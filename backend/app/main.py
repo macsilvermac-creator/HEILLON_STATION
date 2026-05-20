@@ -1,0 +1,132 @@
+"""FastAPI application entry establishing Heillon Legal custody rails."""
+
+from __future__ import annotations
+
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.core import config as runtime_config
+from app.db.database import init_database, sqlite_file_path
+from app.domain.evidence.api import router as evidence_router
+from app.domain.forensic.api import router as forensic_router
+from app.domain.forensic.services import ForensicPackageService
+from app.domain.hdr.api import router as hdr_verification_router
+from app.domain.mission.api import router as mission_router
+from app.domain.mission.agent_registry_setup import build_agent_registry
+from app.domain.mission.services import OrchestrationEngine
+from app.domain.normative.api import router as normative_router
+from app.domain.normative.anchoring_service import NormativeAnchoringService
+from app.domain.normative.compliance_api import router as compliance_router
+from app.domain.normative.lgpd_br import LGPD_FRAMEWORK
+from app.domain.normative.repository import NormativeRepository
+from app.domain.normative.services import DEFAULT_LEGAL_RULES, NormativeService
+from app.domain.hdr.services import HDRService
+from app.domain.mission.agent_config_api import router as agent_config_router
+from app.domain.mission.agent_config_service import AgentConfigService
+from app.domain.mobile.api import router as mobile_router
+from app.domain.user.api import router as identity_router
+from app.domain.user.services import AuthService
+
+logger = logging.getLogger("heillon.legal")
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    """Initialize persistence plus governance EASY singletons."""
+
+    settings = runtime_config.get_settings()
+
+    if settings.FORCE_STUB_TIMESTAMP:
+        if settings.ENVIRONMENT == "production":
+            msg = "FORCE_STUB_TIMESTAMP=True in production is FORBIDDEN. HDR timestamps would lack probative value."
+            raise RuntimeError(msg)
+        logger.warning(
+            "FORCE_STUB_TIMESTAMP=True — RFC3161 artefacts are deterministic stubs. Use only in development/testing."
+        )
+
+    sqlite_path = sqlite_file_path(settings.DATABASE_URL).resolve()
+    application.state.sqlite_path = str(sqlite_path)
+
+    init_database(settings)
+
+    normative_repository = NormativeRepository(list(DEFAULT_LEGAL_RULES))
+    normative_service = NormativeService(repository=normative_repository)
+
+    hdr_singleton = HDRService()
+
+    agent_config_binding = AgentConfigService(database_path=sqlite_path)
+
+    orchestration_registry = build_agent_registry(settings)
+    orchestration_engine = OrchestrationEngine(
+        normative_service,
+        hdr_singleton,
+        orchestration_registry,
+        agent_config_service=agent_config_binding,
+    )
+
+    forensic_service = ForensicPackageService()
+
+    auth_bundle = AuthService(
+        secret_key=settings.AUTH_SECRET_KEY,
+        expire_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+    )
+
+    anchoring_service = NormativeAnchoringService()
+    anchoring_service.register_framework(LGPD_FRAMEWORK)
+
+    application.state.normative_service = normative_service
+    application.state.orchestration_engine = orchestration_engine
+    application.state.hdr_singleton = hdr_singleton
+    application.state.forensic_service = forensic_service
+    application.state.auth_service = auth_bundle
+    application.state.agent_config_service = agent_config_binding
+    application.state.anchoring_service = anchoring_service
+
+    yield
+
+
+def create_application() -> FastAPI:
+    """Application factory simplifying hypervisor tests."""
+
+    settings = runtime_config.get_settings()
+
+    application = FastAPI(
+        title="Heillon Legal — HDR Ledger Service",
+        version="0.4.0-mvp",
+        docs_url="/docs",
+        openapi_url="/openapi.json",
+        lifespan=lifespan,
+    )
+
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    api_prefix = settings.API_V1_PREFIX
+    application.include_router(evidence_router, prefix=api_prefix)
+    application.include_router(hdr_verification_router, prefix=api_prefix)
+    application.include_router(mission_router, prefix=api_prefix)
+    application.include_router(normative_router, prefix=api_prefix)
+    application.include_router(compliance_router, prefix=api_prefix)
+    application.include_router(forensic_router, prefix=api_prefix)
+    application.include_router(identity_router, prefix=api_prefix)
+    application.include_router(agent_config_router, prefix=api_prefix)
+    application.include_router(mobile_router, prefix=api_prefix)
+
+    @application.get("/health", tags=["health"])
+    def healthcheck() -> dict[str, str]:
+        """Liveness/readiness sentinel for orchestration planes."""
+
+        return {"status": "ok"}
+
+    return application
+
+
+app = create_application()

@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:////app/data/heillon.db
+      - FORENSICS_PACKAGE_DIR=/app/data/forensics
+      - FORCE_STUB_TIMESTAMP=false
+      - AUTH_SECRET_KEY=${AUTH_SECRET_KEY:-dev-insecure-heillon-secret-change-in-production-min-32-characters-long}
+      - VERIFICATION_PUBLIC_BASE=http://localhost:3000
+    volumes:
+      - heillon_backend_data:/app/data
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_BACKEND_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=http://backend:8000
+
+volumes:
+  heillon_backend_data:

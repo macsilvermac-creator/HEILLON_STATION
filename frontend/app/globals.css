@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+@layer base {
+  @media (hover: hover) and (pointer: fine) {
+    body.cursor-elite * {
+      cursor: none !important;
+    }
+  }
+
+  body {
+    @apply antialiased bg-deep-space-900 text-white;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    @apply bg-gold-500/30 text-white;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-[20px];
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.33), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-card-hover {
+    @apply transition-all duration-500 ease-out;
+  }
+  .glass-card-hover:hover {
+    @apply -translate-y-1 border-white/15 bg-white/[0.055];
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  /** Glass 2.0 — depth, specular edge, softer lift */
+  .glass-elite {
+    @apply rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-[28px];
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.38),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    background-image: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.02) 42%,
+      rgba(212, 175, 55, 0.04) 100%
+    );
+  }
+
+  .btn-gold {
+    @apply rounded-full bg-gold-500 px-6 py-3 font-semibold text-deep-space-900 transition-all duration-300;
+  }
+  .btn-gold:hover {
+    @apply bg-gold-400 shadow-lg shadow-gold-500/20;
+  }
+
+  .btn-glass {
+    @apply rounded-full border border-white/20 bg-white/5 px-6 py-3 font-medium text-white backdrop-blur-[16px] transition-all duration-300;
+  }
+  .btn-glass:hover {
+    @apply border-gold-500/50 bg-gold-500/10 text-gold-300;
+  }
+
+  .section-title {
+    background: linear-gradient(135deg, #ffffff 0%, rgba(212, 175, 55, 0.92) 100%);
+    -webkit-background-clip: text;
+    color: transparent;
+    @apply text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl;
+  }
+
+  /** Conteúdo longo nos documentos (Fase 10 · Docs Hub) */
+  .docs-prose h2 {
+    margin-top: 2.75rem;
+    margin-bottom: 1.1rem;
+    scroll-margin-top: 7rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.55rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: rgb(248 248 253);
+  }
+
+  .docs-prose h3 {
+    margin-top: 1.85rem;
+    margin-bottom: 0.85rem;
+    scroll-margin-top: 7rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgba(236, 220, 150, 0.92);
+  }
+
+  .docs-prose p {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.74;
+    color: rgba(255, 255, 255, 0.73);
+  }
+
+  .docs-prose ul {
+    margin-bottom: 1rem;
+    margin-left: 1.35rem;
+    list-style-type: square;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    list-style-position: outside;
+    padding-inline-start: 0.25rem;
+  }
+
+  .docs-prose ol {
+    margin-bottom: 1rem;
+    margin-left: 1.35rem;
+    list-style-type: decimal;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    padding-inline-start: 0.25rem;
+  }
+
+  .docs-prose ul li {
+    margin-top: 0.45rem;
+  }
+
+  .docs-prose strong {
+    font-weight: 600;
+    color: rgba(248, 250, 255, 1);
+  }
+
+  .docs-prose blockquote {
+    margin-bottom: 1rem;
+    border-radius: 0.95rem;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    background: rgba(212, 175, 55, 0.07);
+    padding: 0.9rem 1rem;
+    font-size: 0.84rem;
+    line-height: 1.72;
+    color: rgba(255, 255, 255, 0.76);
+    font-style: normal;
+  }
+
+  .docs-prose a {
+    color: rgba(224, 200, 100, 0.95);
+    text-underline-offset: 4px;
+  }
+
+  .docs-prose a:hover {
+    color: rgba(238, 220, 150, 1);
+    text-decoration: underline;
+  }
+
+  .docs-prose code.inline {
+    padding: 0.12rem 0.45rem;
+    border-radius: 0.4rem;
+    font-family: var(--font-jetbrains), ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: rgba(235, 210, 120, 0.92);
+    background: rgba(12, 20, 40, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    white-space: nowrap;
+  }
+
+  .docs-prose table {
+    margin-bottom: 1.65rem;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.76rem;
+    text-align: left;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.85rem;
+    overflow: hidden;
+  }
+
+  .docs-prose th {
+    background: rgba(255, 255, 255, 0.065);
+    padding: 0.55rem 0.72rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .docs-prose td {
+    padding: 0.55rem 0.72rem;
+    vertical-align: top;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.75);
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #ffffff 0%, #d4af37 100%);
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+
+  /** PWA handheld — notch / home-indicator safe areas */
+  .pt-safe-mobile {
+    padding-top: calc(3.5rem + env(safe-area-inset-top, 0px));
+  }
+  .pb-safe-tabs {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
