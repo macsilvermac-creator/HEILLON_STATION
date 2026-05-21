@@ -79,8 +79,12 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-2 block text-sm text-white/60">Nome</label>
+            <label htmlFor="register-name" className="mb-2 block text-sm text-white/60">
+              Nome
+            </label>
             <input
+              id="register-name"
+              name="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -90,8 +94,12 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-white/60">Email</label>
+            <label htmlFor="register-email" className="mb-2 block text-sm text-white/60">
+              Email
+            </label>
             <input
+              id="register-email"
+              name="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -102,8 +110,12 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-white/60">Password (mín. 8)</label>
+            <label htmlFor="register-password" className="mb-2 block text-sm text-white/60">
+              Password (mín. 8)
+            </label>
             <input
+              id="register-password"
+              name="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -115,8 +127,12 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm text-white/60">Função</label>
+            <label htmlFor="register-role" className="mb-2 block text-sm text-white/60">
+              Função
+            </label>
             <select
+              id="register-role"
+              name="role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               className="w-full rounded-xl border border-white/10 bg-deep-space-800 px-4 py-3 text-white focus:border-gold-500/60 focus:outline-none focus:ring-1 focus:ring-gold-500/40"
