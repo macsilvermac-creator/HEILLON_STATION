@@ -64,8 +64,11 @@ test.describe("Jornada completa — Heillon Legal", () => {
     });
 
     await page.goto("/normative");
+    await expect(page.getByPlaceholder(/mission_id/i)).toBeVisible({ timeout: 30_000 });
     await page.getByPlaceholder(/mission_id/i).fill(missionId);
-    await page.getByRole("button", { name: /Gerar \(LGPD-BR\)/i }).click();
+    const reportBtn = page.getByRole("button", { name: /Gerar \(LGPD-BR\)/i });
+    await expect(reportBtn).toBeEnabled({ timeout: 30_000 });
+    await reportBtn.click();
     await expect(page.getByText("Relatório", { exact: true })).toBeVisible({ timeout: 30_000 });
 
     const reportViaApi = await generateCompliance(api, bearer, missionId);

@@ -75,8 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const next = mapMePayload(raw);
         setUserState(next);
         localStorage.setItem("heillon_user", JSON.stringify(next));
-        setToken(null);
-        localStorage.removeItem("heillon_bearer");
+        // Mantém bearer em paralelo ao cookie HttpOnly — necessário para proxy dev/CI e clientes API.
       } catch {
         /* sessão inválida ou só legacy em memória */
       } finally {

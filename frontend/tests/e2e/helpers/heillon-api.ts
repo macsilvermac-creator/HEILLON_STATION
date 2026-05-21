@@ -42,6 +42,14 @@ export async function registerOperator(
   return { bearer, email };
 }
 
+function sessionHeaders(bearer: string): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (bearer) {
+    headers.Authorization = `Bearer ${bearer}`;
+  }
+  return headers;
+}
+
 export async function planMission(
   request: APIRequestContext,
   bearer: string,
@@ -49,7 +57,7 @@ export async function planMission(
   authorizedAgents: string[],
 ): Promise<string> {
   const plan = await request.post(`${API_PREFIX}/mission/plan`, {
-    headers: { Authorization: `Bearer ${bearer}` },
+    headers: sessionHeaders(bearer),
     data: {
       description,
       authorized_agents: authorizedAgents,
@@ -65,7 +73,7 @@ export async function planMission(
 
 export async function approveMission(request: APIRequestContext, bearer: string, missionId: string): Promise<void> {
   const res = await request.post(`${API_PREFIX}/mission/${missionId}/approve`, {
-    headers: { Authorization: `Bearer ${bearer}` },
+    headers: sessionHeaders(bearer),
   });
   await assertOk(res, "aprovar missão");
 }
@@ -76,7 +84,7 @@ export async function executeMission(
   missionId: string,
 ): Promise<Record<string, unknown>> {
   const res = await request.post(`${API_PREFIX}/mission/${missionId}/execute`, {
-    headers: { Authorization: `Bearer ${bearer}` },
+    headers: sessionHeaders(bearer),
   });
   const body = await assertOk(res, "executar missão");
   const totalHdrs = Number(body.total_hdrs ?? 0);
@@ -97,7 +105,7 @@ export async function generateCompliance(
 ): Promise<Record<string, unknown>> {
   const res = await request.post(
     `${API_PREFIX}/compliance/report/${missionId}?framework_id=LGPD-BR`,
-    { headers: { Authorization: `Bearer ${bearer}` } },
+    { headers: sessionHeaders(bearer) },
   );
   return assertOk(res, "relatório LGPD");
 }

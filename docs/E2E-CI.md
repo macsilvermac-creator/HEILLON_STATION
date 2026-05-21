@@ -13,9 +13,10 @@
 ### Princípios
 
 1. **API E2E através de `page.request`** com URLs `/api/v1/...` (porta 3000), não chamadas directas à :8000 — valida proxy, CORS e cookies.
-2. **SQLite no job E2E** — isolado em `/tmp/heillon_e2e.db`; sem dados de produção.
-3. **Rate limit desligado só com `CI_E2E=true`** — evita 429 em pipelines; produção mantém Redis/memória.
-4. **Segredos** — `AUTH_SECRET_KEY` apenas em GitHub Secrets / `.env` local (nunca no repo).
+2. **Sessão híbrida (cookie + bearer)** — cookie HttpOnly para XSS; bearer em `localStorage` mantido após `/auth/me` para proxy dev/CI e clientes API. O proxy Next nem sempre reencaminha `Set-Cookie` do backend.
+3. **SQLite no job E2E** — isolado em `/tmp/heillon_e2e.db`; sem dados de produção.
+4. **Rate limit desligado só com `CI_E2E=true`** — evita 429 em pipelines; produção mantém Redis/memória.
+5. **Segredos** — `AUTH_SECRET_KEY` apenas em GitHub Secrets / `.env` local (nunca no repo).
 
 ## Executar localmente
 
