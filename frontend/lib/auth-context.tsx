@@ -2,6 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
+import { fetchCurrentUser, logoutLegalOperator } from "@/lib/api";
+
 export interface AuthUser {
   user_id: string;
   email: string;
@@ -17,7 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isReady: boolean;
   login: (token: string, user: AuthUser) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
 }
 
@@ -41,6 +43,17 @@ function parseStoredUser(raw: string | null): AuthUser | null {
   }
 }
 
+function mapMePayload(raw: Record<string, unknown>): AuthUser {
+  return {
+    user_id: String(raw.user_id ?? ""),
+    email: String(raw.email ?? ""),
+    name: String(raw.name ?? ""),
+    role: String(raw.role ?? "advogado"),
+    organization_id: typeof raw.organization_id === "string" ? raw.organization_id : undefined,
+    is_active: typeof raw.is_active === "boolean" ? raw.is_active : true,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -53,7 +66,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(storedToken);
       setUserState(storedUser);
     }
-    setHydrated(true);
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = (await fetchCurrentUser()) as Record<string, unknown>;
+        if (cancelled) return;
+        const next = mapMePayload(raw);
+        setUserState(next);
+        localStorage.setItem("heillon_user", JSON.stringify(next));
+        setToken(null);
+        localStorage.removeItem("heillon_bearer");
+      } catch {
+        /* sessão inválida ou só legacy em memória */
+      } finally {
+        if (!cancelled) setHydrated(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = useCallback((newToken: string, newUser: AuthUser) => {
@@ -63,7 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserState(newUser);
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await logoutLegalOperator();
     localStorage.removeItem("heillon_bearer");
     localStorage.removeItem("heillon_user");
     setToken(null);
@@ -80,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user: hydrated ? user : null,
       token: hydrated ? token : null,
-      isAuthenticated: hydrated && !!token,
+      isAuthenticated: hydrated && !!user,
       isReady: hydrated,
       login,
       logout,

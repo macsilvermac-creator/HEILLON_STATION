@@ -87,6 +87,7 @@ export function MissionPlanner() {
       <label className="block space-y-2 text-sm">
         <span className="font-medium text-white/80">Comando jurídico</span>
         <textarea
+          data-tour="mission-input"
           value={intent}
           onChange={(e) => setIntent(e.target.value)}
           className="min-h-[140px] w-full rounded-xl border border-white/10 bg-deep-space-800/90 px-4 py-3 text-sm text-white outline-none ring-gold-500/40 focus-visible:ring-2"
@@ -115,6 +116,7 @@ export function MissionPlanner() {
         </button>
         <button
           type="button"
+          data-tour="mission-approve"
           data-cursor-hover
           onClick={() => void handleApprove()}
           disabled={!missionId || busy !== null}

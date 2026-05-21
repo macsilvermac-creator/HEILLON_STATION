@@ -30,7 +30,7 @@ def test_agent_config_crud_requires_bearer(monkeypatch: pytest.MonkeyPatch, tmp_
     app = create_application()
     with TestClient(app) as client:
         r = client.get("/api/v1/agent-config/analysis-agent")
-        assert r.status_code == 403  # bearer auto-error
+        assert r.status_code == 401  # bearer ou cookie obrigatório
 
 
 def test_agent_config_stub_roundtrip(monkeypatch: pytest.MonkeyPatch, tmp_path):

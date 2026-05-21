@@ -21,6 +21,17 @@ function authorizedHeaders(extra?: HeadersInit): HeadersInit {
   return headers;
 }
 
+function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+  const next: RequestInit = {
+    ...init,
+    headers: authorizedHeaders(init?.headers),
+  };
+  if (typeof window !== "undefined") {
+    next.credentials = "include";
+  }
+  return fetch(input, next);
+}
+
 export function persistAuthBearer(token: string | null): void {
   if (typeof window === "undefined") return;
   if (!token || token.trim().length === 0) window.localStorage.removeItem("heillon_bearer");
@@ -85,7 +96,7 @@ export async function postIngestFile(file: File, missionId?: string): Promise<un
     form.append("mission_id", missionId);
   }
 
-  const response = await fetch(`${PREFIX}/ingestion`, {
+  const response = await apiFetch(`${PREFIX}/ingestion`, {
     method: "POST",
     headers: authorizedHeaders(),
     body: form,
@@ -100,7 +111,7 @@ export async function postIngestFile(file: File, missionId?: string): Promise<un
 }
 
 export async function fetchHdrVerification(hdrId: string): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/verify/${hdrId}`);
+  const response = await apiFetch(`${PREFIX}/verify/${hdrId}`);
   const payload = await parseJsonResponse(response);
 
   if (!response.ok) {
@@ -111,7 +122,7 @@ export async function fetchHdrVerification(hdrId: string): Promise<unknown> {
 }
 
 export async function fetchChainVerification(missionId: string): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/verify/chain/${missionId}`);
+  const response = await apiFetch(`${PREFIX}/verify/chain/${missionId}`);
   const payload = await parseJsonResponse(response);
 
   if (!response.ok) {
@@ -122,7 +133,7 @@ export async function fetchChainVerification(missionId: string): Promise<unknown
 }
 
 export async function planMission(description: string, authorizedAgents: string[]): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/mission/plan`, {
+  const response = await apiFetch(`${PREFIX}/mission/plan`, {
     method: "POST",
     headers: authorizedHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ description, authorized_agents: authorizedAgents }),
@@ -137,7 +148,7 @@ export async function planMission(description: string, authorizedAgents: string[
 }
 
 export async function approveMission(missionId: string): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/mission/${missionId}/approve`, {
+  const response = await apiFetch(`${PREFIX}/mission/${missionId}/approve`, {
     method: "POST",
     headers: authorizedHeaders(),
   });
@@ -151,7 +162,7 @@ export async function approveMission(missionId: string): Promise<unknown> {
 }
 
 export async function rejectMission(missionId: string): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/mission/${missionId}/reject`, {
+  const response = await apiFetch(`${PREFIX}/mission/${missionId}/reject`, {
     method: "POST",
     headers: authorizedHeaders(),
   });
@@ -165,7 +176,7 @@ export async function rejectMission(missionId: string): Promise<unknown> {
 }
 
 export async function executeMission(missionId: string): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/mission/${missionId}/execute`, {
+  const response = await apiFetch(`${PREFIX}/mission/${missionId}/execute`, {
     method: "POST",
     headers: authorizedHeaders(),
   });
@@ -179,7 +190,7 @@ export async function executeMission(missionId: string): Promise<unknown> {
 }
 
 export async function fetchMissionPlan(missionId: string): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/mission/${missionId}`, { headers: authorizedHeaders() });
+  const response = await apiFetch(`${PREFIX}/mission/${missionId}`, { headers: authorizedHeaders() });
   const payload = await parseJsonResponse(response);
 
   if (!response.ok) {
@@ -198,7 +209,7 @@ export async function getDiary(search: Record<string, string | undefined>): Prom
   }
   const qs = query.toString();
   const suffix = qs ? `?${qs}` : "";
-  const response = await fetch(`${PREFIX}/mission/diary${suffix}`, {
+  const response = await apiFetch(`${PREFIX}/mission/diary${suffix}`, {
     headers: authorizedHeaders(),
   });
   const payload = await parseJsonResponse(response);
@@ -211,7 +222,7 @@ export async function getDiary(search: Record<string, string | undefined>): Prom
 }
 
 export async function getDiaryStats(): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/mission/diary/stats`, { headers: authorizedHeaders() });
+  const response = await apiFetch(`${PREFIX}/mission/diary/stats`, { headers: authorizedHeaders() });
   const payload = await parseJsonResponse(response);
 
   if (!response.ok) {
@@ -222,7 +233,7 @@ export async function getDiaryStats(): Promise<unknown> {
 }
 
 export async function fetchMobileQuickStats(): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/mobile/quick-stats`, { headers: authorizedHeaders() });
+  const response = await apiFetch(`${PREFIX}/mobile/quick-stats`, { headers: authorizedHeaders() });
   const payload = await parseJsonResponse(response);
   if (!response.ok) {
     throw new Error(formatProblemDetail(payload));
@@ -231,7 +242,7 @@ export async function fetchMobileQuickStats(): Promise<unknown> {
 }
 
 export async function fetchMobilePendingApprovals(): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/mobile/pending-approvals`, {
+  const response = await apiFetch(`${PREFIX}/mobile/pending-approvals`, {
     headers: authorizedHeaders(),
   });
   const payload = await parseJsonResponse(response);
@@ -244,7 +255,7 @@ export async function fetchMobilePendingApprovals(): Promise<unknown> {
 }
 
 export async function registerPushTokenJson(subscriptionJson: string): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/mobile/push-token`, {
+  const response = await apiFetch(`${PREFIX}/mobile/push-token`, {
     method: "POST",
     headers: authorizedHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ subscription_json: subscriptionJson }),
@@ -259,7 +270,7 @@ export async function registerPushTokenJson(subscriptionJson: string): Promise<u
 }
 
 export async function generateForensicPackage(missionId: string, generatedBy: string): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/forensic/package/${missionId}?generated_by=${encodeURIComponent(generatedBy)}`, {
+  const response = await apiFetch(`${PREFIX}/forensic/package/${missionId}?generated_by=${encodeURIComponent(generatedBy)}`, {
     method: "POST",
   });
   const payload = await parseJsonResponse(response);
@@ -272,7 +283,7 @@ export async function generateForensicPackage(missionId: string, generatedBy: st
 }
 
 export async function getNormativeRules(): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/normative/rules`);
+  const response = await apiFetch(`${PREFIX}/normative/rules`);
   const payload = await parseJsonResponse(response);
 
   if (!response.ok) {
@@ -283,7 +294,7 @@ export async function getNormativeRules(): Promise<unknown> {
 }
 
 export async function fetchComplianceFrameworks(): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/compliance/frameworks`);
+  const response = await apiFetch(`${PREFIX}/compliance/frameworks`);
   const payload = await parseJsonResponse(response);
   if (!response.ok) {
     throw new Error(formatProblemDetail(payload));
@@ -293,7 +304,7 @@ export async function fetchComplianceFrameworks(): Promise<unknown> {
 
 export async function postComplianceReport(missionId: string, frameworkId = "LGPD-BR"): Promise<unknown> {
   const url = `${PREFIX}/compliance/report/${missionId}?framework_id=${encodeURIComponent(frameworkId)}`;
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: authorizedHeaders(),
   });
@@ -305,7 +316,7 @@ export async function postComplianceReport(missionId: string, frameworkId = "LGP
 }
 
 export async function loginLegalOperator(email: string, password: string): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/auth/login`, {
+  const response = await apiFetch(`${PREFIX}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -320,7 +331,7 @@ export async function loginLegalOperator(email: string, password: string): Promi
 }
 
 export async function registerLegalOperator(body: Record<string, unknown>): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/auth/register`, {
+  const response = await apiFetch(`${PREFIX}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -338,7 +349,7 @@ export async function registerLegalOperator(body: Record<string, unknown>): Prom
 }
 
 export async function fetchCurrentUser(): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/auth/me`, { headers: authorizedHeaders() });
+  const response = await apiFetch(`${PREFIX}/auth/me`, { headers: authorizedHeaders() });
   const payload = await parseJsonResponse(response);
   if (!response.ok) {
     throw new Error(formatProblemDetail(payload));
@@ -347,7 +358,7 @@ export async function fetchCurrentUser(): Promise<unknown> {
 }
 
 export async function listMissions(skip = 0, limit = 20): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/mission/?skip=${skip}&limit=${limit}`, {
+  const response = await apiFetch(`${PREFIX}/mission/?skip=${skip}&limit=${limit}`, {
     headers: authorizedHeaders(),
   });
   const payload = await parseJsonResponse(response);
@@ -360,7 +371,7 @@ export async function listMissions(skip = 0, limit = 20): Promise<unknown> {
 }
 
 export async function listAgentConfigs(): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/agent-config/`, { headers: authorizedHeaders() });
+  const response = await apiFetch(`${PREFIX}/agent-config/`, { headers: authorizedHeaders() });
   const payload = await parseJsonResponse(response);
 
   if (!response.ok) {
@@ -371,7 +382,7 @@ export async function listAgentConfigs(): Promise<unknown> {
 }
 
 export async function putAgentModelConfig(agentId: string, patch: Record<string, unknown>): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/agent-config/${encodeURIComponent(agentId)}`, {
+  const response = await apiFetch(`${PREFIX}/agent-config/${encodeURIComponent(agentId)}`, {
     method: "PUT",
     headers: authorizedHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(patch),
@@ -386,7 +397,7 @@ export async function putAgentModelConfig(agentId: string, patch: Record<string,
 }
 
 export async function testAgentModel(agentId: string): Promise<unknown> {
-  const response = await fetch(`${PREFIX}/agent-config/${encodeURIComponent(agentId)}/test`, {
+  const response = await apiFetch(`${PREFIX}/agent-config/${encodeURIComponent(agentId)}/test`, {
     method: "POST",
     headers: authorizedHeaders(),
   });
@@ -397,4 +408,12 @@ export async function testAgentModel(agentId: string): Promise<unknown> {
   }
 
   return payload;
+}
+
+export async function logoutLegalOperator(): Promise<void> {
+  try {
+    await apiFetch(`${PREFIX}/auth/logout`, { method: "POST" });
+  } catch {
+    /* rede directa / offline */
+  }
 }

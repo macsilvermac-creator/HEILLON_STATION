@@ -6,6 +6,8 @@ data/
 **/node_modules/
 **/.next/
 **/dist/
+**/playwright-report/
+**/test-results/
 
 # Python
 **/__pycache__/
@@ -16,3 +18,6 @@ data/
 # Ambiente local
 .env
 .env.local
+
+# Vercel (project link local por máquina; pode ser omitido para partilhar com a equipa)
+.vercel/

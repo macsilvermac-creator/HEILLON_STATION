@@ -5,29 +5,13 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.dependencies import database_dependency
+from app.dependencies import get_current_user_record
 from app.domain.mission.agent_config_models import AgentConfig, AgentConfigTestResponse, AgentConfigUpdate
 from app.domain.mission.agent_config_service import AgentConfigService
 from app.domain.user.models import UserRecord
-from app.domain.user.repository import UserRepository
-from app.domain.user.services import AuthService
-
 
 router = APIRouter(prefix="/agent-config", tags=["agent-config"])
-
-strict_bearer = HTTPBearer(auto_error=True)
-
-
-def get_auth_runtime(request: Request) -> AuthService:
-    svc = getattr(request.app.state, "auth_service", None)
-    if svc is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Serviço de autenticação indisponível.",
-        )
-    return svc
 
 
 def get_agent_config_runtime(request: Request) -> AgentConfigService:
@@ -40,31 +24,9 @@ def get_agent_config_runtime(request: Request) -> AgentConfigService:
     return svc
 
 
-def resolve_registered_operator(
-    request: Request,
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(strict_bearer)],
-    conn=Depends(database_dependency),
-) -> UserRecord:
-    """Authenticate bearer tokens and hydrate SQLite-backed operator dossiers."""
-
-    auth_service = get_auth_runtime(request)
-    payload = auth_service.decode_token(credentials.credentials)
-    if payload is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida.")
-
-    subject = payload.get("sub")
-    if subject is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token sem sujeito.")
-
-    operator = UserRepository.get_by_id(conn, str(subject))
-    if operator is None or not operator.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Operador não encontrado ou inativo.")
-    return operator
-
-
 @router.get("/", response_model=list[AgentConfig])
 def list_agent_configs(
-    actor: Annotated[UserRecord, Depends(resolve_registered_operator)],
+    actor: Annotated[UserRecord, Depends(get_current_user_record)],
     config_service: Annotated[AgentConfigService, Depends(get_agent_config_runtime)],
 ) -> list[AgentConfig]:
     """Enumerate configured cognition backends for the operator organization."""
@@ -75,7 +37,7 @@ def list_agent_configs(
 @router.get("/{agent_id}", response_model=AgentConfig)
 def get_agent_config_route(
     agent_id: str,
-    actor: Annotated[UserRecord, Depends(resolve_registered_operator)],
+    actor: Annotated[UserRecord, Depends(get_current_user_record)],
     config_service: Annotated[AgentConfigService, Depends(get_agent_config_runtime)],
 ) -> AgentConfig:
     """Hydrate sanitized configuration projections (secrets never egress)."""
@@ -87,7 +49,7 @@ def get_agent_config_route(
 def put_agent_config_route(
     agent_id: str,
     body: AgentConfigUpdate,
-    actor: Annotated[UserRecord, Depends(resolve_registered_operator)],
+    actor: Annotated[UserRecord, Depends(get_current_user_record)],
     config_service: Annotated[AgentConfigService, Depends(get_agent_config_runtime)],
 ) -> AgentConfig:
     """Upsert cognition routing artefacts for EASY workers."""
@@ -101,7 +63,7 @@ def put_agent_config_route(
 @router.post("/{agent_id}/test", response_model=AgentConfigTestResponse)
 def probe_agent_configuration(
     agent_id: str,
-    actor: Annotated[UserRecord, Depends(resolve_registered_operator)],
+    actor: Annotated[UserRecord, Depends(get_current_user_record)],
     config_service: Annotated[AgentConfigService, Depends(get_agent_config_runtime)],
 ) -> AgentConfigTestResponse:
     """Lightweight inference ping using the persisted routing profile."""

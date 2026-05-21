@@ -57,6 +57,14 @@ def hdr_service_dependency() -> HDRService:
 
 mission_optional_bearer = HTTPBearer(auto_error=False)
 
+AUTH_COOKIE_NAME = "heillon_token"
+
+
+def _access_token_from_request(request: Request, credentials: HTTPAuthorizationCredentials | None) -> str | None:
+    if credentials is not None:
+        return credentials.credentials
+    return request.cookies.get(AUTH_COOKIE_NAME)
+
 
 @dataclass(frozen=True)
 class MissionActor:
@@ -77,14 +85,15 @@ def resolve_mission_actor(
     if not settings.MISSION_ROUTES_REQUIRE_AUTH:
         return MissionActor(organization_id=settings.DEFAULT_ORGANIZATION_ID, user_id=None)
 
-    if credentials is None:
+    token = _access_token_from_request(request, credentials)
+    if token is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais em falta.")
 
     auth_service: AuthService | None = getattr(request.app.state, "auth_service", None)
     if auth_service is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Auth indisponível.")
 
-    payload = auth_service.decode_token(credentials.credentials)
+    payload = auth_service.decode_token(token)
     if payload is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida.")
 
@@ -96,13 +105,13 @@ def resolve_mission_actor(
     return MissionActor(organization_id=str(org_claim), user_id=str(subject))
 
 
-strict_bearer = HTTPBearer(auto_error=True)
+optional_auth_bearer = HTTPBearer(auto_error=False)
 
 
 def get_current_user_record(
     request: Request,
     conn: Annotated[sqlite3.Connection, Depends(database_dependency)],
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(strict_bearer)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(optional_auth_bearer)],
 ) -> UserRecord:
     """Resolve bearer subject to a hydrated ``UserRecord`` (ingestion and compliance gates)."""
 
@@ -110,7 +119,11 @@ def get_current_user_record(
     if auth_service is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Auth indisponível.")
 
-    payload = auth_service.decode_token(credentials.credentials)
+    token = _access_token_from_request(request, credentials)
+    if token is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais em falta.")
+
+    payload = auth_service.decode_token(token)
     if payload is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida.")
 

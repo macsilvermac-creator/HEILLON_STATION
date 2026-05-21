@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate:icons": "node scripts/generate-pwa-icons.cjs"
+    "generate:icons": "node scripts/generate-pwa-icons.cjs",
+    "test:e2e": "playwright test",
+    "dev:stack": "concurrently -k -n api,web -c blue,green \"cd ../backend && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000\" \"next dev\""
   },
   "dependencies": {
     "@react-three/drei": "^10.6.1",
@@ -20,16 +22,20 @@
     "next": "15.4.10",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-to-print": "^3.3.0",
+    "recharts": "^3.8.1",
     "tailwind-merge": "^3.4.0",
     "three": "^0.173.0"
   },
   "devDependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
+    "@playwright/test": "^1.60.0",
     "@types/node": "^22.19.7",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/three": "^0.173.0",
     "autoprefixer": "^10.4.22",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.2",
     "eslint-config-next": "15.4.10",
     "pngjs": "^7.0.0",

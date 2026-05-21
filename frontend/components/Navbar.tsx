@@ -10,9 +10,9 @@ const navLinks = [
   { href: "/", label: "Missão" },
   { href: "/m", label: "Mobile" },
   { href: "/diary", label: "Diário" },
-  { href: "/docs", label: "Docs" },
-  { href: "/normative", label: "Normativo" },
-  { href: "/verification", label: "Verificar" },
+  { href: "/docs", label: "Docs", tour: "docs-link" },
+  { href: "/normative", label: "Normativo", tour: "normative-link" },
+  { href: "/verification", label: "Verificar", tour: "verify-link" },
   { href: "/ingestion", label: "Evidências" },
   { href: "/agent-config", label: "Modelos" },
 ];
@@ -43,6 +43,7 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 data-cursor-hover
+                {...("tour" in link && link.tour ? { "data-tour": link.tour } : {})}
                 className="rounded-full px-3 py-2 text-xs text-white/60 transition-colors duration-300 hover:bg-white/5 hover:text-white"
               >
                 {link.label}
@@ -67,7 +68,7 @@ export function Navbar() {
                   className="hidden rounded-full border border-white/15 px-3 py-2 text-xs text-white/70 transition-colors hover:border-white/25 hover:text-white sm:inline-flex"
                   data-cursor-hover
                   onClick={() => {
-                    logout();
+                    void logout();
                     router.push("/");
                   }}
                 >
@@ -102,6 +103,7 @@ export function Navbar() {
               key={link.href}
               href={link.href}
               data-cursor-hover
+              {...("tour" in link && link.tour ? { "data-tour": link.tour } : {})}
               className="rounded-full border border-white/10 px-4 py-2 text-[11px] text-white/70"
             >
               {link.label}
@@ -117,7 +119,7 @@ export function Navbar() {
                   type="button"
                   className="rounded-full border border-white/15 px-4 py-2 text-[11px] text-white/70"
                   onClick={() => {
-                    logout();
+                    void logout();
                     router.push("/");
                   }}
                 >

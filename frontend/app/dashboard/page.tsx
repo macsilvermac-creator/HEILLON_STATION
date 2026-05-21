@@ -1,9 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
 import { useAuth } from "@/lib/auth-context";
 import { getDiaryStats, listMissions } from "@/lib/api";
 
@@ -13,11 +27,23 @@ interface MissionRow {
   description?: string;
 }
 
+interface DiaryStats {
+  total_missions?: number;
+  completed?: number;
+  failed?: number;
+  blocked_by_normative?: number;
+  total_hdrs_generated?: number;
+  avg_execution_time_ms?: number;
+  most_used_agents?: { agent_id: string; count: number }[];
+}
+
+const PIE_COLORS = ["#d4af37", "#34d399", "#60a5fa", "#f472b6", "#a78bfa", "#fb923c", "#94a3b8"];
+
 export default function DashboardPage() {
   const router = useRouter();
   const { isAuthenticated, user, logout, isReady } = useAuth();
   const [missions, setMissions] = useState<MissionRow[]>([]);
-  const [stats, setStats] = useState<{ total_missions?: number } | null>(null);
+  const [stats, setStats] = useState<DiaryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -42,7 +68,7 @@ export default function DashboardPage() {
         ]);
         if (cancelled) return;
         setMissions(Array.isArray(mRaw) ? (mRaw as MissionRow[]) : []);
-        setStats(typeof sRaw === "object" && sRaw !== null ? (sRaw as { total_missions?: number }) : null);
+        setStats(typeof sRaw === "object" && sRaw !== null ? (sRaw as DiaryStats) : null);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Falha ao carregar dados.");
       } finally {
@@ -55,6 +81,33 @@ export default function DashboardPage() {
     };
   }, [isAuthenticated, isReady]);
 
+  const total = stats?.total_missions ?? missions.length;
+
+  const lifecycleData = useMemo(() => {
+    if (!stats) return [];
+    return [
+      { name: "Concluídas", v: stats.completed ?? 0 },
+      { name: "Falhas", v: stats.failed ?? 0 },
+      { name: "Bloqueio normativo", v: stats.blocked_by_normative ?? 0 },
+    ];
+  }, [stats]);
+
+  const agentPieData = useMemo(() => {
+    const rows = stats?.most_used_agents ?? [];
+    return rows
+      .filter((r) => r.count > 0)
+      .map((r) => ({ name: r.agent_id.replace(/-agent$/, "") || r.agent_id, value: r.count }));
+  }, [stats]);
+
+  const complianceRate = useMemo(() => {
+    const c = stats?.completed ?? 0;
+    const f = stats?.failed ?? 0;
+    const b = stats?.blocked_by_normative ?? 0;
+    const denom = c + f + b;
+    if (denom === 0) return null;
+    return Math.round((c / denom) * 1000) / 10;
+  }, [stats]);
+
   if (!isReady || !isAuthenticated) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center pt-24 text-white/50">
@@ -65,8 +118,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const total = stats?.total_missions ?? missions.length;
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-20 pt-24">
@@ -80,7 +131,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => {
-              logout();
+              void logout();
               router.push("/");
             }}
             className="btn-glass self-start text-sm"
@@ -99,8 +150,8 @@ export default function DashboardPage() {
         <div className="mb-10 grid gap-4 sm:grid-cols-3">
           {[
             { label: "Missões (átomo)", value: loading ? "…" : String(total), hint: "Diário / org" },
-            { label: "Papel", value: user?.role ?? "—", hint: "perfil" },
-            { label: "Estado", value: "Ativo", hint: "sessão JWT" },
+            { label: "Taxa conformidade*", value: loading ? "…" : complianceRate !== null ? `${complianceRate}%` : "—", hint: "concluídas / (concl.+falhas+bloq.)" },
+            { label: "Tempo médio (DAG)", value: loading ? "…" : `${Math.round(stats?.avg_execution_time_ms ?? 0)} ms`, hint: "orquestração EASY" },
           ].map((card) => (
             <div key={card.label} className="glass-elite rounded-2xl p-5">
               <p className="text-[11px] uppercase tracking-wider text-white/40">{card.label}</p>
@@ -109,6 +160,64 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {!loading && stats ? (
+          <div className="mb-10 grid gap-6 lg:grid-cols-2">
+            <div className="glass-elite rounded-2xl border border-white/10 p-5">
+              <h3 className="text-sm font-semibold text-white">Ciclo de vida (missões)</h3>
+              <p className="mt-1 text-[11px] text-white/40">Distribuição agregada do diário.</p>
+              <div className="mt-4 h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={lifecycleData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                    <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} />
+                    <YAxis tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 10 }} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "rgba(15,23,42,0.95)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: "12px",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Bar dataKey="v" fill="#d4af37" radius={[6, 6, 0, 0]} name="Missões" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="glass-elite rounded-2xl border border-white/10 p-5">
+              <h3 className="text-sm font-semibold text-white">Agentes EASY (uso)</h3>
+              <p className="mt-1 text-[11px] text-white/40">Frequência relativa no período agregado.</p>
+              <div className="mt-4 h-56 w-full">
+                {agentPieData.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={agentPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={72} label>
+                        {agentPieData.map((_, i) => (
+                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="rgba(0,0,0,0.2)" />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          background: "rgba(15,23,42,0.95)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          borderRadius: "12px",
+                          fontSize: "12px",
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: "11px", color: "rgba(255,255,255,0.55)" }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs text-white/40">
+                    Sem frequências de agente — execute missões para povoar.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="glass-elite rounded-2xl p-6 md:p-8">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -158,6 +267,9 @@ export default function DashboardPage() {
           </Link>
           <Link href="/agent-config" className="btn-glass text-sm">
             Soberania de modelos
+          </Link>
+          <Link href="/normative" className="btn-glass text-sm">
+            Hub normativo
           </Link>
         </div>
       </motion.div>

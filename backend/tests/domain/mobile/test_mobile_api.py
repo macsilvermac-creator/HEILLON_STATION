@@ -11,10 +11,10 @@ from app.main import create_application
 
 
 def test_mobile_endpoints_require_bearer(api_client: TestClient) -> None:
-    """Mobile routes use strict bearer like agent-config."""
+    """Mobile routes require bearer or session cookie."""
 
-    assert api_client.get("/api/v1/mobile/quick-stats").status_code == 403
-    assert api_client.get("/api/v1/mobile/pending-approvals").status_code == 403
+    assert api_client.get("/api/v1/mobile/quick-stats").status_code == 401
+    assert api_client.get("/api/v1/mobile/pending-approvals").status_code == 401
 
 
 def test_mobile_quick_stats_and_push_token(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:

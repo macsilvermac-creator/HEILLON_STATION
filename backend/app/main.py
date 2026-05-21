@@ -7,8 +7,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core import config as runtime_config
+from app.core.rate_limit import rate_limit_middleware
 from app.db.database import init_database, sqlite_file_path
 from app.domain.evidence.api import router as evidence_router
 from app.domain.forensic.api import router as forensic_router
@@ -108,6 +110,12 @@ def create_application() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    class RateLimitHttpMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):  # type: ignore[override]
+            return await rate_limit_middleware(request, call_next)
+
+    application.add_middleware(RateLimitHttpMiddleware)
 
     api_prefix = settings.API_V1_PREFIX
     application.include_router(evidence_router, prefix=api_prefix)

@@ -206,3 +206,9 @@
     padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

@@ -7,8 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core import config as runtime_config
-from app.dependencies import database_dependency
-from app.domain.mission.agent_config_api import resolve_registered_operator
+from app.dependencies import database_dependency, get_current_user_record
 from app.domain.mission.models import MissionStatus
 from app.domain.mission.repository import MissionRepository
 from app.domain.mobile.models import (
@@ -33,7 +32,7 @@ def _tenant_org(user: UserRecord) -> str | None:
 
 @router.get("/pending-approvals", response_model=PendingApprovalsEnvelope)
 def mobile_pending_approvals(
-    actor: Annotated[UserRecord, Depends(resolve_registered_operator)],
+    actor: Annotated[UserRecord, Depends(get_current_user_record)],
     conn=Depends(database_dependency),
 ) -> PendingApprovalsEnvelope:
     """Mission dossiers still awaiting EASY human affirmation."""
@@ -52,7 +51,7 @@ def mobile_pending_approvals(
 
 @router.get("/quick-stats", response_model=MobileQuickStats)
 def mobile_quick_stats(
-    actor: Annotated[UserRecord, Depends(resolve_registered_operator)],
+    actor: Annotated[UserRecord, Depends(get_current_user_record)],
     conn=Depends(database_dependency),
 ) -> MobileQuickStats:
     """Ultra-compact tiles for handset dashboards."""
@@ -79,7 +78,7 @@ def mobile_quick_stats(
 @router.post("/push-token", response_model=PushTokenRegisterResponse)
 def register_push_subscription(
     body: PushTokenRegisterRequest,
-    actor: Annotated[UserRecord, Depends(resolve_registered_operator)],
+    actor: Annotated[UserRecord, Depends(get_current_user_record)],
     conn=Depends(database_dependency),
 ) -> PushTokenRegisterResponse:
     """Accept Web Push subscriptions until dedicated notification dispatcher exists."""

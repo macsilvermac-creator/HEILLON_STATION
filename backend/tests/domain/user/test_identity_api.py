@@ -89,6 +89,8 @@ def test_missions_require_bearer_when_flag_enabled(monkeypatch: pytest.MonkeyPat
         assert reg.status_code == 200
         token = reg.json()["access_token"]
 
+        client.cookies.clear()
+
         guarded = client.post(
             "/api/v1/mission/plan",
             json={"description": "OCR and analyze dossier attachments", "authorized_agents": ["ocr-agent"]},

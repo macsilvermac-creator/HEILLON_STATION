@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.dependencies import database_dependency
-from app.core import config as runtime_config
+from app.dependencies import AUTH_COOKIE_NAME, database_dependency, settings_dependency
+from app.core.config import Settings
 from app.domain.user.models import TokenResponse, UserCreate, UserLogin, UserPublic
 from app.domain.user.repository import UserRepository
 from app.domain.user.services import AuthService
@@ -32,12 +33,25 @@ def bearer_credentials(
     return authorization
 
 
-@router.post("/register", response_model=TokenResponse)
+def _attach_session_cookie(response: JSONResponse, *, settings: Settings, token: str) -> None:
+    response.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+    )
+
+
+@router.post("/register", response_model=None)
 def register_operator(
     body: UserCreate,
     conn=Depends(database_dependency),
     auth_service: AuthService = Depends(get_auth_service),
-) -> TokenResponse:
+    settings: Settings = Depends(settings_dependency),
+) -> JSONResponse:
     """Onboard EASY operators with bcrypt digests."""
 
     repo = UserRepository()
@@ -45,7 +59,6 @@ def register_operator(
     if conflict is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já registado.")
 
-    settings = runtime_config.get_settings()
     organization_target = body.organization_id or settings.DEFAULT_ORGANIZATION_ID
     org_name = f"Organização {organization_target}"
 
@@ -74,16 +87,22 @@ def register_operator(
         is_active=record.is_active,
     )
 
-    return TokenResponse(access_token=token, token_type="bearer", user=persona.model_dump(mode="json"))
+    payload = TokenResponse(
+        access_token=token, token_type="bearer", user=persona.model_dump(mode="json")
+    ).model_dump(mode="json")
+    response = JSONResponse(content=payload, status_code=status.HTTP_200_OK)
+    _attach_session_cookie(response, settings=settings, token=token)
+    return response
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=None)
 def login_operator(
     body: UserLogin,
     conn=Depends(database_dependency),
     auth_service: AuthService = Depends(get_auth_service),
-) -> TokenResponse:
-    """Authenticate returning HS256 artefacts."""
+    settings: Settings = Depends(settings_dependency),
+) -> JSONResponse:
+    """Authenticate returning HS256 artefacts + HttpOnly session cookie."""
 
     repo = UserRepository()
     record = repo.get_by_email(conn, str(body.email))
@@ -107,20 +126,41 @@ def login_operator(
         is_active=record.is_active,
     )
 
-    return TokenResponse(access_token=token, token_type="bearer", user=persona.model_dump(mode="json"))
+    payload = TokenResponse(
+        access_token=token, token_type="bearer", user=persona.model_dump(mode="json")
+    ).model_dump(mode="json")
+    response = JSONResponse(content=payload, status_code=status.HTTP_200_OK)
+    _attach_session_cookie(response, settings=settings, token=token)
+    return response
+
+
+@router.post("/logout")
+def logout_operator() -> JSONResponse:
+    """Clear HttpOnly session cookie (JSON body remains compatible with proxies)."""
+
+    response = JSONResponse(content={"detail": "Sessão terminada."}, status_code=status.HTTP_200_OK)
+    response.delete_cookie(key=AUTH_COOKIE_NAME, path="/")
+    return response
 
 
 @router.get("/me", response_model=UserPublic)
 def current_operator_snapshot(
+    request: Request,
     conn=Depends(database_dependency),
     auth_service: AuthService = Depends(get_auth_service),
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_credentials),
 ) -> UserPublic:
-    """Return sanitized operator dossier anchored to bearer subject."""
+    """Return sanitized operator dossier anchored to bearer subject or session cookie."""
 
-    if credentials is None:
+    token: str | None = None
+    if credentials is not None:
+        token = credentials.credentials
+    if token is None:
+        token = request.cookies.get(AUTH_COOKIE_NAME)
+    if token is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais em falta.")
-    payload = auth_service.decode_token(credentials.credentials)
+
+    payload = auth_service.decode_token(token)
     if payload is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida.")
 

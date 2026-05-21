@@ -39,7 +39,7 @@ export default function MobileProfilePage() {
         type="button"
         className="mt-12 w-full rounded-2xl border border-white/15 py-5 text-xs font-semibold text-white/65"
         onClick={() => {
-          logout();
+          void logout();
           router.push("/m");
         }}
       >
