@@ -26,9 +26,6 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,8 +33,12 @@ jobs:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run build
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Build
+        working-directory: frontend
+        run: npm run build
 
   e2e-tests:
     runs-on: ubuntu-latest
@@ -82,6 +83,19 @@ jobs:
         working-directory: backend
         run: pip install -r requirements.txt
 
+      - name: Initialize Postgres schema
+        working-directory: backend
+        env:
+          DATABASE_TYPE: postgresql
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_DB: heillon_test
+          POSTGRES_USER: heillon
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_SSL_MODE: disable
+          ENVIRONMENT: development
+        run: python -c "from app.core.config import get_settings; from app.db.database import init_database; init_database(get_settings())"
+
       - name: Start backend
         working-directory: backend
         env:
@@ -98,7 +112,7 @@ jobs:
           FORCE_STUB_TIMESTAMP: "true"
         run: |
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
-          sleep 8
+          sleep 10
           curl -sf http://127.0.0.1:8000/health
 
       - name: Install frontend dependencies
