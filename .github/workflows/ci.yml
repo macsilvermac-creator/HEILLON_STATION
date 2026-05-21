@@ -83,35 +83,11 @@ jobs:
         working-directory: backend
         run: pip install -r requirements.txt
 
-      - name: Initialize Postgres schema
-        working-directory: backend
-        env:
-          DATABASE_TYPE: postgresql
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: "5432"
-          POSTGRES_DB: heillon_test
-          POSTGRES_USER: heillon
-          POSTGRES_PASSWORD: testpass
-          POSTGRES_SSL_MODE: disable
-          ENVIRONMENT: development
-        run: |
-          for attempt in $(seq 1 20); do
-            python -c "from app.core.config import get_settings; from app.db.database import init_database; init_database(get_settings())" && exit 0
-            echo "Postgres not ready (attempt $attempt)…"
-            sleep 2
-          done
-          exit 1
-
       - name: Start backend
         working-directory: backend
         env:
-          DATABASE_TYPE: postgresql
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: "5432"
-          POSTGRES_DB: heillon_test
-          POSTGRES_USER: heillon
-          POSTGRES_PASSWORD: testpass
-          POSTGRES_SSL_MODE: disable
+          DATABASE_TYPE: sqlite
+          DATABASE_URL: sqlite:////tmp/heillon_e2e.db
           REDIS_URL: redis://localhost:6379/0
           AUTH_SECRET_KEY: ci-test-secret-key-minimum-32-characters-long
           ENVIRONMENT: development

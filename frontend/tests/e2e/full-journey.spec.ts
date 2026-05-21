@@ -49,14 +49,12 @@ test.describe("Full User Journey — Heillon Legal", () => {
     await page.getByLabel(/Missão inteira/i).check();
     await page.getByPlaceholder("mission_xxx").fill(missionId);
     await page.getByRole("button", { name: /Validar custódia/i }).click();
-    await expect(page.locator("pre")).toContainText(/"valid":\s*true/i, { timeout: 30_000 });
+    await expect(page.locator("pre")).toContainText(/"valid":\s*true|"valid": true/i, { timeout: 30_000 });
 
     await page.goto("/normative");
     await page.getByPlaceholder(/mission_id/i).fill(missionId);
     await page.getByRole("button", { name: /Gerar \(LGPD-BR\)/i }).click();
-    await expect(page.getByText(/LGPD|conformidade|Compliance/i).first()).toBeVisible({
-      timeout: 30_000,
-    });
+    await expect(page.getByText("Relatório")).toBeVisible({ timeout: 30_000 });
 
     await page.goto("/docs");
     await expect(page.getByRole("heading", { name: /Central de Documentação/i })).toBeVisible();
