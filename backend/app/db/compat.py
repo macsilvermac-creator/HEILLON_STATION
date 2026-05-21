@@ -72,11 +72,24 @@ class CompatConnection:
         if self.dialect == "sqlite":
             self._raw.executescript(script)
             return
-        statements = [s.strip() for s in script.split(";") if s.strip()]
-        for stmt in statements:
-            if stmt.upper().startswith("BEGIN") or stmt.upper().startswith("COMMIT"):
-                continue
-            self.execute(stmt)
+
+        import psycopg2.extensions as pg_ext
+
+        prev_isolation = self._raw.isolation_level
+        self._raw.set_isolation_level(pg_ext.ISOLATION_LEVEL_AUTOCOMMIT)
+        try:
+            statements = [s.strip() for s in script.split(";") if s.strip()]
+            for stmt in statements:
+                upper = stmt.upper()
+                if upper.startswith("BEGIN") or upper.startswith("COMMIT"):
+                    continue
+                cur = self._raw.cursor()
+                try:
+                    cur.execute(stmt)
+                finally:
+                    cur.close()
+        finally:
+            self._raw.set_isolation_level(prev_isolation)
 
 
 @contextmanager

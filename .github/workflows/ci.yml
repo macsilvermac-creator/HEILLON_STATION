@@ -94,7 +94,13 @@ jobs:
           POSTGRES_PASSWORD: testpass
           POSTGRES_SSL_MODE: disable
           ENVIRONMENT: development
-        run: python -c "from app.core.config import get_settings; from app.db.database import init_database; init_database(get_settings())"
+        run: |
+          for attempt in $(seq 1 20); do
+            python -c "from app.core.config import get_settings; from app.db.database import init_database; init_database(get_settings())" && exit 0
+            echo "Postgres not ready (attempt $attempt)…"
+            sleep 2
+          done
+          exit 1
 
       - name: Start backend
         working-directory: backend

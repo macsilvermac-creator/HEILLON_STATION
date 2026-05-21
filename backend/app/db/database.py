@@ -38,7 +38,10 @@ def sqlite_file_path(database_url: str) -> Path:
 
 
 def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[3]
+    """Repo root (``backend/`` parent) where ``supabase/migrations`` lives."""
+
+    backend_dir = Path(__file__).resolve().parents[2]
+    return backend_dir.parent
 
 
 def _postgres_bootstrap_path() -> Path:
