@@ -1,24 +1,39 @@
 import { expect, test } from "@playwright/test";
 
-const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+import {
+  approveMission,
+  executeMission,
+  generateCompliance,
+  planMission,
+  verifyChainValid,
+} from "./helpers/heillon-api";
 
-test.describe("Full User Journey — Heillon Legal", () => {
+const BACKEND_HEALTH =
+  (process.env.BACKEND_HEALTH_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000").replace(
+    /\/$/,
+    "",
+  );
+
+/** Descrição e agentes alinhados ao teste de integração backend (normativa permite + 2 HDRs). */
+const MISSION_DESCRIPTION = "Analyze financial documents for risk and prioritize by relevance";
+const MISSION_AGENTS = ["analysis-agent", "prioritization-agent"];
+
+test.describe("Jornada completa — Heillon Legal", () => {
   test.describe.configure({ mode: "serial" });
   test.setTimeout(120_000);
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ request }) => {
     try {
-      const res = await fetch(`${backendUrl}/health`);
-      if (!res.ok) {
-        test.skip(true, "Backend não disponível — ignorar jornada completa.");
-      }
+      const res = await request.get(`${BACKEND_HEALTH}/health`);
+      expect(res.ok()).toBeTruthy();
     } catch {
-      test.skip(true, "Backend não disponível — ignorar jornada completa.");
+      test.skip(true, "Backend indisponível para E2E.");
     }
   });
 
-  test("Registo → missão → verificação → conformidade → docs", async ({ page, request }) => {
-    const testEmail = `e2e-${Date.now()}@test.com`;
+  test("UI registo + API via proxy + verificação + conformidade + docs", async ({ page }) => {
+    const api = page.request;
+    const testEmail = `e2e-${Date.now()}@heillon.test`;
     const testPassword = "securepassword123";
 
     await page.goto("/register");
@@ -35,40 +50,26 @@ test.describe("Full User Journey — Heillon Legal", () => {
     const bearer = await page.evaluate(() => localStorage.getItem("heillon_bearer") ?? "");
     expect(bearer.length).toBeGreaterThan(10);
 
-    const authHeaders = { Authorization: `Bearer ${bearer}` };
-
-    const planRes = await request.post(`${backendUrl}/api/v1/mission/plan`, {
-      headers: { ...authHeaders, "Content-Type": "application/json" },
-      data: {
-        description: "Analyze financial documents for risk and prioritize by relevance",
-        authorized_agents: ["ocr-agent", "classification-agent", "analysis-agent"],
-      },
-    });
-    expect(planRes.ok()).toBeTruthy();
-    const planBody = (await planRes.json()) as { mission_id?: string };
-    const missionId = planBody.mission_id || "";
-    expect(missionId.length).toBeGreaterThan(0);
-
-    const approveRes = await request.post(`${backendUrl}/api/v1/mission/${missionId}/approve`, {
-      headers: authHeaders,
-    });
-    expect(approveRes.ok()).toBeTruthy();
-
-    const executeRes = await request.post(`${backendUrl}/api/v1/mission/${missionId}/execute`, {
-      headers: authHeaders,
-    });
-    expect(executeRes.ok()).toBeTruthy();
+    const missionId = await planMission(api, bearer, MISSION_DESCRIPTION, MISSION_AGENTS);
+    await approveMission(api, bearer, missionId);
+    await executeMission(api, bearer, missionId);
+    await verifyChainValid(api, missionId);
 
     await page.goto("/verification");
     await page.getByLabel(/Missão inteira/i).check();
     await page.getByPlaceholder("mission_xxx").fill(missionId);
     await page.getByRole("button", { name: /Validar custódia/i }).click();
-    await expect(page.locator("pre")).toContainText(/"valid":\s*true|"valid": true/i, { timeout: 30_000 });
+    await expect(page.locator("pre")).toContainText(/"valid":\s*true|"valid": true/i, {
+      timeout: 30_000,
+    });
 
     await page.goto("/normative");
     await page.getByPlaceholder(/mission_id/i).fill(missionId);
     await page.getByRole("button", { name: /Gerar \(LGPD-BR\)/i }).click();
     await expect(page.getByText("Relatório", { exact: true })).toBeVisible({ timeout: 30_000 });
+
+    const reportViaApi = await generateCompliance(api, bearer, missionId);
+    expect(reportViaApi.framework_id ?? reportViaApi.mission_id).toBeTruthy();
 
     await page.goto("/docs");
     await expect(page.getByRole("heading", { name: /Central de Documentação/i })).toBeVisible();

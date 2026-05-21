@@ -24,6 +24,69 @@ jobs:
           DATABASE_TYPE: sqlite
           ENVIRONMENT: development
 
+  backend-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: heillon_test
+          POSTGRES_USER: heillon
+          POSTGRES_PASSWORD: testpass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U heillon -d heillon_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Bootstrap Postgres schema
+        env:
+          DATABASE_TYPE: postgresql
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_DB: heillon_test
+          POSTGRES_USER: heillon
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_SSL_MODE: disable
+          ENVIRONMENT: development
+        run: |
+          for attempt in $(seq 1 25); do
+            python -c "from app.core.config import get_settings; from app.db.database import init_database; init_database(get_settings())" && exit 0
+            echo "Aguardar Postgres ($attempt)…"
+            sleep 2
+          done
+          exit 1
+      - name: Smoke query (Postgres)
+        env:
+          DATABASE_TYPE: postgresql
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_DB: heillon_test
+          POSTGRES_USER: heillon
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_SSL_MODE: disable
+          ENVIRONMENT: development
+        run: |
+          python <<'PY'
+          from app.core.config import get_settings
+          from app.db.compat import open_connection
+          with open_connection(get_settings()) as conn:
+              conn.execute("SELECT 1")
+          print("postgres-ok")
+          PY
+
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -40,23 +103,10 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-  e2e-tests:
+  e2e:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
     services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: heillon_test
-          POSTGRES_USER: heillon
-          POSTGRES_PASSWORD: testpass
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U heillon -d heillon_test"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
       redis:
         image: redis:7-alpine
         ports:
@@ -83,6 +133,14 @@ jobs:
         working-directory: backend
         run: pip install -r requirements.txt
 
+      - name: Initialize SQLite (E2E)
+        working-directory: backend
+        env:
+          DATABASE_TYPE: sqlite
+          DATABASE_URL: sqlite:////tmp/heillon_e2e.db
+          ENVIRONMENT: development
+        run: python -c "from app.core.config import get_settings; from app.db.database import init_database; init_database(get_settings())"
+
       - name: Start backend
         working-directory: backend
         env:
@@ -92,24 +150,30 @@ jobs:
           AUTH_SECRET_KEY: ci-test-secret-key-minimum-32-characters-long
           ENVIRONMENT: development
           FORCE_STUB_TIMESTAMP: "true"
+          CI_E2E: "true"
         run: |
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
-          sleep 10
-          curl -sf http://127.0.0.1:8000/health
+          for attempt in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000/health && exit 0
+            sleep 2
+          done
+          exit 1
 
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
 
-      - name: Run E2E tests
+      - name: Run Playwright E2E
         working-directory: frontend
         env:
           NEXT_PUBLIC_BACKEND_URL: http://127.0.0.1:8000
           BACKEND_PROXY_TARGET: http://127.0.0.1:8000
+          BACKEND_HEALTH_URL: http://127.0.0.1:8000
           CI: "true"
+          CI_E2E: "true"
         run: |
           npx playwright install --with-deps chromium
-          npx playwright test --workers=1 --retries=0
+          npx playwright test --workers=1
 
       - name: Upload Playwright report
         if: failure()

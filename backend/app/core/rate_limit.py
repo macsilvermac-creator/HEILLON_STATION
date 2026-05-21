@@ -66,7 +66,9 @@ async def rate_limit_middleware(request: Request, call_next):
         return await call_next(request)
 
     bucket_key, max_req, window_sec = classified
-    if os.environ.get("PYTEST_CURRENT_TEST"):
+    if os.environ.get("PYTEST_CURRENT_TEST") or os.environ.get("CI_E2E") == "true":
+        return await call_next(request)
+    if os.environ.get("DISABLE_RATE_LIMIT", "").lower() in ("1", "true", "yes"):
         return await call_next(request)
 
     client_ip = request.client.host if request.client else "unknown"

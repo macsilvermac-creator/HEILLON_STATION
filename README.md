@@ -168,10 +168,13 @@ python -m pytest -q
 cd frontend
 npm run build
 
-# E2E (backend + frontend a correr)
+# E2E (backend :8000 + frontend dev — ver docs/E2E-CI.md)
 cd frontend
-npx playwright test
+$env:BACKEND_PROXY_TARGET="http://127.0.0.1:8000"
+npx playwright test --workers=1
 ```
+
+Detalhes da pipeline e da jornada Playwright: [`docs/E2E-CI.md`](docs/E2E-CI.md).
 
 ## Segurança
 
