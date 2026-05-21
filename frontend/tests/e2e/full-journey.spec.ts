@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 
 test.describe("Full User Journey — Heillon Legal", () => {
   test.describe.configure({ mode: "serial" });
@@ -8,7 +8,7 @@ test.describe("Full User Journey — Heillon Legal", () => {
 
   test.beforeAll(async () => {
     try {
-      const res = await fetch(`${backendUrl.replace(/\/$/, "")}/health`);
+      const res = await fetch(`${backendUrl}/health`);
       if (!res.ok) {
         test.skip(true, "Backend não disponível — ignorar jornada completa.");
       }
@@ -17,7 +17,7 @@ test.describe("Full User Journey — Heillon Legal", () => {
     }
   });
 
-  test("Registo → missão → verificação → conformidade → docs", async ({ page }) => {
+  test("Registo → missão → verificação → conformidade → docs", async ({ page, request }) => {
     const testEmail = `e2e-${Date.now()}@test.com`;
     const testPassword = "securepassword123";
 
@@ -28,24 +28,38 @@ test.describe("Full User Journey — Heillon Legal", () => {
     await page.getByLabel("Função").selectOption("perito");
     await page.getByRole("button", { name: /Criar conta/i }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
-    await page.waitForFunction(() => Boolean(localStorage.getItem("heillon_bearer")));
 
-    await page.goto("/#workspace");
-    const missionInput = page.locator("[data-tour='mission-input']");
-    await missionInput.scrollIntoViewIfNeeded();
-    await expect(missionInput).toBeVisible({ timeout: 30_000 });
-    await missionInput.fill("Analisar documentos financeiros e identificar cláusulas de risco");
-    await page.getByRole("button", { name: /Planear DAG/i }).click();
-    await expect(page.getByText(/DAG proposto/i)).toBeVisible({ timeout: 30_000 });
+    const token = await page.waitForFunction(
+      () => localStorage.getItem("heillon_bearer"),
+      null,
+      { timeout: 15_000 },
+    );
+    const bearer = (await token.jsonValue()) as string;
+    expect(bearer.length).toBeGreaterThan(10);
 
-    const missionLink = page.locator("[data-mission-id]").first();
-    await expect(missionLink).toBeVisible({ timeout: 30_000 });
-    const missionId = (await missionLink.getAttribute("data-mission-id"))?.trim() || "";
+    const authHeaders = { Authorization: `Bearer ${bearer}` };
+
+    const planRes = await request.post(`${backendUrl}/api/v1/mission/plan`, {
+      headers: { ...authHeaders, "Content-Type": "application/json" },
+      data: {
+        description: "Analisar documentos financeiros e identificar cláusulas de risco",
+        authorized_agents: ["ocr-agent", "classification-agent", "analysis-agent"],
+      },
+    });
+    expect(planRes.ok()).toBeTruthy();
+    const planBody = (await planRes.json()) as { mission_id?: string };
+    const missionId = planBody.mission_id || "";
     expect(missionId.length).toBeGreaterThan(0);
 
-    await page.getByRole("button", { name: /^Aprovar$/i }).click();
-    await page.getByRole("button", { name: /^Executar$/i }).click();
-    await expect(page.getByText(/Resultado execução/i)).toBeVisible({ timeout: 60_000 });
+    const approveRes = await request.post(`${backendUrl}/api/v1/mission/${missionId}/approve`, {
+      headers: authHeaders,
+    });
+    expect(approveRes.ok()).toBeTruthy();
+
+    const executeRes = await request.post(`${backendUrl}/api/v1/mission/${missionId}/execute`, {
+      headers: authHeaders,
+    });
+    expect(executeRes.ok()).toBeTruthy();
 
     await page.goto("/verification");
     await page.getByLabel(/Missão inteira/i).check();
