@@ -109,7 +109,7 @@ jobs:
           CI: "true"
         run: |
           npx playwright install --with-deps chromium
-          npx playwright test
+          npx playwright test --workers=1
 
       - name: Upload Playwright report
         if: failure()

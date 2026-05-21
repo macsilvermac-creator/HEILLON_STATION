@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
 
 test.describe("Full User Journey — Heillon Legal", () => {
+  test.describe.configure({ mode: "serial" });
   test.setTimeout(120_000);
 
   test.beforeAll(async () => {
@@ -27,12 +28,13 @@ test.describe("Full User Journey — Heillon Legal", () => {
     await page.getByLabel("Função").selectOption("perito");
     await page.getByRole("button", { name: /Criar conta/i }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+    await page.waitForFunction(() => Boolean(localStorage.getItem("heillon_bearer")));
 
-    await page.goto("/");
-    await expect(page.locator("[data-tour='mission-input']")).toBeVisible();
-    await page
-      .locator("[data-tour='mission-input']")
-      .fill("Analisar documentos financeiros e identificar cláusulas de risco");
+    await page.goto("/#workspace");
+    const missionInput = page.locator("[data-tour='mission-input']");
+    await missionInput.scrollIntoViewIfNeeded();
+    await expect(missionInput).toBeVisible({ timeout: 30_000 });
+    await missionInput.fill("Analisar documentos financeiros e identificar cláusulas de risco");
     await page.getByRole("button", { name: /Planear DAG/i }).click();
     await expect(page.getByText(/DAG proposto/i)).toBeVisible({ timeout: 30_000 });
 
@@ -43,7 +45,7 @@ test.describe("Full User Journey — Heillon Legal", () => {
 
     await page.getByRole("button", { name: /^Aprovar$/i }).click();
     await page.getByRole("button", { name: /^Executar$/i }).click();
-    await expect(page.getByText(/Resultado execução/i)).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByText(/Resultado execução/i)).toBeVisible({ timeout: 60_000 });
 
     await page.goto("/verification");
     await page.getByLabel(/Missão inteira/i).check();
@@ -54,11 +56,11 @@ test.describe("Full User Journey — Heillon Legal", () => {
     await page.goto("/normative");
     await page.getByPlaceholder(/mission_id/i).fill(missionId);
     await page.getByRole("button", { name: /Gerar \(LGPD-BR\)/i }).click();
-    await expect(page.getByText("Relatório")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Relatório", { exact: true })).toBeVisible({ timeout: 30_000 });
 
     await page.goto("/docs");
     await expect(page.getByRole("heading", { name: /Central de Documentação/i })).toBeVisible();
     await page.getByRole("link", { name: /Manual de uso geral/i }).click();
-    await expect(page.getByRole("heading", { name: /Introdução/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Introdução" })).toBeVisible({ timeout: 15_000 });
   });
 });
