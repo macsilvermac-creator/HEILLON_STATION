@@ -6,6 +6,8 @@ import base64
 import hashlib
 import os
 from pathlib import Path
+from urllib.parse import quote_plus
+
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,6 +23,18 @@ class Settings(BaseSettings):
     """Runtime settings sourced from environment variables."""
 
     DATABASE_URL: str = "sqlite:///./data/heillon.db"
+    DATABASE_TYPE: str = Field(
+        default="",
+        description="sqlite | postgresql — vazio = inferir de DATABASE_URL.",
+    )
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str = "heillon"
+    POSTGRES_USER: str = "heillon"
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_SSL_MODE: str = "prefer"
+    REDIS_URL: str = "redis://localhost:6379/0"
+    ENABLE_POSTGRES_RLS: bool = False
     EVIDENCE_DIR: Path = Field(default_factory=lambda: Path("data/evidence"))
     TSA_URL: str = "https://freetsa.org/tsr"
     ENVIRONMENT: str = Field(
@@ -79,6 +93,29 @@ class Settings(BaseSettings):
             msg = "FORCE_STUB_TIMESTAMP cannot be True in production environment"
             raise ValueError(msg)
         return v
+
+    @property
+    def resolved_database_type(self) -> str:
+        explicit = (self.DATABASE_TYPE or "").strip().lower()
+        if explicit in ("postgresql", "postgres"):
+            return "postgresql"
+        if explicit == "sqlite":
+            return "sqlite"
+        if self.DATABASE_URL.lower().startswith(("postgresql://", "postgres://")):
+            return "postgresql"
+        return "sqlite"
+
+    @property
+    def effective_database_url(self) -> str:
+        if self.resolved_database_type == "postgresql":
+            user = quote_plus(self.POSTGRES_USER)
+            password = quote_plus(self.POSTGRES_PASSWORD)
+            host = self.POSTGRES_HOST
+            port = self.POSTGRES_PORT
+            db = self.POSTGRES_DB
+            ssl = self.POSTGRES_SSL_MODE
+            return f"postgresql://{user}:{password}@{host}:{port}/{db}?sslmode={ssl}"
+        return self.DATABASE_URL
 
     @model_validator(mode="after")
     def ensure_fernet_encryption_key(self) -> Settings:

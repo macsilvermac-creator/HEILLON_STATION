@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core import config as runtime_config
+from app.api.health import router as health_router
 from app.core.rate_limit import rate_limit_middleware
 from app.db.database import init_database, sqlite_file_path
 from app.domain.evidence.api import router as evidence_router
@@ -59,7 +60,7 @@ async def lifespan(application: FastAPI):
 
     hdr_singleton = HDRService()
 
-    agent_config_binding = AgentConfigService(database_path=sqlite_path)
+    agent_config_binding = AgentConfigService(settings=settings, database_path=sqlite_path)
 
     orchestration_registry = build_agent_registry(settings)
     orchestration_engine = OrchestrationEngine(
@@ -127,12 +128,8 @@ def create_application() -> FastAPI:
     application.include_router(identity_router, prefix=api_prefix)
     application.include_router(agent_config_router, prefix=api_prefix)
     application.include_router(mobile_router, prefix=api_prefix)
-
-    @application.get("/health", tags=["health"])
-    def healthcheck() -> dict[str, str]:
-        """Liveness/readiness sentinel for orchestration planes."""
-
-        return {"status": "ok"}
+    application.include_router(health_router)
+    application.include_router(health_router, prefix=api_prefix)
 
     return application
 

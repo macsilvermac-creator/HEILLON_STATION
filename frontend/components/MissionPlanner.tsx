@@ -141,7 +141,11 @@ export function MissionPlanner() {
       {missionId ? (
         <p className="text-xs text-white/60">
           Missão:{" "}
-          <Link className="font-mono text-gold-300 underline" href={`/missions/${missionId}`}>
+          <Link
+            className="font-mono text-gold-300 underline"
+            href={`/missions/${missionId}`}
+            data-mission-id={missionId}
+          >
             {missionId}
           </Link>
         </p>

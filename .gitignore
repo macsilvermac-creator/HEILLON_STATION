@@ -21,3 +21,7 @@ data/
 
 # Vercel (project link local por máquina; pode ser omitido para partilhar com a equipa)
 .vercel/
+
+# Supabase CLI temp
+supabase/.temp/
+.vercel

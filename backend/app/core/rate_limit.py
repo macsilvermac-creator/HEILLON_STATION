@@ -71,7 +71,11 @@ async def rate_limit_middleware(request: Request, call_next):
 
     client_ip = request.client.host if request.client else "unknown"
     key = f"{client_ip}:{bucket_key}"
-    if not limiter.is_allowed(key, max_req, window_sec):
+    from app.core.rate_limit_redis import redis_is_allowed
+
+    redis_ok = redis_is_allowed(f"rate_limit:{key}", max_req, window_sec)
+    allowed = redis_ok if redis_ok is not None else limiter.is_allowed(key, max_req, window_sec)
+    if not allowed:
         return JSONResponse(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             content={"detail": "Too many requests. Please try again later."},

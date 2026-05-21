@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-import sqlite3
 from collections.abc import Generator
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core import config as runtime_config
 from app.core.config import Settings
-from app.db.database import sqlite_file_path
+from app.db.compat import CompatConnection, open_connection
 from app.domain.hdr.services import HDRService
 from app.domain.user.models import UserRecord
 from app.domain.user.repository import UserRepository
@@ -27,26 +26,11 @@ def settings_dependency() -> Settings:
 
 def database_dependency(
     settings: Settings = Depends(settings_dependency),
-) -> Generator[sqlite3.Connection, None, None]:
-    """Open SQLite connectivity with explicit transaction framing."""
+) -> Generator[CompatConnection, None, None]:
+    """Open database connectivity with explicit transaction framing."""
 
-    path = sqlite_file_path(settings.DATABASE_URL)
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    conn = sqlite3.connect(path.as_posix(), check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    conn.execute("PRAGMA synchronous=NORMAL")
-
-    try:
+    with open_connection(settings) as conn:
         yield conn
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
 
 
 def hdr_service_dependency() -> HDRService:
@@ -110,7 +94,7 @@ optional_auth_bearer = HTTPBearer(auto_error=False)
 
 def get_current_user_record(
     request: Request,
-    conn: Annotated[sqlite3.Connection, Depends(database_dependency)],
+    conn: Annotated[CompatConnection, Depends(database_dependency)],
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(optional_auth_bearer)],
 ) -> UserRecord:
     """Resolve bearer subject to a hydrated ``UserRecord`` (ingestion and compliance gates)."""

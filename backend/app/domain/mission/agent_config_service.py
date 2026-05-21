@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, Generator
 
 from cryptography.fernet import InvalidToken
 
+from app.core.config import Settings, get_settings
+from app.db.compat import CompatConnection, open_connection, resolve_dialect
 from app.domain.mission.agent_config_crypto import build_config_fernet
 from app.domain.mission.agent_config_models import AgentConfig, AgentConfigUpdate, AgentModelSource
 from app.domain.mission.agent_execution import MissionAgentExecutor
@@ -37,20 +41,40 @@ class _StoredCipher:
 
 
 class AgentConfigService:
-    """SQLite façade with Fernet payloads for discretionary API bearer material."""
+    """Persistência de configuração de agentes (SQLite dev / PostgreSQL produção)."""
 
-    def __init__(self, *, database_path: Path, secret_material: str | None = None) -> None:
-        self._db_path = database_path.expanduser().resolve()
+    def __init__(
+        self,
+        *,
+        settings: Settings | None = None,
+        database_path: Path | None = None,
+        secret_material: str | None = None,
+    ) -> None:
+        self._settings = settings or get_settings()
+        self._legacy_sqlite_path = database_path.expanduser().resolve() if database_path else None
         self._fernet = build_config_fernet(secret_material=secret_material)
 
-    def _connect(self) -> sqlite3.Connection:
-        self._db_path.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(self._db_path.as_posix(), check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        return conn
+    @contextmanager
+    def _connect(self) -> Generator[CompatConnection | sqlite3.Connection, None, None]:
+        if self._legacy_sqlite_path is not None and resolve_dialect(self._settings) == "sqlite":
+            self._legacy_sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+            raw = sqlite3.connect(self._legacy_sqlite_path.as_posix(), check_same_thread=False)
+            raw.row_factory = sqlite3.Row
+            try:
+                yield raw
+                raw.commit()
+            except Exception:
+                raw.rollback()
+                raise
+            finally:
+                raw.close()
+            return
+
+        with open_connection(self._settings) as conn:
+            yield conn
 
     @staticmethod
-    def _decode_row(row: sqlite3.Row | None) -> _StoredCipher | None:
+    def _decode_row(row: Any) -> _StoredCipher | None:
         if row is None:
             return None
         cipher_blob = row["api_key_encrypted"]
@@ -91,7 +115,7 @@ class AgentConfigService:
             return None
         return self._fernet.encrypt(plain.encode("utf-8"))
 
-    def _fetch(self, conn: sqlite3.Connection, agent_id: str, organization_id: str) -> _StoredCipher | None:
+    def _fetch(self, conn: Any, agent_id: str, organization_id: str) -> _StoredCipher | None:
         row = conn.execute(
             """SELECT agent_id, organization_id, source, model_name, api_base_url,
                       api_key_encrypted, updated_at
@@ -113,7 +137,7 @@ class AgentConfigService:
         )
 
     def get_config(self, agent_id: str, organization_id: str) -> AgentConfig:
-        with self._connect() as conn:
+        with self._connect() as conn:  # noqa: SIM117
             row = self._fetch(conn, agent_id, organization_id)
             if row is None:
                 return AgentConfig(

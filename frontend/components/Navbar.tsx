@@ -20,7 +20,8 @@ const navLinks = [
 export function Navbar() {
   const { scrollYProgress } = useScroll();
   const barWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-  const { isAuthenticated, logout, isReady } = useAuth();
+  const { isAuthenticated, logout, isReady, user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const router = useRouter();
 
   return (
@@ -63,6 +64,15 @@ export function Navbar() {
                 >
                   Painel
                 </Link>
+                {isAdmin ? (
+                  <Link
+                    href="/health"
+                    className="hidden rounded-full px-3 py-2 text-xs text-white/50 transition-colors hover:text-gold-400 sm:inline-flex"
+                    data-cursor-hover
+                  >
+                    Health
+                  </Link>
+                ) : null}
                 <button
                   type="button"
                   className="hidden rounded-full border border-white/15 px-3 py-2 text-xs text-white/70 transition-colors hover:border-white/25 hover:text-white sm:inline-flex"

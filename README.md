@@ -1,73 +1,94 @@
-# Heillon Legal — Legitimidade computacional para o Direito
+# Heillon Legal — Legitimidade Computacional para o Direito
 
-**Versão MVP:** Maio de 2026 (Fases 1–3 concluídas) · **Backend:** 40 testes (`pytest`) · **Frontend:** `npm run build` OK  
+**Versão:** 12.0 — Maio de 2026  
+**Estado:** Produção (hardening Fase 12)  
+**Testes backend:** `pytest -q`  
+**Build frontend:** 28 rotas (`npm run build`)
 
-O **Heillon Legal** é a vertical jurídica da **Estação Heillon**: cada passo relevante pode ser registado como **HDR** (Heillon Decision Record) — hash SHA-256, payload JSON **canónico** (RFC 8785 where aplicável), encadeamento criptográfico e carimbo **RFC 3161** (FreeTSA em produção, *stub* em testes).
+## Sobre o projeto
 
-## Ecossistema Heillon
+A **Estação Heillon** é uma plataforma de **Legitimidade Computacional** que transforma cada ação relevante de IA num registo imutável (**HDR — Heillon Decision Record**) com hash SHA-256, carimbo temporal RFC 3161 e encadeamento criptográfico. Qualquer decisão pode ser auditada, verificada e apresentada como prova técnica.
+
+O **Heillon Legal** é a vertical jurídica dessa estação.
 
 | Recurso | URL |
 |:---|:---|
-| Sítio principal | [https://heillon.com](https://heillon.com) |
-| Vitrine | [https://vitrine.heillon.com](https://vitrine.heillon.com) |
-| Portal HDR | [https://hdr.heillon.com](https://hdr.heillon.com) |
+| UI (Vercel) | https://heillon-legal-ui.vercel.app |
+| Ecossistema | https://heillon.com |
 
-## O que este repositório entrega
+## Fases concluídas
 
-1. **Ingestão de evidências** — upload com hash consistente + HDR tipo `ingestion`
-2. **Planeamento de missões** — mapeamento *keyword→agente* + **Corpus normativo** pré-execução
-3. **Execução orquestrada** — DAG linear (MVP): um HDR encadeado por nó (**stubs**, sem IA real)
-4. **Verificação pública** — `/verify/{hdr_id}` e `/verify/chain/{mission_id}`
-5. **Pacote forense** — relatório executivo (**stub texto**, não PDF/A final), JSON da cadeia, manifesto, hash de integridade
-6. **Diário de bordo** — listagem paginada, filtros e estatísticas agregadas
-7. **Frontend Next.js** — modo missão, verificação, diário e ingestão, cliente em `frontend/lib/api.ts`
+| Fase | Descrição | Estado |
+|:---|:---|:---|
+| 1 | HDR Ledger (SHA-256 + RFC 3161) | ✅ |
+| 2 | Corpus Normativo + Orquestração | ✅ |
+| 3 | DDD + Forense + Diário + Frontend | ✅ |
+| 4 | Execução real + Autenticação + Deploy | ✅ |
+| 5 | Soberania de modelos + UI/UX | ✅ |
+| 6 | PDF/A-1/B + refinamento UI | ✅ |
+| 7 | Auditoria (personas + segurança) | ✅ |
+| 8 | Mobile PWA | ✅ |
+| 9 | Segurança + LGPD | ✅ |
+| 10 | Central de Documentação (Docs Hub) | ✅ |
+| 11 | Cookies HttpOnly, rate limit, onboarding, E2E smoke | ✅ |
+| 12 | PostgreSQL, Redis, Health Dashboard, E2E CI | ✅ |
 
-## Arquitetura do backend (DDD)
+## Funcionalidades principais
+
+- **HDR Ledger** — registos imutáveis SHA-256 + RFC 3161  
+- **Corpus Normativo** — validação pré-execução (LGPD, GDPR, …)  
+- **Pacote forense** — PDF/A-1/B + assinatura Ed25519  
+- **Soberania de modelos** — Ollama, OpenAI, Anthropic, custom  
+- **PWA mobile** — verificação, missões, evidências em campo  
+- **Docs Hub** — 10 documentos integrados  
+- **Onboarding** — tour guiado de 5 passos  
+- **Segurança** — JWT + cookies HttpOnly, rate limit (Redis + fallback), CSP/HSTS  
+
+## Stack tecnológico
+
+| Camada | Tecnologia |
+|:---|:---|
+| Backend | Python 3.12, FastAPI, Pydantic v2 |
+| Base de dados | PostgreSQL (produção) / SQLite (dev e testes) |
+| Cache / rate limit | Redis 7 (+ fallback em memória) |
+| Frontend | Next.js 15, shadcn/ui, Tailwind, Framer Motion |
+| Mobile | PWA (`@ducanh2912/next-pwa`) |
+| CI/CD | GitHub Actions, Playwright |
+| Deploy | Vercel (UI) + Docker Compose (stack local) |
+
+## Arquitetura (DDD)
+
+Sete domínios: **HDR**, **Evidence**, **Mission**, **Normative**, **Forensic**, **User**, **Mobile** — cada um com models, services, repository e API.
 
 ```
 heillon-legal/
-├── backend/
-│   ├── app/
-│   │   ├── main.py                 # FastAPI + lifespan + routers dos domínios
-│   │   ├── dependencies.py       # Depends() globais (DB, HDR…)
-│   │   ├── core/                 # Infraestrutura partilhada (config, security, canonical_json)
-│   │   ├── domain/
-│   │   │   ├── hdr/              # Modelos HDR, HDRService, repositório, verificação, timestamp RFC3161
-│   │   │   ├── evidence/         # Ingestão e armazenamento WORM
-│   │   │   ├── mission/          # Orquestração, diário, repositório de missões, lexicon
-│   │   │   ├── normative/       # Corpus normativo + regras públicas
-│   │   │   └── forensic/        # Pacote forense + downloads
-│   │   └── db/                   # SQLite, migrações
-│   └── tests/
-│       ├── conftest.py
-│       ├── domain/               # Testes por bounded context (nomes únicos por ficheiro)
-│       └── integration/
-├── frontend/
-│   ├── app/                     # Rotas Next.js App Router
-│   ├── components/
-│   └── lib/api.ts               # Cliente REST (NEXT_PUBLIC_BACKEND_URL)
-└── docs/
-    ├── CONTEXT.md
-    └── API-REFERENCE.md
+├── backend/app/          # FastAPI + domínios
+├── frontend/             # Next.js App Router (28 rotas)
+├── supabase/migrations/  # Schema Postgres consolidado
+├── docker-compose.yml    # postgres + redis + backend + frontend
+└── docs/                 # API, CONTEXT, auditorias, Supabase, segredos
 ```
 
-Consulte **`docs/API-REFERENCE.md`** para contratos REST alinhados ao código e **`docs/CONTEXT.md`** para o fluxo fim‑a‑fim.
+## Endpoints principais
 
-## Stack técnico
-
-| Camada | Ferramentas |
+| Prefixo | Área |
 |:---|:---|
-| API | FastAPI · Pydantic v2 · Uvicorn |
-| Persistência | SQLite (ficheiros em `data/`) · migrações em `backend/app/db/migrations/` |
-| Criptografia / integridade | SHA-256 (`generate_hdr_id`) · asn1crypto/httpx para RFC3161 |
-| Frontend | Next.js 15 (**usar patch mínimo 15.4.10** — ver segurança) · Tailwind |
-| Testes backend | pytest · Starlette TestClient |
+| `/api/v1/auth/*` | Registo, login (JWT + cookie HttpOnly) |
+| `/api/v1/ingestion` | Upload de evidências |
+| `/api/v1/verify/*` | Verificação pública HDR / cadeia |
+| `/api/v1/mission/*` | Planear, aprovar, executar, diário |
+| `/api/v1/normative/*` | Corpus normativo |
+| `/api/v1/compliance/*` | Relatórios LGPD |
+| `/api/v1/forensic/*` | Pacotes forenses |
+| `/api/v1/agent-config/*` | Soberania de modelos |
+| `/api/v1/mobile/*` | Push e estatísticas mobile |
+| `/health`, `/api/v1/health/detailed` | Liveness e painel admin |
 
-> **Nota:** extensões tipo `sqlite-vss` podem constar na roadmap técnica; não fazem parte do `requirements.txt` actual.
+Documentação detalhada: [`docs/API-REFERENCE.md`](docs/API-REFERENCE.md), [`docs/CONTEXT.md`](docs/CONTEXT.md).
 
-## Arranque rápido · Backend
+## Configuração rápida
 
-Requisitos: **Python ≥ 3.11** (recomendado 3.12).
+### Backend (SQLite — desenvolvimento)
 
 ```powershell
 cd backend
@@ -78,65 +99,86 @@ python -m pytest -q
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-- Swagger: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- Estado: [`GET /health`](http://127.0.0.1:8000/health)
+- Swagger: http://127.0.0.1:8000/docs  
+- Health: http://127.0.0.1:8000/health  
 
-## Arranque rápido · Frontend
+### Frontend
 
 ```powershell
 cd frontend
-npm install
-# opcional:
-# copy NUL .env.local  && echo NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8000 >> .env.local
+npm ci
+# .env.local (opcional):
+# NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8000
+# BACKEND_PROXY_TARGET=http://127.0.0.1:8000
 npm run build
 npm run dev
 ```
 
-Variável **`NEXT_PUBLIC_BACKEND_URL`**: por defeito o cliente usa `http://127.0.0.1:8000` (`frontend/lib/api.ts`). Ajuste se o backend correr doutra porta.
+O proxy em `frontend/next.config.ts` encaminha `/api/v1/*` para o backend (evita CORS em desenvolvimento).
 
-## Variáveis de ambiente (backend)
+### Stack completa (Docker)
 
-Definidas em `app/core/config.py` (ficheiro `.env` opcional).
+```powershell
+cd heillon-legal
+$env:AUTH_SECRET_KEY = "sua-chave-jwt-min-32-chars"
+$env:FERNET_ENCRYPTION_KEY = "chave-fernet-url-safe-distinta"
+docker compose up -d
+curl http://localhost:8000/health
+```
 
-| Variável | Descrição | Padrão |
-|:---|:---|:---|
-| `DATABASE_URL` | SQLite (`sqlite:///...`) | `sqlite:///./data/heillon.db` |
-| `EVIDENCE_DIR` | Pasta das evidências ingeridas | `data/evidence` |
-| `FORENSICS_PACKAGE_DIR` | Pasta dos pacotes forenses gerados | `data/forensic_packages` |
-| `VERIFICATION_PUBLIC_BASE` | Base URL incluída no `verification_url` do manifesto (API pública HDR) | `http://127.0.0.1:8000` |
-| `TSA_URL` | Autoridade de carimbo | `https://freetsa.org/tsr` |
-| `FORCE_STUB_TIMESTAMP` | *Stub* RFC3161 determinístico (apenas dev/CI) | `false` |
-| `API_V1_PREFIX` | Prefixo global da API versionada | `/api/v1` |
-| `CORS_ORIGINS` | Lista de origins CORS JSON | por defeito inclui `http://localhost:3000` |
+### PostgreSQL (produção / Supabase)
 
-## Segurança · Next.js (App Router)
+```env
+DATABASE_TYPE=postgresql
+POSTGRES_HOST=aws-1-sa-east-1.pooler.supabase.com
+POSTGRES_PORT=5432
+POSTGRES_DB=postgres
+POSTGRES_USER=postgres.ydxjncqtsgikywfgfndx
+POSTGRES_PASSWORD=<do-dashboard>
+POSTGRES_SSL_MODE=require
+REDIS_URL=redis://localhost:6379/0
+ENVIRONMENT=production
+FERNET_ENCRYPTION_KEY=<obrigatório>
+AUTH_SECRET_KEY=<obrigatório>
+```
 
-- A linha **15.4.x** deve usar pelo menos **`next@15.4.10`**, que corrige **CVE-2025-55183** (exposição de código compilado via RSC), **CVE-2025-55184**/**CVE-2025-67779** (DoS no protocolo RSC) além do ciclo anterior em torno de **CVE-2025-66478** / React2Shell. Ver o comunicado oficial: [Security Update December 11, 2025](https://nextjs.org/blog/security-update-2025-12-11) e o tooling [`npx fix-react2shell-next`](https://github.com/vercel-labs/fix-react2shell-next).
-- Estratégia recomendada: manter **`next`** e **`eslint-config-next`** na **mesma versão patched** dentro da série em uso (`npm install next@15.4.10 eslint-config-next@15.4.10`), voltar a correr **`npm audit`**, **`npm run build`** e regressões manuais nas páginas App Router.
+Ver [`docs/SUPABASE.md`](docs/SUPABASE.md) e [`docs/SECRETS-AUDIT-FASE12.md`](docs/SECRETS-AUDIT-FASE12.md).
 
-## Endpoints principais (resumo)
+## Variáveis de ambiente (resumo)
 
-| Método | Caminho | Descrição |
-|:---|:---|:---|
-| `GET` | `/health` | Liveness |
-| `POST` | `/api/v1/ingestion` | Upload de evidência (+ HDR ingestion) |
-| `GET` | `/api/v1/verify/{hdr_id}` | Verificar um HDR |
-| `GET` | `/api/v1/verify/chain/{mission_id}` | Verificar cadeia por `mission_id` |
-| `POST` | `/api/v1/mission/plan` | Planear missão |
-| `POST` | `/api/v1/mission/{id}/approve` | Aprovar |
-| `POST` | `/api/v1/mission/{id}/execute` | Executar DAG aprovado |
-| `GET` | `/api/v1/mission/diary` | Diário com filtros |
-| `GET` | `/api/v1/mission/diary/stats` | Estatísticas |
-| `GET` | `/api/v1/normative/rules` | Corpus activo |
-| `POST` | `/api/v1/forensic/package/{mission_id}` | Gerar pacote (missão **completed**) |
-| `GET` | `/api/v1/forensic/package/{package_id}` | Metadados do pacote |
-| `GET` | `/api/v1/forensic/package/{package_id}/download/pdf` | Relatório executivo (**stub `.txt`**) |
-| `GET` | `/api/v1/forensic/package/{package_id}/download/json` | JSON da linhagem HDR |
-| `GET` | `/api/v1/forensic/package/{package_id}/download/manifest` | Manifesto JSON |
+| Variável | Descrição |
+|:---|:---|
+| `DATABASE_TYPE` | `sqlite` ou `postgresql` |
+| `DATABASE_URL` | URI SQLite quando `sqlite` |
+| `POSTGRES_*` | Ligação Postgres quando `postgresql` |
+| `REDIS_URL` | Rate limiting distribuído |
+| `AUTH_SECRET_KEY` | JWT (alterar em produção) |
+| `FERNET_ENCRYPTION_KEY` | Chaves de agentes (obrigatório em produção) |
+| `FORCE_STUB_TIMESTAMP` | Stub RFC3161 (só dev/CI) |
+| `MISSION_ROUTES_REQUIRE_AUTH` | Exigir JWT nas rotas de missão |
 
-## Roadmap próximo
+## Testes
 
-- Agentes de IA reais / workers de produção
-- PDF/A final + assinaturas jurídicas fortes
-- Autenticação, multi‑tenant e *hardening* operacional (WAF / limites nas rotas públicas Verificação)
-- Integração Postgres e políticas de arquivo
+```powershell
+# Backend (SQLite)
+cd backend
+python -m pytest -q
+
+# Frontend build
+cd frontend
+npm run build
+
+# E2E (backend + frontend a correr)
+cd frontend
+npx playwright test
+```
+
+## Segurança
+
+- Next.js ≥ **15.4.10** (patches RSC — ver [blog Next.js](https://nextjs.org/blog/security-update-2025-12-11)).  
+- Não commitar `.env` — ver auditoria Fase 12.  
+- Rotas públicas de verificação: considerar WAF e limites adicionais em produção.  
+
+## Licença e contacto
+
+Projeto MVP Heillon / Estação Heillon — consulte a documentação em `docs/` para operação e conformidade LGPD.

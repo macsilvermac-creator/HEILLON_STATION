@@ -1,4 +1,35 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: heillon
+      POSTGRES_USER: heillon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heillon -d heillon"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: .
@@ -6,13 +37,26 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:////app/data/heillon.db
-      - FORENSICS_PACKAGE_DIR=/app/data/forensics
-      - FORCE_STUB_TIMESTAMP=false
-      - AUTH_SECRET_KEY=${AUTH_SECRET_KEY:-dev-insecure-heillon-secret-change-in-production-min-32-characters-long}
-      - VERIFICATION_PUBLIC_BASE=http://localhost:3000
-    volumes:
-      - heillon_backend_data:/app/data
+      DATABASE_TYPE: postgresql
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: heillon
+      POSTGRES_USER: heillon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_SSL_MODE: disable
+      REDIS_URL: redis://redis:6379/0
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:-dev-insecure-heillon-secret-change-in-production-min-32-characters-long}
+      FERNET_ENCRYPTION_KEY: ${FERNET_ENCRYPTION_KEY:-}
+      FORCE_STUB_TIMESTAMP: "false"
+      ENVIRONMENT: production
+      FORENSICS_PACKAGE_DIR: /app/data/forensics
+      VERIFICATION_PUBLIC_BASE: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
   frontend:
     build:
@@ -22,10 +66,13 @@ services:
         NEXT_PUBLIC_BACKEND_URL: http://backend:8000
     ports:
       - "3000:3000"
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: http://backend:8000
+      BACKEND_PROXY_TARGET: http://backend:8000
     depends_on:
       - backend
-    environment:
-      - NEXT_PUBLIC_BACKEND_URL=http://backend:8000
+    restart: unless-stopped
 
 volumes:
-  heillon_backend_data:
+  postgres_data:
+  redis_data:
