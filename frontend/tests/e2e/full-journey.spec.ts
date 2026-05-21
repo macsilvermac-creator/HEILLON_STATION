@@ -29,12 +29,10 @@ test.describe("Full User Journey — Heillon Legal", () => {
     await page.getByRole("button", { name: /Criar conta/i }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
 
-    const token = await page.waitForFunction(
-      () => localStorage.getItem("heillon_bearer"),
-      null,
-      { timeout: 15_000 },
-    );
-    const bearer = (await token.jsonValue()) as string;
+    await page.waitForFunction(() => Boolean(localStorage.getItem("heillon_bearer")), null, {
+      timeout: 15_000,
+    });
+    const bearer = await page.evaluate(() => localStorage.getItem("heillon_bearer") ?? "");
     expect(bearer.length).toBeGreaterThan(10);
 
     const authHeaders = { Authorization: `Bearer ${bearer}` };
@@ -42,7 +40,7 @@ test.describe("Full User Journey — Heillon Legal", () => {
     const planRes = await request.post(`${backendUrl}/api/v1/mission/plan`, {
       headers: { ...authHeaders, "Content-Type": "application/json" },
       data: {
-        description: "Analisar documentos financeiros e identificar cláusulas de risco",
+        description: "Analyze financial documents for risk and prioritize by relevance",
         authorized_agents: ["ocr-agent", "classification-agent", "analysis-agent"],
       },
     });
