@@ -33,6 +33,10 @@ O **Heillon Legal** é a vertical jurídica dessa estação.
 | 11 | Cookies HttpOnly, rate limit, onboarding, E2E smoke | ✅ |
 | 12 | PostgreSQL, Redis, Health Dashboard, E2E CI | ✅ |
 | 13 | ICP-Brasil TSA, headers CSP/HSTS, logging JSON, proxy cookie-aware, PyMuPDF, FTS5, página de conformidade | ✅ |
+| **14** | **LGPD técnica: RIPD automático, DPO, retenção de logs, notificação ANPD 72h, consentimento granular** | 🔴 Crítico |
+| **15** | **ICP-Brasil qualificada: assinatura A1/A3, PDF/A-3 PAdES embedded, certificado de cliente TSA** | 🟡 Urgente |
+| **16** | **CNJ 615/2025 + OAB: classificação de risco IA, auditabilidade, supervisão humana, disclosure** | 🟡 Urgente |
+| **17** | **ISO 27001 foundation + SOC 2 readiness + EU AI Act conformity (prazo ago/2026)** | 🟢 Planeado |
 
 ## Funcionalidades principais
 
@@ -147,6 +151,25 @@ AUTH_SECRET_KEY=<obrigatório>
 ```
 
 Ver [`docs/SUPABASE.md`](docs/SUPABASE.md) e [`docs/SECRETS-AUDIT-FASE12.md`](docs/SECRETS-AUDIT-FASE12.md).
+
+## Roadmap regulatório
+
+Ver análise completa em [`docs/ROADMAP-REGULATORIO.md`](docs/ROADMAP-REGULATORIO.md).
+
+| Diploma | Obrigatoriedade | Estado |
+|:---|:---|:---|
+| LGPD — Lei 13.709/2018 | 🔴 Legal | Fase 14 |
+| Marco Civil — Lei 12.965/2014 | 🔴 Legal | Fase 14 |
+| ANPD Res. 15/2024 (incidentes 72h) | 🔴 Legal | Fase 14 |
+| MP 2.200-2/2001 (ICP-Brasil assinatura qualificada) | 🔴 Legal/Judicial | Fase 15 |
+| Lei 11.419/2006 (processo eletrônico) | 🔴 Legal/Judicial | Fase 15 |
+| CNJ Res. 615/2025 (IA no Judiciário) | 🟡 Mercado | Fase 16 |
+| OAB Rec. 001/2024 (IA na advocacia) | 🟡 Mercado | Fase 16 |
+| PL 2338/2023 (Marco Legal IA — em tramitação) | 🟡 Antecipação | Fase 16 |
+| ISO 27001:2022 | 🟢 Enterprise | Fase 17 |
+| ISO 27701:2019 (PIMS) | 🟢 Enterprise | Fase 17 |
+| SOC 2 Type II | 🟢 Enterprise | Fase 17 |
+| EU AI Act 2024/1689 (prazo ago/2026) | 🟡 Internacional | Fase 17 |
 
 ## Variáveis de ambiente (resumo)
 
