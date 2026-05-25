@@ -48,8 +48,9 @@ const nextConfig: NextConfig = {
     return {
       beforeFiles: [
         {
+          // Redirect to the cookie-aware Route Handler proxy
           source: "/api/v1/:path*",
-          destination: `${backendProxyTarget}/api/v1/:path*`,
+          destination: "/api/proxy/:path*",
         },
       ],
     };

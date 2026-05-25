@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/", label: "Missão" },
   { href: "/m", label: "Mobile" },
   { href: "/diary", label: "Diário" },
+  { href: "/compliance", label: "Conformidade" },
   { href: "/docs", label: "Docs", tour: "docs-link" },
   { href: "/normative", label: "Normativo", tour: "normative-link" },
   { href: "/verification", label: "Verificar", tour: "verify-link" },

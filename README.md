@@ -1,9 +1,9 @@
 # Heillon Legal — Legitimidade Computacional para o Direito
 
-**Versão:** 12.0 — Maio de 2026  
-**Estado:** Produção (hardening Fase 12)  
-**Testes backend:** `pytest -q`  
-**Build frontend:** 28 rotas (`npm run build`)
+**Versão:** 13.0 — Maio de 2026  
+**Estado:** Produção (hardening Fase 13)  
+**Testes backend:** 73 testes (`pytest -q`)  
+**Build frontend:** 31 rotas (`npm run build`)
 
 ## Sobre o projeto
 
@@ -32,17 +32,21 @@ O **Heillon Legal** é a vertical jurídica dessa estação.
 | 10 | Central de Documentação (Docs Hub) | ✅ |
 | 11 | Cookies HttpOnly, rate limit, onboarding, E2E smoke | ✅ |
 | 12 | PostgreSQL, Redis, Health Dashboard, E2E CI | ✅ |
+| 13 | ICP-Brasil TSA, headers CSP/HSTS, logging JSON, proxy cookie-aware, PyMuPDF, FTS5, página de conformidade | ✅ |
 
 ## Funcionalidades principais
 
-- **HDR Ledger** — registos imutáveis SHA-256 + RFC 3161  
-- **Corpus Normativo** — validação pré-execução (LGPD, GDPR, …)  
-- **Pacote forense** — PDF/A-1/B + assinatura Ed25519  
-- **Soberania de modelos** — Ollama, OpenAI, Anthropic, custom  
-- **PWA mobile** — verificação, missões, evidências em campo  
-- **Docs Hub** — 10 documentos integrados  
-- **Onboarding** — tour guiado de 5 passos  
-- **Segurança** — JWT + cookies HttpOnly, rate limit (Redis + fallback), CSP/HSTS  
+- **HDR Ledger** — registos imutáveis SHA-256 + RFC 3161 + TSA ICP-Brasil (Certisign/Serpro/FreeTSA)
+- **Corpus Normativo** — validação pré-execução (LGPD, GDPR, …) com pesquisa FTS5
+- **Pacote forense** — PDF/A-1/B + assinatura Ed25519
+- **Soberania de modelos** — Ollama, OpenAI, Anthropic, custom
+- **PWA mobile** — verificação, missões, evidências em campo
+- **Docs Hub** — 10 documentos integrados
+- **Onboarding** — tour guiado de 6 passos até ao primeiro HDR
+- **Segurança** — JWT + cookies HttpOnly, rate limit (Redis + fallback), CSP/HSTS, structured logging JSON
+- **Extração de texto** — PyMuPDF (PDF) + python-docx (DOCX) na ingestão de evidências
+- **Conformidade** — página de relatório LGPD/GDPR com ancoragem constitucional + download PDF
+- **Proxy cookie-aware** — Route Handler Next.js repassa cookies HttpOnly ao backend sem CORS
 
 ## Stack tecnológico
 

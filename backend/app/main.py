@@ -14,6 +14,7 @@ from app.api.health import router as health_router
 from app.core.logging_config import configure_logging
 from app.core.rate_limit import rate_limit_middleware
 from app.core.security_headers import SecurityHeadersMiddleware
+from app.db.compat import open_connection
 from app.db.database import init_database, sqlite_file_path
 from app.domain.evidence.api import router as evidence_router
 from app.domain.forensic.api import router as forensic_router
@@ -25,6 +26,7 @@ from app.domain.mission.services import OrchestrationEngine
 from app.domain.normative.api import router as normative_router
 from app.domain.normative.anchoring_service import NormativeAnchoringService
 from app.domain.normative.compliance_api import router as compliance_router
+from app.domain.normative.fts_repository import seed_corpus
 from app.domain.normative.lgpd_br import LGPD_FRAMEWORK
 from app.domain.normative.repository import NormativeRepository
 from app.domain.normative.services import DEFAULT_LEGAL_RULES, NormativeService
@@ -65,6 +67,13 @@ async def lifespan(application: FastAPI):
 
     normative_repository = NormativeRepository(list(DEFAULT_LEGAL_RULES))
     normative_service = NormativeService(repository=normative_repository)
+
+    # Seed FTS5 corpus (safe to re-run; uses UPSERT internally)
+    with open_connection(settings) as seed_conn:
+        try:
+            seed_corpus(seed_conn, list(DEFAULT_LEGAL_RULES))
+        except Exception as _seed_err:
+            logger.warning("FTS5 corpus seed skipped: %s", _seed_err)
 
     hdr_singleton = HDRService()
 

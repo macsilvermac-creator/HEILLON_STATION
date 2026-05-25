@@ -14,6 +14,7 @@ from app.domain.hdr.models import HDR
 from app.domain.hdr.repository import HDRRepository
 from app.domain.hdr.services import HDRService
 from app.domain.user.models import UserRecord
+from app.domain.evidence.extractor import extract_text
 from app.domain.evidence.models import IngestionResponse
 from app.domain.evidence.repository import EvidenceRepository
 from app.domain.evidence.services import build_ingestion_hdr
@@ -47,6 +48,7 @@ async def ingest_evidence_file(
     file_bytes = await file.read()
 
     checksum = generate_hash(file_bytes)
+    extracted_text = await run_in_threadpool(extract_text, file.filename or "", file_bytes)
 
     if previous_hdr:
         predecessor = _hdr_repository.fetch_hdr(conn, previous_hdr)
@@ -78,6 +80,7 @@ async def ingest_evidence_file(
         inferred_mission_id=inferred_mission_id,
         checksum=checksum,
         previous_hdr=previous_hdr,
+        extracted_text=extracted_text,
     )
 
     _hdr_repository.insert(conn, hdr, organization_id=current_user.organization_id)

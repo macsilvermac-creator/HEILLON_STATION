@@ -69,8 +69,23 @@ Migrada incrementalmente sob `backend/app/db/migrations/` (`hdrs`, `missions`, `
 
 Aplicações com **App Router** dependem das versões patched indicadas pela Vercel (ex.: `next@15.4.10` na série 15.4.x) para CVEs CVE-2025-55183, CVE-2025-55184 e CVE-2025-67779 documentados na actualização [11 Dez 2025](https://nextjs.org/blog/security-update-2025-12-11).
 
-## Estado da arte vs roadmap
+## Estado da arte vs roadmap (Fase 13)
 
-✅ Ledger HDR determinístico, ingestão WORM pública verificável, EASY com DAG stubs, Corpus normativo, Diário forense/estatísticas, Frontend integrado ao backend com build verde.
+✅ Ledger HDR determinístico + TSA ICP-Brasil (Certisign → Serpro → FreeTSA), ingestão WORM com extração real de texto (PyMuPDF + python-docx), Corpus normativo com FTS5, Diário forense/estatísticas, Frontend integrado via proxy cookie-aware (Route Handler Next.js), headers CSP/HSTS/XFO, logging JSON estruturado, página de conformidade LGPD/GDPR com download PDF.
 
-⏭️ Agentes OCR/IAS reais, PDF/A com assinatura qualificada, autenticação de utilizadores, vector store (`sqlite‑vss` ou serviço dedicado), *hardening* da superfície pública `/verify`.
+⏭️ Agentes OCR/LLM reais em produção, PDF/A-3 com assinatura qualificada ICP-Brasil, vector store semântica (`sqlite-vec` ou Qdrant), *hardening* da superfície pública `/verify`.
+
+## Novidades da Fase 13
+
+| Componente | Alteração |
+|:---|:---|
+| `backend/app/domain/hdr/icp_brasil.py` | TSA ICP-Brasil: fallback Certisign → Serpro → FreeTSA |
+| `backend/app/core/security_headers.py` | `SecurityHeadersMiddleware` — CSP, HSTS, XFO, Referrer, Permissions |
+| `backend/app/core/logging_config.py` | Logging JSON estruturado em produção; colorido em dev |
+| `backend/app/domain/evidence/extractor.py` | Extração de texto PDF (PyMuPDF + pypdf fallback) e DOCX |
+| `backend/app/domain/normative/fts_repository.py` | FTS5 full-text search no corpus normativo; seed automático |
+| `backend/app/db/migrations/009_normative_fts.sql` | DDL: `normative_rules` + `normative_rules_fts` (triggers) |
+| `frontend/app/api/proxy/[...path]/route.ts` | Route Handler proxy cookie-aware (elimina 401 no Dashboard) |
+| `frontend/app/compliance/page.tsx` | Página de conformidade: gera relatório LGPD, pesquisa FTS5, download PDF |
+| `frontend/components/HeroSection.tsx` | `dynamic()` import de Hero3DScene — lazy Three.js |
+| `frontend/app/dashboard/DashboardCharts.tsx` | Recharts extraído — lazy load, elimina blocking bundle |

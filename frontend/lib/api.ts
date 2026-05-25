@@ -308,6 +308,21 @@ export async function postComplianceReport(missionId: string, frameworkId = "LGP
   return payload;
 }
 
+export function complianceReportDownloadUrl(missionId: string, frameworkId = "LGPD-BR"): string {
+  return `${PREFIX}/compliance/report/${encodeURIComponent(missionId)}/download?framework_id=${encodeURIComponent(frameworkId)}`;
+}
+
+export async function searchNormativeRules(query: string): Promise<unknown> {
+  const response = await apiFetch(
+    `${PREFIX}/normative/search?q=${encodeURIComponent(query)}&limit=20`,
+  );
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(formatProblemDetail(payload));
+  }
+  return payload;
+}
+
 export async function loginLegalOperator(email: string, password: string): Promise<unknown> {
   const response = await apiFetch(`${PREFIX}/auth/login`, {
     method: "POST",
