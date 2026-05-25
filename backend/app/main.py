@@ -37,6 +37,9 @@ from app.domain.mobile.api import router as mobile_router
 from app.domain.privacy.api import router as privacy_router
 from app.domain.governance.api import router as governance_router
 from app.domain.euaiact.api import router as euaiact_router
+from app.domain.signatures.api import router as signatures_router
+from app.domain.usa.api import router as usa_router
+from app.domain.uae.api import router as uae_router
 from app.domain.user.api import router as identity_router
 from app.domain.user.services import AuthService
 
@@ -156,6 +159,9 @@ def create_application() -> FastAPI:
     application.include_router(privacy_router, prefix=api_prefix)
     application.include_router(governance_router, prefix=api_prefix)
     application.include_router(euaiact_router, prefix=api_prefix)
+    application.include_router(signatures_router, prefix=api_prefix)
+    application.include_router(usa_router, prefix=api_prefix)
+    application.include_router(uae_router, prefix=api_prefix)
     application.include_router(health_router)
     application.include_router(health_router, prefix=api_prefix)
 

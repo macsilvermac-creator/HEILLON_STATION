@@ -1,8 +1,8 @@
 # Heillon Legal — Legitimidade Computacional para o Direito
 
-**Versão:** 17.0 — Maio de 2026  
-**Estado:** Produção (Fase 17 — EU AI Act + eIDAS 2.0 + ISO 27001)  
-**Testes backend:** 154 testes (`pytest -q`)  
+**Versão:** 19.0 — Maio de 2026  
+**Estado:** Produção (Fase 19 — Expansão Global: EUA + EAU + Assinaturas Digitais)  
+**Testes backend:** 206 testes (`pytest -q`)  
 **Build frontend:** 32 rotas (`npm run build`)
 
 ## Sobre o projeto
@@ -37,10 +37,11 @@ O **Heillon Legal** é a vertical jurídica dessa estação.
 | **15** | **ICP-Brasil qualificada: `icp_signer.py` (A1 PKCS#12 / CAdES-BES), `pdfa3_service.py` (PDF/A-3 + AF chains.json), `GET /verify/icp/{hdr_id}`, 27 novos testes** | ✅ |
 | **16** | **CNJ 615/2025 + OAB: risk classification (low/medium/high/prohibited), human approval gates, AI decision audit log, OAB disclosure lifecycle, 23 testes** | ✅ |
 | **17** | **EU AI Act 2024/1689 + eIDAS 2.0 + ISO 27001: Annex IV tech docs, DPIA (GDPR/LGPD), QES/PAdES-LTA/CAdES-LTA, ISMS risk register (score-based), 21 testes** | ✅ |
-| **18** | **Expansão EUA: Colorado AI Act + ABA Model Rule 1.1 + CCPA/CPRA + NIST AI RMF** | 🟢 Planeado |
-| **19** | **Expansão EAU: UAE PDPL + DIFC + Dubai AI Seal + UAE AI Charter 2024** | 🟢 Planeado |
-| **20** | **Expansão Ásia-Pacífico: Singapura PDPA + Agentic AI Framework + Austrália Privacy Act** | 🟢 Planeado |
-| **21** | **Certificações globais: ISO 42001:2023 (AIMS) + ISO 27001 full + ISO 27701 + SOC 2 Type II** | 🟢 Planeado |
+| **Sig** | **Assinaturas digitais universais: ICP-Brasil/eIDAS/ESIGN/UAE-PASS — lifecycle envio→entrega→recebimento→assinatura, acks com hash de integridade, revogação (admin)** | ✅ |
+| **18** | **Expansão EUA: Colorado AI Act SB 205, CCPA/CPRA, ABA Model Rules (1.1/1.6/3.4/5.3), NIST AI RMF 1.0 (GOVERN/MAP/MEASURE/MANAGE), ESIGN audit trail, 18 testes** | ✅ |
+| **19** | **Expansão EAU: UAE PDPL (Decreto 45/2021), UAE AI Ethics 7 princípios, DIFC + ADGM, UAE AI Seal, UAE PASS (QES/AES), 18 testes** | ✅ |
+| **20** | **Expansão Ásia-Pacífico: Singapura PDPA 2012 + Agentic AI Framework (PDPC) + Austrália Privacy Act** | 🟢 Planeado |
+| **21** | **Certificações globais: ISO 42001:2023 (AIMS) + ISO 27001 completo + ISO 27701 (PIMS) + SOC 2 Type II** | 🟢 Planeado |
 
 ## Funcionalidades principais
 
