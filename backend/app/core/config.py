@@ -86,6 +86,15 @@ class Settings(BaseSettings):
     # LGPD Fase 14 — DPO settings
     DPO_NAME: str = Field(default="Encarregado de Dados", description="Nome do DPO (LGPD art. 41)")
     DPO_EMAIL: str = Field(default="dpo@heillon.com", description="E-mail público do DPO (LGPD art. 41)")
+    # ICP-Brasil Fase 15 — A1 soft-certificate signing
+    ICP_CERT_PATH: str | None = Field(
+        default=None,
+        description="Path to PKCS#12 (.p12/.pfx) ICP-Brasil A1 certificate file.",
+    )
+    ICP_CERT_PASSWORD: str = Field(
+        default="",
+        description="Password for the PKCS#12 ICP-Brasil A1 certificate (empty = no password).",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

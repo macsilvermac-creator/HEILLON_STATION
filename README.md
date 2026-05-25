@@ -1,8 +1,8 @@
 # Heillon Legal — Legitimidade Computacional para o Direito
 
-**Versão:** 14.0 — Maio de 2026  
-**Estado:** Produção (hardening Fase 14 — LGPD Técnica)  
-**Testes backend:** 83 testes (`pytest -q`)  
+**Versão:** 17.0 — Maio de 2026  
+**Estado:** Produção (Fase 17 — EU AI Act + eIDAS 2.0 + ISO 27001)  
+**Testes backend:** 154 testes (`pytest -q`)  
 **Build frontend:** 32 rotas (`npm run build`)
 
 ## Sobre o projeto
@@ -34,11 +34,10 @@ O **Heillon Legal** é a vertical jurídica dessa estação.
 | 12 | PostgreSQL, Redis, Health Dashboard, E2E CI | ✅ |
 | 13 | ICP-Brasil TSA, headers CSP/HSTS, logging JSON, proxy cookie-aware, PyMuPDF, FTS5, página de conformidade | ✅ |
 | **14** | **LGPD técnica completa: RIPD automático (PDF/A), DPO + 15d SLA, retenção Marco Civil, incidentes ANPD 72h, consentimento granular, portabilidade ZIP, página `/privacy`** | ✅ |
-| **14** | **LGPD técnica: RIPD automático, DPO, retenção de logs, notificação ANPD 72h, consentimento granular** | ✅ |
-| **15** | **ICP-Brasil qualificada: assinatura A1/A3, PDF/A-3 PAdES embedded, certificado de cliente TSA** | 🟡 Urgente |
-| **16** | **CNJ 615/2025 + OAB: classificação de risco IA, auditabilidade, supervisão humana, disclosure** | 🟡 Urgente |
-| **17** | **EU AI Act (ago/2026!) + eIDAS 2.0 + GDPR alignment + ISO 27001 foundation** | 🟢 Planeado |
-| **18** | **Expansão EUA: Colorado AI Act + ABA Op 512 + CCPA/CPRA + NIST AI RMF** | 🟢 Planeado |
+| **15** | **ICP-Brasil qualificada: `icp_signer.py` (A1 PKCS#12 / CAdES-BES), `pdfa3_service.py` (PDF/A-3 + AF chains.json), `GET /verify/icp/{hdr_id}`, 27 novos testes** | ✅ |
+| **16** | **CNJ 615/2025 + OAB: risk classification (low/medium/high/prohibited), human approval gates, AI decision audit log, OAB disclosure lifecycle, 23 testes** | ✅ |
+| **17** | **EU AI Act 2024/1689 + eIDAS 2.0 + ISO 27001: Annex IV tech docs, DPIA (GDPR/LGPD), QES/PAdES-LTA/CAdES-LTA, ISMS risk register (score-based), 21 testes** | ✅ |
+| **18** | **Expansão EUA: Colorado AI Act + ABA Model Rule 1.1 + CCPA/CPRA + NIST AI RMF** | 🟢 Planeado |
 | **19** | **Expansão EAU: UAE PDPL + DIFC + Dubai AI Seal + UAE AI Charter 2024** | 🟢 Planeado |
 | **20** | **Expansão Ásia-Pacífico: Singapura PDPA + Agentic AI Framework + Austrália Privacy Act** | 🟢 Planeado |
 | **21** | **Certificações globais: ISO 42001:2023 (AIMS) + ISO 27001 full + ISO 27701 + SOC 2 Type II** | 🟢 Planeado |
@@ -169,8 +168,8 @@ Ver análise completa em [`docs/ROADMAP-REGULATORIO.md`](docs/ROADMAP-REGULATORI
 | LGPD — Lei 13.709/2018 | 🔴 Legal | 14 |
 | Marco Civil — Lei 12.965/2014 | 🔴 Legal | 14 |
 | ANPD Res. 15/2024 (incidentes 72h) | 🔴 Legal | 14 |
-| MP 2.200-2/2001 (ICP-Brasil assinatura qualificada) | 🔴 Legal/Judicial | 15 |
-| Lei 11.419/2006 (processo eletrônico) | 🔴 Legal/Judicial | 15 |
+| MP 2.200-2/2001 (ICP-Brasil assinatura qualificada) | ✅ Implementado | 15 |
+| Lei 11.419/2006 (processo eletrônico) | ✅ Implementado | 15 |
 | CNJ Res. 615/2025 (IA no Judiciário) | 🟡 Mercado | 16 |
 | OAB Rec. 001/2024 (IA na advocacia) | 🟡 Mercado | 16 |
 | PL 2338/2023 (Marco Legal IA) | 🟡 Antecipação | 16 |
