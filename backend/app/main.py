@@ -40,6 +40,10 @@ from app.domain.euaiact.api import router as euaiact_router
 from app.domain.signatures.api import router as signatures_router
 from app.domain.usa.api import router as usa_router
 from app.domain.uae.api import router as uae_router
+from app.domain.iso42001.api import router as iso42001_router
+from app.domain.legal_evidence.api import router as legal_evidence_router
+from app.domain.apac.api import router as apac_router
+from app.domain.malpractice.api import router as malpractice_router
 from app.domain.user.api import router as identity_router
 from app.domain.user.services import AuthService
 
@@ -162,6 +166,10 @@ def create_application() -> FastAPI:
     application.include_router(signatures_router, prefix=api_prefix)
     application.include_router(usa_router, prefix=api_prefix)
     application.include_router(uae_router, prefix=api_prefix)
+    application.include_router(iso42001_router, prefix=api_prefix)
+    application.include_router(legal_evidence_router, prefix=api_prefix)
+    application.include_router(apac_router, prefix=api_prefix)
+    application.include_router(malpractice_router, prefix=api_prefix)
     application.include_router(health_router)
     application.include_router(health_router, prefix=api_prefix)
 

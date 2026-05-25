@@ -1,8 +1,8 @@
 # Heillon Legal — Legitimidade Computacional para o Direito
 
-**Versão:** 19.0 — Maio de 2026  
-**Estado:** Produção (Fase 19 — Expansão Global: EUA + EAU + Assinaturas Digitais)  
-**Testes backend:** 206 testes (`pytest -q`)  
+**Versão:** 20.0 — Maio de 2026  
+**Estado:** Produção (Fase 20 — Sistema Definitivo Global: ISO 42001/FRIA + APAC + Legal Evidence + Malpractice Score)  
+**Testes backend:** 271 testes (`pytest -q`)  
 **Build frontend:** 32 rotas (`npm run build`)
 
 ## Sobre o projeto
@@ -40,8 +40,8 @@ O **Heillon Legal** é a vertical jurídica dessa estação.
 | **Sig** | **Assinaturas digitais universais: ICP-Brasil/eIDAS/ESIGN/UAE-PASS — lifecycle envio→entrega→recebimento→assinatura, acks com hash de integridade, revogação (admin)** | ✅ |
 | **18** | **Expansão EUA: Colorado AI Act SB 205, CCPA/CPRA, ABA Model Rules (1.1/1.6/3.4/5.3), NIST AI RMF 1.0 (GOVERN/MAP/MEASURE/MANAGE), ESIGN audit trail, 18 testes** | ✅ |
 | **19** | **Expansão EAU: UAE PDPL (Decreto 45/2021), UAE AI Ethics 7 princípios, DIFC + ADGM, UAE AI Seal, UAE PASS (QES/AES), 18 testes** | ✅ |
-| **20** | **Expansão Ásia-Pacífico: Singapura PDPA 2012 + Agentic AI Framework (PDPC) + Austrália Privacy Act** | 🟢 Planeado |
-| **21** | **Certificações globais: ISO 42001:2023 (AIMS) + ISO 27001 completo + ISO 27701 (PIMS) + SOC 2 Type II** | 🟢 Planeado |
+| **20** | **Sistema Definitivo Global: ISO 42001:2023 AIMS + FRIA (EU AI Act Art. 27) + Legal Evidence (FRE 707 + citações + alucinações + competência OAB/ABA) + APAC (UK GDPR + Canada PIPEDA/C-27/AIDA + Singapore PDPA + Agentic AI Framework + Australia Privacy Act) + Malpractice Insurance Score + Colorado SB 26-189 + CCPA ADMT + Heillon Global Compliance Score (17 componentes, tiers bronze→platinum), 65 novos testes** | ✅ |
+| **21** | **Certificações globais: ISO 27001 completo + ISO 27701 (PIMS) + SOC 2 Type II + Frontend F20** | 🟢 Planeado |
 
 ## Funcionalidades principais
 
@@ -207,16 +207,16 @@ Ver análise completa em [`docs/ROADMAP-REGULATORIO.md`](docs/ROADMAP-REGULATORI
 
 | Diploma | Jurisdição | Fase |
 |:---|:---|:---|
-| UK GDPR + AI Code of Practice Regs 2026 | Reino Unido | 20 |
-| PDPA + Agentic AI Framework (jan/2026) | Singapura | 20 |
-| Privacy Act 1988 — automated decisions (dez/2026) | Austrália | 20 |
-| Quebec Law 25 (mais rigorosa do Canadá) | Canadá | 20 |
+| UK GDPR + AI Code of Practice Regs 2026 | Reino Unido | **20** ✅ |
+| PDPA + Agentic AI Framework (jan/2026) | Singapura | **20** ✅ |
+| Privacy Act 1988 — automated decisions (dez/2026) | Austrália | **20** ✅ |
+| PIPEDA + Bill C-27 (CPPA + AIDA) + Quebec Law 25 | Canadá | **20** ✅ |
 
 ### 🏅 Certificações internacionais
 
 | Padrão | Cobertura | Fase |
 |:---|:---|:---|
-| ISO 42001:2023 — AI Management System (AIMS) | Global | 21 |
+| ISO 42001:2023 — AI Management System (AIMS) | Global | **20** ✅ |
 | ISO 27001:2022 — ISMS (certificação completa) | Global | 21 |
 | ISO 27701:2019 — PIMS (privacidade) | Global | 21 |
 | SOC 2 Type II — TSC (enterprise EUA/global) | EUA / Global | 21 |
