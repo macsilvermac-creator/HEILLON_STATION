@@ -11,7 +11,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core import config as runtime_config
 from app.api.health import router as health_router
+from app.core.logging_config import configure_logging
 from app.core.rate_limit import rate_limit_middleware
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.db.database import init_database, sqlite_file_path
 from app.domain.evidence.api import router as evidence_router
 from app.domain.forensic.api import router as forensic_router
@@ -35,12 +37,18 @@ from app.domain.user.services import AuthService
 
 logger = logging.getLogger("heillon.legal")
 
+# Configure structured logging before anything else runs.
+# This will be overridden once settings are loaded in lifespan, but gives
+# sensible defaults for import-time warnings.
+configure_logging(environment="development")
+
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    """Initialize persistence plus governance EASY singletons."""
+    """Initialize persistence plus governance singletons."""
 
     settings = runtime_config.get_settings()
+    configure_logging(environment=settings.ENVIRONMENT)
 
     if settings.FORCE_STUB_TIMESTAMP:
         if settings.ENVIRONMENT == "production":
@@ -96,11 +104,13 @@ def create_application() -> FastAPI:
 
     settings = runtime_config.get_settings()
 
+    is_production = settings.ENVIRONMENT == "production"
     application = FastAPI(
         title="Heillon Legal — HDR Ledger Service",
         version="0.4.0-mvp",
-        docs_url="/docs",
-        openapi_url="/openapi.json",
+        docs_url=None if is_production else "/docs",
+        redoc_url=None if is_production else "/redoc",
+        openapi_url=None if is_production else "/openapi.json",
         lifespan=lifespan,
     )
 
@@ -111,6 +121,9 @@ def create_application() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Security headers — added first so they wrap every response.
+    application.add_middleware(SecurityHeadersMiddleware, is_production=is_production)
 
     class RateLimitHttpMiddleware(BaseHTTPMiddleware):
         async def dispatch(self, request, call_next):  # type: ignore[override]

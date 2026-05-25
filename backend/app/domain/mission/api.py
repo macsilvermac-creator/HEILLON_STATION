@@ -175,7 +175,7 @@ def reject_mission_endpoint(
 
 
 @router.post("/{mission_id}/execute", response_model=MissionExecutionResult)
-def execute_mission_endpoint(
+async def execute_mission_endpoint(
     mission_id: str,
     actor: MissionActor = Depends(resolve_mission_actor),
     conn=Depends(database_dependency),
@@ -195,7 +195,7 @@ def execute_mission_endpoint(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Mission normatively barred.")
 
     try:
-        hdrs = orchestrator.execute_mission(plan, mission_id=mission_id)
+        hdrs = await orchestrator.execute_mission(plan, mission_id=mission_id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 

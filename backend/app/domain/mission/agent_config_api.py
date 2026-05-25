@@ -61,14 +61,14 @@ def put_agent_config_route(
 
 
 @router.post("/{agent_id}/test", response_model=AgentConfigTestResponse)
-def probe_agent_configuration(
+async def probe_agent_configuration(
     agent_id: str,
     actor: Annotated[UserRecord, Depends(get_current_user_record)],
     config_service: Annotated[AgentConfigService, Depends(get_agent_config_runtime)],
 ) -> AgentConfigTestResponse:
     """Lightweight inference ping using the persisted routing profile."""
 
-    raw = config_service.run_smoke_probe(agent_id, actor.organization_id)
+    raw = await config_service.run_smoke_probe(agent_id, actor.organization_id)
     okay = raw.get("status") == "ok"
     return AgentConfigTestResponse(
         status=str(raw.get("status") or "error"),

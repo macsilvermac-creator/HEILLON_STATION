@@ -1,9 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
 
-import { Hero3DScene } from "./Hero3DScene";
+const Hero3DScene = dynamic(
+  () => import("./Hero3DScene").then((m) => ({ default: m.Hero3DScene })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-br from-deep-space-900 to-black" />
+    ),
+  }
+);
 
 export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);

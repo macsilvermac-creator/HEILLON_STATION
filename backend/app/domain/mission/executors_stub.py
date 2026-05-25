@@ -15,7 +15,7 @@ class DeterministicStubMissionExecutor:
     def __init__(self, agent_binding: str | None = None) -> None:
         self.agent_id = agent_binding or "__stub_default__"
 
-    def execute(
+    async def execute(
         self,
         *,
         node: DAGNode,
@@ -53,7 +53,7 @@ class FailingMissionExecutor:
     def __init__(self, agent_binding: str) -> None:
         self.agent_id = agent_binding
 
-    def execute(
+    async def execute(
         self,
         *,
         node: DAGNode,
@@ -64,4 +64,3 @@ class FailingMissionExecutor:
         context: dict[str, Any] | None = None,
     ) -> MissionAgentExecutionOutcome:
         raise RuntimeError("forced executor failure")
-

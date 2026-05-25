@@ -9,8 +9,7 @@ export default async function MissionDetailPage({ params }: { params: Promise<{ 
       <div>
         <h1 className="text-gradient text-3xl font-semibold tracking-tight">Missão `{missionId}`</h1>
         <p className="mt-2 text-sm text-white/60">
-          Visualização do DAG / corrente de custódia e exportação futura para pacote forense PDF/A +
-          manifesto JSON.
+          Corrente de custódia computacional com registos HDR encadeados e pacote forense PDF/A + manifesto JSON.
         </p>
       </div>
       <HDRChain missionId={missionId} />

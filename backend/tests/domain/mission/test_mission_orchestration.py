@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from app.domain.mission.models import MissionStatus
 
 
@@ -51,7 +53,7 @@ def test_execute_mission(orchestration_engine):
     )
     plan.status = MissionStatus.APPROVED
 
-    hdrs = orchestration_engine.execute_mission(plan)
+    hdrs = asyncio.run(orchestration_engine.execute_mission(plan))
 
     assert len(hdrs) == 2
     assert hdrs[0].previous_hdr is None

@@ -186,7 +186,7 @@ class OrchestrationEngine:
         roots = [n for n in dag.nodes if not n.depends_on]
         return len(roots) == 1
 
-    def execute_mission(self, plan: MissionPlan, mission_id: str | None = None) -> list[HDR]:
+    async def execute_mission(self, plan: MissionPlan, mission_id: str | None = None) -> list[HDR]:
         """Walk an approved DAG emitting cryptographic HDR artefacts per node."""
 
         if plan.status != MissionStatus.APPROVED:
@@ -215,7 +215,7 @@ class OrchestrationEngine:
         plan.hdrs_generated = []
 
         for node in ordered_nodes:
-            hdr = self.execute_node(
+            hdr = await self.execute_node(
                 node=node,
                 previous_hdr_id=previous_chain,
                 mission_id=mid,
@@ -230,7 +230,7 @@ class OrchestrationEngine:
 
         return hdr_bundle
 
-    def execute_node(
+    async def execute_node(
         self,
         node: DAGNode,
         previous_hdr_id: str | None,
@@ -288,7 +288,7 @@ class OrchestrationEngine:
         )
         user = HDRUser(id="easy_orchestration_stub")
 
-        outcome = executor.execute(
+        outcome = await executor.execute(
             node=node,
             mission_id=mission_id,
             plan_description=plan_description,

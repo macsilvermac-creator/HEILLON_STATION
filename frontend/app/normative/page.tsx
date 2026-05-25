@@ -56,7 +56,7 @@ export default function NormativeHubPage() {
       <div>
         <h1 className="text-gradient text-3xl font-semibold tracking-tight">Hub normativo — âncoras de legitimidade</h1>
         <p className="mt-3 max-w-3xl text-sm text-white/60">
-          Corpus Normativo ativo antes da execução EASY; relatórios de conformidade LGPD ligam HDRs já executados aos
+          Âncoras normativas ativas em cada análise; relatórios de conformidade LGPD ligam os registos de custódia aos
           artigos registados neste quadro jurídico.
         </p>
       </div>
@@ -87,13 +87,13 @@ export default function NormativeHubPage() {
           <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400">Regras activas</h2>
           <p className="mt-2 text-sm text-white/60">{rules.length} regras no corpus (prioridade global).</p>
           <Link href="/missions" className="mt-3 inline-block text-xs text-gold-400 underline-offset-4 hover:underline">
-            Abrir dossiers de missão
+            Ver histórico de análises
           </Link>
         </div>
       </section>
 
       <section className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400">Relatório LGPD por missão</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400">Relatório LGPD por análise</h2>
         {!isReady || !isAuthenticated ? (
           <p className="mt-3 text-sm text-white/50">Faça sessão para gerar relatórios ancorados à sua organização.</p>
         ) : (

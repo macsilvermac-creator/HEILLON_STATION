@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     ENABLE_POSTGRES_RLS: bool = False
     EVIDENCE_DIR: Path = Field(default_factory=lambda: Path("data/evidence"))
     TSA_URL: str = "https://freetsa.org/tsr"
+    TSA_PROVIDER: str = Field(
+        default="freetsa",
+        description="certisign | serpro | freetsa | stub — preferred ICP-Brasil TSA provider.",
+    )
     ENVIRONMENT: str = Field(
         default="development",
         description="development | staging | production — gates stub timestamps and Fernet defaults.",
@@ -72,6 +76,10 @@ class Settings(BaseSettings):
         default=None,
         description="Optional hex-encoded raw Ed25519 seed (64 hex chars); generates ephemeral signing when unset.",
     )
+    DISABLE_RATE_LIMIT: bool = Field(
+        default=False,
+        description="Bypass rate limiting (never enable in production).",
+    )
     OPENAI_API_KEY: str | None = Field(default=None, description="When set, analysis-agent binds to Chat Completions API.")
     OPENAI_API_BASE_URL: str = "https://api.openai.com/v1"
     OPENAI_MODEL: str = "gpt-4o-mini"
@@ -80,6 +88,15 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+    )
+
+    _INSECURE_AUTH_DEFAULTS: frozenset[str] = frozenset(
+        {
+            "dev-insecure-heillon-secret-change-in-production-min-32-characters-long",
+            "change-me-min-32-chars-for-jwt-signing",
+            "changeme",
+            "secret",
+        }
     )
 
     @field_validator("FORCE_STUB_TIMESTAMP")
@@ -116,6 +133,23 @@ class Settings(BaseSettings):
             ssl = self.POSTGRES_SSL_MODE
             return f"postgresql://{user}:{password}@{host}:{port}/{db}?sslmode={ssl}"
         return self.DATABASE_URL
+
+    @model_validator(mode="after")
+    def enforce_production_security(self) -> Settings:
+        """Block known-insecure configuration in production before the app starts."""
+
+        if self.ENVIRONMENT != "production":
+            return self
+        if self.AUTH_SECRET_KEY.strip() in self._INSECURE_AUTH_DEFAULTS:
+            msg = "AUTH_SECRET_KEY must be changed from the insecure default in production"
+            raise ValueError(msg)
+        if not self.MISSION_ROUTES_REQUIRE_AUTH:
+            msg = "MISSION_ROUTES_REQUIRE_AUTH must be True in production"
+            raise ValueError(msg)
+        if self.DISABLE_RATE_LIMIT:
+            msg = "DISABLE_RATE_LIMIT cannot be enabled in production"
+            raise ValueError(msg)
+        return self
 
     @model_validator(mode="after")
     def ensure_fernet_encryption_key(self) -> Settings:

@@ -12,35 +12,43 @@ interface TourStep {
 const TOUR_STEPS: TourStep[] = [
   {
     target: "[data-tour='mission-input']",
-    title: "Comece por aqui",
+    title: "Escolha um modelo ou descreva",
     description:
-      "Descreva o que precisa em linguagem natural. Ex.: «Analisar estes documentos e identificar cláusulas de risco». De seguida use «Planear DAG».",
+      "Seleccione um modelo pré-configurado (risco contratual, due diligence, LGPD…) ou escreva em linguagem natural o que precisa. De seguida clique em «Iniciar análise».",
   },
   {
     target: "[data-tour='mission-approve']",
-    title: "Revise e aprove",
+    title: "Revise e aprove os passos",
     description:
-      "O plano EASY propõe nós e agentes. Quando estiver alinhado com o Corpus Normativo, aprove antes de executar a cadeia.",
+      "O sistema propõe uma sequência de assistentes de IA. Quando os passos estiverem alinhados com o Corpus Normativo, aprove para liberar a execução.",
+  },
+  {
+    target: "[data-tour='hdr-result']",
+    title: "O seu primeiro registo de custódia",
+    description:
+      "Após executar, cada passo gera um registo HDR imutável com hash SHA-256, carimbo temporal e assinatura criptográfica. Clique no ID para ver a cadeia completa.",
   },
   {
     target: "[data-tour='verify-link']",
     title: "Verificação pública",
     description:
-      "Cada passo relevante gera provas HDR encadeadas. Use o Portal de Verificação para validar integridade.",
+      "Qualquer parte — juiz, perito, contraente — pode validar a integridade da cadeia de custódia no Portal de Verificação sem necessitar de conta.",
   },
   {
     target: "[data-tour='normative-link']",
-    title: "Conformidade",
-    description: "O Hub Normativo ancora as decisões a frameworks (LGDP, etc.) e permite relatórios de conformidade.",
+    title: "Conformidade normativa",
+    description:
+      "O Hub Normativo ancora cada decisão a frameworks legais (LGPD-BR, CPP Art. 158-A, GDPR). Gere relatórios de conformidade prontos para juntada.",
   },
   {
     target: "[data-tour='docs-link']",
-    title: "Documentação",
-    description: "Manuais, termos, LGPD e FAQ — tudo na Central de Documentação integrada.",
+    title: "Central de documentação",
+    description:
+      "Manuais, termos de uso, política LGPD e FAQ estão disponíveis na Central de Documentação integrada ao produto.",
   },
 ];
 
-const STORAGE_KEY = "heillon_onboarding_completed";
+const STORAGE_KEY = "heillon_onboarding_v2_completed";
 
 export function OnboardingTour() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -81,6 +89,10 @@ export function OnboardingTour() {
     }
   };
 
+  const handlePrev = () => {
+    if (currentStep > 0) setCurrentStep((s) => s - 1);
+  };
+
   if (!visible) return null;
 
   const step = TOUR_STEPS[currentStep];
@@ -91,45 +103,66 @@ export function OnboardingTour() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[150] bg-deep-space-900/80 backdrop-blur-sm"
+        className="fixed inset-0 z-[150] bg-deep-space-900/75 backdrop-blur-sm"
         aria-modal
         role="dialog"
         aria-labelledby="onboarding-title"
       >
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          key={currentStep}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22 }}
           className="absolute bottom-8 left-1/2 w-full max-w-lg -translate-x-1/2 px-4"
         >
           <div className="glass-card mx-auto rounded-2xl border border-white/12 p-6">
             <div className="mb-4 flex items-center justify-between">
-              <span className="text-sm text-white/50">
-                Passo {currentStep + 1} de {TOUR_STEPS.length}
+              <span className="text-xs text-white/40">
+                {currentStep + 1} / {TOUR_STEPS.length}
               </span>
               <button
                 type="button"
                 onClick={finish}
-                className="text-sm text-white/40 transition-colors hover:text-white/75"
+                className="text-xs text-white/35 transition-colors hover:text-white/65"
               >
                 Pular tour
               </button>
             </div>
+
             <h3 id="onboarding-title" className="mb-2 text-xl font-bold text-white">
               {step.title}
             </h3>
-            <p className="mb-6 text-sm leading-relaxed text-white/70">{step.description}</p>
+            <p className="mb-6 text-sm leading-relaxed text-white/65">{step.description}</p>
+
             <div className="flex items-center justify-between gap-3">
               <div className="flex gap-1.5">
                 {TOUR_STEPS.map((_, i) => (
-                  <div
+                  <button
                     key={i}
-                    className={`h-2 w-2 rounded-full transition-colors ${i === currentStep ? "bg-gold-500" : "bg-white/20"}`}
+                    type="button"
+                    aria-label={`Ir para passo ${i + 1}`}
+                    onClick={() => setCurrentStep(i)}
+                    className={`h-2 rounded-full transition-all ${
+                      i === currentStep ? "w-5 bg-gold-500" : "w-2 bg-white/20 hover:bg-white/35"
+                    }`}
                   />
                 ))}
               </div>
-              <button type="button" onClick={handleNext} className="btn-gold px-6 py-2 text-sm">
-                {currentStep < TOUR_STEPS.length - 1 ? "Próximo" : "Concluir"}
-              </button>
+
+              <div className="flex gap-2">
+                {currentStep > 0 && (
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    className="rounded-full border border-white/15 px-4 py-2 text-xs text-white/60 transition-colors hover:border-white/30 hover:text-white"
+                  >
+                    Anterior
+                  </button>
+                )}
+                <button type="button" onClick={handleNext} className="btn-gold px-5 py-2 text-xs">
+                  {currentStep < TOUR_STEPS.length - 1 ? "Próximo →" : "Concluir"}
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>

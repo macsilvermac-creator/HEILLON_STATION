@@ -33,12 +33,11 @@ export default function LoginPage() {
 
     try {
       const data = (await loginLegalOperator(email, password)) as Record<string, unknown>;
-      const access = typeof data.access_token === "string" ? data.access_token : null;
       const userRaw = data.user;
-      if (!access || !userRaw || typeof userRaw !== "object") {
+      if (!userRaw || typeof userRaw !== "object") {
         throw new Error("Resposta de sessão inválida.");
       }
-      login(access, toAuthUser(userRaw as Record<string, unknown>));
+      login(toAuthUser(userRaw as Record<string, unknown>));
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Credenciais inválidas.");

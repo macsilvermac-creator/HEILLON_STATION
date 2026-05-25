@@ -12,6 +12,7 @@ from urllib.parse import unquote
 from app.core import config as runtime_config
 from app.core.config import Settings
 from app.db.compat import CompatConnection, open_connection, resolve_dialect
+from app.db.tenant_security import apply_rls_if_enabled
 from app.db.dialect_sql import (
     mission_chain_order_clause,
     mission_list_order_clause,
@@ -141,6 +142,7 @@ def init_database(settings: Settings | None = None) -> None:
     if resolve_dialect(settings) == "postgresql":
         with open_connection(settings) as conn:
             apply_postgres_bootstrap(conn)
+            apply_rls_if_enabled(conn, enabled=settings.ENABLE_POSTGRES_RLS)
         return
 
     with db_connection(settings.DATABASE_URL) as conn:

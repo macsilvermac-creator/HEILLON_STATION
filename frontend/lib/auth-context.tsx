@@ -15,10 +15,9 @@ export interface AuthUser {
 
 interface AuthContextType {
   user: AuthUser | null;
-  token: string | null;
   isAuthenticated: boolean;
   isReady: boolean;
-  login: (token: string, user: AuthUser) => void;
+  login: (user: AuthUser) => void;
   logout: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
 }
@@ -56,28 +55,31 @@ function mapMePayload(raw: Record<string, unknown>): AuthUser {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("heillon_bearer");
+    // Optimistic hydration from localStorage (non-sensitive user data only)
     const storedUser = parseStoredUser(localStorage.getItem("heillon_user"));
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUserState(storedUser);
-    }
+    if (storedUser) setUserState(storedUser);
+
+    // Remove any legacy bearer token from localStorage
+    localStorage.removeItem("heillon_bearer");
 
     let cancelled = false;
     (async () => {
       try {
+        // Authoritative check via HttpOnly cookie — no bearer needed
         const raw = (await fetchCurrentUser()) as Record<string, unknown>;
         if (cancelled) return;
         const next = mapMePayload(raw);
         setUserState(next);
         localStorage.setItem("heillon_user", JSON.stringify(next));
-        // Mantém bearer em paralelo ao cookie HttpOnly — necessário para proxy dev/CI e clientes API.
       } catch {
-        /* sessão inválida ou só legacy em memória */
+        // Cookie expired or absent — clear cached user
+        if (!cancelled) {
+          setUserState(null);
+          localStorage.removeItem("heillon_user");
+        }
       } finally {
         if (!cancelled) setHydrated(true);
       }
@@ -88,18 +90,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback((newToken: string, newUser: AuthUser) => {
-    localStorage.setItem("heillon_bearer", newToken);
+  const login = useCallback((newUser: AuthUser) => {
     localStorage.setItem("heillon_user", JSON.stringify(newUser));
-    setToken(newToken);
     setUserState(newUser);
   }, []);
 
   const logout = useCallback(async () => {
     await logoutLegalOperator();
-    localStorage.removeItem("heillon_bearer");
     localStorage.removeItem("heillon_user");
-    setToken(null);
     setUserState(null);
   }, []);
 
@@ -112,14 +110,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextType>(
     () => ({
       user: hydrated ? user : null,
-      token: hydrated ? token : null,
       isAuthenticated: hydrated && !!user,
       isReady: hydrated,
       login,
       logout,
       setUser,
     }),
-    [hydrated, user, token, login, logout, setUser],
+    [hydrated, user, login, logout, setUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

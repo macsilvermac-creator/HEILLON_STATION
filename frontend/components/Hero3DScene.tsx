@@ -41,8 +41,10 @@ export function Hero3DScene({ scrollProgress }: { scrollProgress: number }) {
     <div className="pointer-events-none absolute inset-0 z-0">
       <Canvas
         aria-hidden
-        dpr={[1, 2]}
-        gl={{ alpha: true, antialias: true }}
+        dpr={[0.75, 1]}
+        frameloop="demand"
+        performance={{ min: 0.5 }}
+        gl={{ alpha: true, antialias: false, powerPreference: "low-power" }}
         camera={{ position: [0, 0, 6.2], fov: 38 }}
       >
         <ambientLight intensity={0.35} />

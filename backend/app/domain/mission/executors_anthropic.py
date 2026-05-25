@@ -16,7 +16,7 @@ ANTHROPIC_VERSION_HEADER = "2023-06-01"
 
 
 class AnthropicMessagesMissionExecutor:
-    """Invokes Claude via ``/v1/messages``."""
+    """Invokes Claude via ``/v1/messages`` (async, non-blocking)."""
 
     def __init__(
         self,
@@ -33,7 +33,7 @@ class AnthropicMessagesMissionExecutor:
         self._base_url = api_base_url.rstrip("/")
         self._timeout = timeout_seconds
 
-    def execute(
+    async def execute(
         self,
         *,
         node: DAGNode,
@@ -63,9 +63,9 @@ class AnthropicMessagesMissionExecutor:
         user_message = prompt_payload[:120000]
 
         try:
-            with httpx.Client(timeout=self._timeout) as client:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
                 t0 = time.perf_counter()
-                response = client.post(
+                response = await client.post(
                     f"{self._base_url}/v1/messages",
                     headers={
                         "x-api-key": self._api_key,

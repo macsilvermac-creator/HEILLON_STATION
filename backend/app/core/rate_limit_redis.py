@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+import uuid
 from typing import TYPE_CHECKING
 
 from app.core.config import get_settings
@@ -15,6 +16,25 @@ logger = logging.getLogger("heillon.legal.rate_limit")
 
 _redis_client: redis.Redis | None = None
 _redis_disabled = False
+
+# Atomically: clean expired entries, count, conditionally add — no TOCTOU window.
+_SLIDING_WINDOW_LUA = """
+local key      = KEYS[1]
+local now      = tonumber(ARGV[1])
+local win_start = tonumber(ARGV[2])
+local max_req  = tonumber(ARGV[3])
+local ttl      = tonumber(ARGV[4])
+local member   = ARGV[5]
+
+redis.call('ZREMRANGEBYSCORE', key, '-inf', win_start)
+local count = redis.call('ZCARD', key)
+if count >= max_req then
+    return 0
+end
+redis.call('ZADD', key, now, member)
+redis.call('EXPIRE', key, ttl)
+return 1
+"""
 
 
 def _get_redis() -> redis.Redis | None:
@@ -41,29 +61,24 @@ def _get_redis() -> redis.Redis | None:
 
 
 class RedisRateLimiter:
-    """Sliding-window limiter backed by Redis sorted sets."""
+    """Sliding-window limiter backed by Redis sorted sets (atomic Lua script)."""
 
     def __init__(self, redis_url: str | None = None) -> None:
         import redis as redis_lib
 
         settings = get_settings()
         self._redis = redis_lib.from_url(redis_url or settings.REDIS_URL)
+        self._script = self._redis.register_script(_SLIDING_WINDOW_LUA)
 
     def is_allowed(self, key: str, max_requests: int, window_seconds: int) -> bool:
         now = time.time()
         window_start = now - window_seconds
-        pipe = self._redis.pipeline()
-        pipe.zremrangebyscore(key, 0, window_start)
-        pipe.zcard(key)
-        _, count = pipe.execute()
-        if int(count) >= max_requests:
-            return False
-        self._redis.zadd(key, {str(now): now})
-        self._redis.expire(key, window_seconds + 1)
-        return True
-
-
-_redis_limiter: RedisRateLimiter | None = None
+        member = f"{now}:{uuid.uuid4().hex}"
+        result = self._script(
+            keys=[key],
+            args=[now, window_start, max_requests, window_seconds + 1, member],
+        )
+        return bool(result)
 
 
 def redis_is_allowed(key: str, max_requests: int, window_seconds: int) -> bool | None:
@@ -79,13 +94,18 @@ def redis_is_allowed(key: str, max_requests: int, window_seconds: int) -> bool |
     try:
         now = time.time()
         window_start = now - window_seconds
-        client.zremrangebyscore(key, 0, window_start)
-        count = int(client.zcard(key))
-        if count >= max_requests:
-            return False
-        client.zadd(key, {str(now).encode(): now})
-        client.expire(key, window_seconds + 1)
-        return True
+        member = f"{now}:{uuid.uuid4().hex}"
+        result = client.eval(
+            _SLIDING_WINDOW_LUA,
+            1,
+            key,
+            now,
+            window_start,
+            max_requests,
+            window_seconds + 1,
+            member,
+        )
+        return bool(result)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Redis rate limit check failed: %s", exc)
         return None

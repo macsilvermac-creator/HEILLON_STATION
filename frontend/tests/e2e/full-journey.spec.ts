@@ -5,6 +5,7 @@ import {
   executeMission,
   generateCompliance,
   planMission,
+  registerOperator,
   verifyChainValid,
 } from "./helpers/heillon-api";
 
@@ -44,10 +45,9 @@ test.describe("Jornada completa — Heillon Legal", () => {
     await page.getByRole("button", { name: /Criar conta/i }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
 
-    await page.waitForFunction(() => Boolean(localStorage.getItem("heillon_bearer")), null, {
-      timeout: 15_000,
-    });
-    const bearer = await page.evaluate(() => localStorage.getItem("heillon_bearer") ?? "");
+    // Obtain bearer via API (cookie auth is set by the browser; bearer used for API helper calls).
+    const session = await registerOperator(api, testEmail, testPassword);
+    const { bearer } = session;
     expect(bearer.length).toBeGreaterThan(10);
 
     const missionId = await planMission(api, bearer, MISSION_DESCRIPTION, MISSION_AGENTS);

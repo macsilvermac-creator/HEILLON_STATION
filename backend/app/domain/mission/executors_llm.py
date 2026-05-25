@@ -14,7 +14,7 @@ from app.domain.mission.models import DAGNode
 
 
 class OpenAICompatibleMissionExecutor:
-    """Calls `/v1/chat/completions`; falls back gracefully when misconfigured."""
+    """Calls `/v1/chat/completions` (async, non-blocking)."""
 
     def __init__(
         self,
@@ -31,7 +31,7 @@ class OpenAICompatibleMissionExecutor:
         self._model = model
         self._timeout = timeout_seconds
 
-    def execute(
+    async def execute(
         self,
         *,
         node: DAGNode,
@@ -57,9 +57,9 @@ class OpenAICompatibleMissionExecutor:
 
         duration_ms = 0
         try:
-            with httpx.Client(timeout=self._timeout) as client:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
                 t0 = time.perf_counter()
-                response = client.post(
+                response = await client.post(
                     f"{self._base_url}/chat/completions",
                     headers={
                         "Authorization": f"Bearer {self._api_key}",

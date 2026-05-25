@@ -307,7 +307,7 @@ class AgentConfigService:
                 version = f"{row.source.value}:{row.model_name}"
             return model, version
 
-    def run_smoke_probe(self, agent_id: str, organization_id: str) -> dict[str, str | None]:
+    async def run_smoke_probe(self, agent_id: str, organization_id: str) -> dict[str, str | None]:
         """Invoke a lightweight synthetic node for connectivity validation."""
 
         executor = self.resolve_executor(agent_id, organization_id)
@@ -323,7 +323,7 @@ class AgentConfigService:
             depends_on=[],
         )
         try:
-            outcome = executor.execute(
+            outcome = await executor.execute(
                 node=dummy,
                 mission_id="probe_mission",
                 plan_description="Connectivity probe",

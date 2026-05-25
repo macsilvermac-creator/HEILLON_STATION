@@ -47,12 +47,11 @@ export default function RegisterPage() {
         password,
         role,
       })) as Record<string, unknown>;
-      const access = typeof data.access_token === "string" ? data.access_token : null;
       const userRaw = data.user;
-      if (!access || !userRaw || typeof userRaw !== "object") {
+      if (!userRaw || typeof userRaw !== "object") {
         throw new Error("Registo incompleto — tente novamente.");
       }
-      login(access, toAuthUser(userRaw as Record<string, unknown>));
+      login(toAuthUser(userRaw as Record<string, unknown>));
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registo falhou.");

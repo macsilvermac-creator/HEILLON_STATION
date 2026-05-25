@@ -12,6 +12,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.core import config as runtime_config
 from app.core.config import Settings
 from app.db.compat import CompatConnection, open_connection
+from app.db.tenant_security import set_tenant_context
 from app.domain.hdr.services import HDRService
 from app.domain.user.models import UserRecord
 from app.domain.user.repository import UserRepository
@@ -87,6 +88,18 @@ def resolve_mission_actor(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token sem sujeito.")
 
     return MissionActor(organization_id=str(org_claim), user_id=str(subject))
+
+
+def tenant_database_dependency(
+    conn: Annotated[CompatConnection, Depends(database_dependency)],
+    actor: Annotated[MissionActor, Depends(resolve_mission_actor)],
+    settings: Settings = Depends(settings_dependency),
+) -> CompatConnection:
+    """Open connection scoped to the authenticated actor's organization (RLS-aware)."""
+
+    if settings.ENABLE_POSTGRES_RLS and settings.resolved_database_type == "postgresql":
+        set_tenant_context(conn, actor.organization_id)
+    return conn
 
 
 optional_auth_bearer = HTTPBearer(auto_error=False)

@@ -13,29 +13,22 @@ const DEFAULT_ORIGIN = resolveApiOrigin();
 const PREFIX = `${DEFAULT_ORIGIN}/api/v1`;
 
 function authorizedHeaders(extra?: HeadersInit): HeadersInit {
-  const headers = new Headers(extra);
-  if (typeof window !== "undefined") {
-    const token = window.localStorage.getItem("heillon_bearer");
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-  }
-  return headers;
+  return new Headers(extra);
 }
 
 function apiFetch(input: string, init?: RequestInit): Promise<Response> {
   const next: RequestInit = {
     ...init,
     headers: authorizedHeaders(init?.headers),
+    credentials: "include",
   };
-  if (typeof window !== "undefined") {
-    next.credentials = "include";
-  }
   return fetch(input, next);
 }
 
-export function persistAuthBearer(token: string | null): void {
+/** @deprecated JWT is now carried exclusively via HttpOnly cookie. */
+export function persistAuthBearer(_token: string | null): void {
   if (typeof window === "undefined") return;
-  if (!token || token.trim().length === 0) window.localStorage.removeItem("heillon_bearer");
-  else window.localStorage.setItem("heillon_bearer", token.trim());
+  window.localStorage.removeItem("heillon_bearer");
 }
 
 export function getBackendPublicUrl(): string {
@@ -342,8 +335,7 @@ export async function registerLegalOperator(body: Record<string, unknown>): Prom
     throw new Error(formatProblemDetail(payload));
   }
 
-  const tokenCandidate = typeof payload.access_token === "string" ? payload.access_token : null;
-  if (tokenCandidate) persistAuthBearer(tokenCandidate);
+  persistAuthBearer(null);
 
   return payload;
 }

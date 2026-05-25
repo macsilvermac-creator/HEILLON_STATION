@@ -27,7 +27,7 @@ class MissionAgentExecutor(Protocol):
 
     agent_id: str
 
-    def execute(
+    async def execute(
         self,
         *,
         node: DAGNode,
@@ -38,4 +38,3 @@ class MissionAgentExecutor(Protocol):
         context: dict[str, Any] | None = None,
     ) -> MissionAgentExecutionOutcome:
         ...
-

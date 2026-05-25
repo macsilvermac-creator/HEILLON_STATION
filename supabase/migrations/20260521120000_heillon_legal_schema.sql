@@ -74,7 +74,7 @@ INSERT INTO organizations (organization_id, name, settings_json, created_at)
 VALUES ('org_default', 'Organização Demo', '{}'::jsonb, NOW())
 ON CONFLICT (organization_id) DO NOTHING;
 
--- 003 + 005 — Pacotes forenses
+-- 003 + 005 + 008 — Pacotes forenses
 CREATE TABLE IF NOT EXISTS forensic_packages (
     package_id TEXT PRIMARY KEY,
     mission_id TEXT NOT NULL,
@@ -88,10 +88,12 @@ CREATE TABLE IF NOT EXISTS forensic_packages (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     generated_by TEXT NOT NULL,
     verification_url_snapshot TEXT NOT NULL,
-    signature_path TEXT
+    signature_path TEXT,
+    organization_id TEXT NOT NULL DEFAULT 'org_default'
 );
 
 CREATE INDEX IF NOT EXISTS idx_forensic_pkg_mission ON forensic_packages (mission_id);
+CREATE INDEX IF NOT EXISTS idx_forensic_pkg_org ON forensic_packages (organization_id);
 
 -- 006 — Agent configs (soberania de modelos)
 CREATE TABLE IF NOT EXISTS agent_configs (
