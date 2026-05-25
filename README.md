@@ -1,9 +1,9 @@
 # Heillon Legal — Legitimidade Computacional para o Direito
 
-**Versão:** 13.0 — Maio de 2026  
-**Estado:** Produção (hardening Fase 13)  
-**Testes backend:** 73 testes (`pytest -q`)  
-**Build frontend:** 31 rotas (`npm run build`)
+**Versão:** 14.0 — Maio de 2026  
+**Estado:** Produção (hardening Fase 14 — LGPD Técnica)  
+**Testes backend:** 83 testes (`pytest -q`)  
+**Build frontend:** 32 rotas (`npm run build`)
 
 ## Sobre o projeto
 
@@ -33,7 +33,8 @@ O **Heillon Legal** é a vertical jurídica dessa estação.
 | 11 | Cookies HttpOnly, rate limit, onboarding, E2E smoke | ✅ |
 | 12 | PostgreSQL, Redis, Health Dashboard, E2E CI | ✅ |
 | 13 | ICP-Brasil TSA, headers CSP/HSTS, logging JSON, proxy cookie-aware, PyMuPDF, FTS5, página de conformidade | ✅ |
-| **14** | **LGPD técnica: RIPD automático, DPO, retenção de logs, notificação ANPD 72h, consentimento granular** | 🔴 Crítico |
+| **14** | **LGPD técnica completa: RIPD automático (PDF/A), DPO + 15d SLA, retenção Marco Civil, incidentes ANPD 72h, consentimento granular, portabilidade ZIP, página `/privacy`** | ✅ |
+| **14** | **LGPD técnica: RIPD automático, DPO, retenção de logs, notificação ANPD 72h, consentimento granular** | ✅ |
 | **15** | **ICP-Brasil qualificada: assinatura A1/A3, PDF/A-3 PAdES embedded, certificado de cliente TSA** | 🟡 Urgente |
 | **16** | **CNJ 615/2025 + OAB: classificação de risco IA, auditabilidade, supervisão humana, disclosure** | 🟡 Urgente |
 | **17** | **EU AI Act (ago/2026!) + eIDAS 2.0 + GDPR alignment + ISO 27001 foundation** | 🟢 Planeado |
@@ -55,6 +56,7 @@ O **Heillon Legal** é a vertical jurídica dessa estação.
 - **Extração de texto** — PyMuPDF (PDF) + python-docx (DOCX) na ingestão de evidências
 - **Conformidade** — página de relatório LGPD/GDPR com ancoragem constitucional + download PDF
 - **Proxy cookie-aware** — Route Handler Next.js repassa cookies HttpOnly ao backend sem CORS
+- **Centro de Privacidade LGPD** — página `/privacy`: consentimento granular, RIPD PDF, direitos do titular (15d SLA), incidentes ANPD ≤72h, portabilidade ZIP
 
 ## Stack tecnológico
 

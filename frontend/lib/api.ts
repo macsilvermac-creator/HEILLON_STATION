@@ -424,3 +424,126 @@ export async function logoutLegalOperator(): Promise<void> {
     /* rede directa / offline */
   }
 }
+
+// ─── Privacy / LGPD Fase 14 ──────────────────────────────────────────────────
+
+/** GET /privacy/dpo-contact — public, no auth */
+export async function fetchDpoContact(): Promise<unknown> {
+  const response = await apiFetch(`${PREFIX}/privacy/dpo-contact`);
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
+
+/** POST /privacy/dpo-request — public, no auth */
+export async function submitDpoRequest(body: Record<string, unknown>): Promise<unknown> {
+  const response = await apiFetch(`${PREFIX}/privacy/dpo-request`, {
+    method: "POST",
+    headers: authorizedHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(body),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
+
+/** GET /privacy/dpo-requests — admin */
+export async function listDpoRequests(statusFilter?: string): Promise<unknown> {
+  const qs = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
+  const response = await apiFetch(`${PREFIX}/privacy/dpo-requests${qs}`, { headers: authorizedHeaders() });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
+
+/** GET /privacy/consent */
+export async function fetchConsentBundle(): Promise<unknown> {
+  const response = await apiFetch(`${PREFIX}/privacy/consent`, { headers: authorizedHeaders() });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
+
+/** POST /privacy/consent */
+export async function setConsent(purpose: string, granted: boolean): Promise<unknown> {
+  const response = await apiFetch(`${PREFIX}/privacy/consent`, {
+    method: "POST",
+    headers: authorizedHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ purpose, granted }),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
+
+/** DELETE /privacy/consent — revoke all */
+export async function revokeAllConsent(): Promise<unknown> {
+  const response = await apiFetch(`${PREFIX}/privacy/consent`, {
+    method: "DELETE",
+    headers: authorizedHeaders(),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
+
+/** GET /privacy/export — portability ZIP download URL */
+export function privacyExportUrl(): string {
+  return `${PREFIX}/privacy/export`;
+}
+
+/** POST /privacy/ripd */
+export async function createRipd(body: Record<string, unknown>): Promise<unknown> {
+  const response = await apiFetch(`${PREFIX}/privacy/ripd`, {
+    method: "POST",
+    headers: authorizedHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(body),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
+
+/** GET /privacy/ripd */
+export async function listRipd(): Promise<unknown> {
+  const response = await apiFetch(`${PREFIX}/privacy/ripd`, { headers: authorizedHeaders() });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
+
+/** GET /privacy/ripd/{id}/download — URL for PDF download */
+export function ripdDownloadUrl(ripdId: string): string {
+  return `${PREFIX}/privacy/ripd/${encodeURIComponent(ripdId)}/download`;
+}
+
+/** POST /security/incident */
+export async function registerIncident(body: Record<string, unknown>): Promise<unknown> {
+  const response = await apiFetch(`${PREFIX}/security/incident`, {
+    method: "POST",
+    headers: authorizedHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(body),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
+
+/** GET /security/incidents — admin */
+export async function listIncidents(): Promise<unknown> {
+  const response = await apiFetch(`${PREFIX}/security/incidents`, { headers: authorizedHeaders() });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
+
+/** POST /privacy/purge-logs — admin */
+export async function purgeLogs(): Promise<unknown> {
+  const response = await apiFetch(`${PREFIX}/privacy/purge-logs`, {
+    method: "POST",
+    headers: authorizedHeaders(),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload;
+}
