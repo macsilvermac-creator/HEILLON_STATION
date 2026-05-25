@@ -213,22 +213,7 @@
   }
 }
 
-/* ── FolderSidebar layout ────────────────────────────────────────────────── */
+/* ── FolderTopbar layout ─────────────────────────────────────────────────── */
 
-/* CSS custom property: sidebar width (set by FolderSidebar.tsx JS).         */
-:root {
-  --sidebar-w: 220px;
-}
-
-/* On desktop, shift main content right to clear the fixed sidebar.          */
-@media (min-width: 1024px) {
-  #main-content-shell {
-    padding-left: var(--sidebar-w, 220px);
-    transition: padding-left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-}
-
-/* Thin scrollbar for folder list (Webkit) */
-.scrollbar-thin::-webkit-scrollbar        { width: 3px; }
-.scrollbar-thin::-webkit-scrollbar-track  { background: transparent; }
-.scrollbar-thin::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.12); border-radius: 999px; }
+/* Hide horizontal scrollbar on the tabs row (Webkit + Firefox)              */
+.folder-tabs-row::-webkit-scrollbar { display: none; }
