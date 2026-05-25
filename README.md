@@ -36,7 +36,11 @@ O **Heillon Legal** é a vertical jurídica dessa estação.
 | **14** | **LGPD técnica: RIPD automático, DPO, retenção de logs, notificação ANPD 72h, consentimento granular** | 🔴 Crítico |
 | **15** | **ICP-Brasil qualificada: assinatura A1/A3, PDF/A-3 PAdES embedded, certificado de cliente TSA** | 🟡 Urgente |
 | **16** | **CNJ 615/2025 + OAB: classificação de risco IA, auditabilidade, supervisão humana, disclosure** | 🟡 Urgente |
-| **17** | **ISO 27001 foundation + SOC 2 readiness + EU AI Act conformity (prazo ago/2026)** | 🟢 Planeado |
+| **17** | **EU AI Act (ago/2026!) + eIDAS 2.0 + GDPR alignment + ISO 27001 foundation** | 🟢 Planeado |
+| **18** | **Expansão EUA: Colorado AI Act + ABA Op 512 + CCPA/CPRA + NIST AI RMF** | 🟢 Planeado |
+| **19** | **Expansão EAU: UAE PDPL + DIFC + Dubai AI Seal + UAE AI Charter 2024** | 🟢 Planeado |
+| **20** | **Expansão Ásia-Pacífico: Singapura PDPA + Agentic AI Framework + Austrália Privacy Act** | 🟢 Planeado |
+| **21** | **Certificações globais: ISO 42001:2023 (AIMS) + ISO 27001 full + ISO 27701 + SOC 2 Type II** | 🟢 Planeado |
 
 ## Funcionalidades principais
 
@@ -152,24 +156,68 @@ AUTH_SECRET_KEY=<obrigatório>
 
 Ver [`docs/SUPABASE.md`](docs/SUPABASE.md) e [`docs/SECRETS-AUDIT-FASE12.md`](docs/SECRETS-AUDIT-FASE12.md).
 
-## Roadmap regulatório
+## Roadmap regulatório global
 
 Ver análise completa em [`docs/ROADMAP-REGULATORIO.md`](docs/ROADMAP-REGULATORIO.md).
 
-| Diploma | Obrigatoriedade | Estado |
+### 🇧🇷 Brasil
+
+| Diploma | Obrigatoriedade | Fase |
 |:---|:---|:---|
-| LGPD — Lei 13.709/2018 | 🔴 Legal | Fase 14 |
-| Marco Civil — Lei 12.965/2014 | 🔴 Legal | Fase 14 |
-| ANPD Res. 15/2024 (incidentes 72h) | 🔴 Legal | Fase 14 |
-| MP 2.200-2/2001 (ICP-Brasil assinatura qualificada) | 🔴 Legal/Judicial | Fase 15 |
-| Lei 11.419/2006 (processo eletrônico) | 🔴 Legal/Judicial | Fase 15 |
-| CNJ Res. 615/2025 (IA no Judiciário) | 🟡 Mercado | Fase 16 |
-| OAB Rec. 001/2024 (IA na advocacia) | 🟡 Mercado | Fase 16 |
-| PL 2338/2023 (Marco Legal IA — em tramitação) | 🟡 Antecipação | Fase 16 |
-| ISO 27001:2022 | 🟢 Enterprise | Fase 17 |
-| ISO 27701:2019 (PIMS) | 🟢 Enterprise | Fase 17 |
-| SOC 2 Type II | 🟢 Enterprise | Fase 17 |
-| EU AI Act 2024/1689 (prazo ago/2026) | 🟡 Internacional | Fase 17 |
+| LGPD — Lei 13.709/2018 | 🔴 Legal | 14 |
+| Marco Civil — Lei 12.965/2014 | 🔴 Legal | 14 |
+| ANPD Res. 15/2024 (incidentes 72h) | 🔴 Legal | 14 |
+| MP 2.200-2/2001 (ICP-Brasil assinatura qualificada) | 🔴 Legal/Judicial | 15 |
+| Lei 11.419/2006 (processo eletrônico) | 🔴 Legal/Judicial | 15 |
+| CNJ Res. 615/2025 (IA no Judiciário) | 🟡 Mercado | 16 |
+| OAB Rec. 001/2024 (IA na advocacia) | 🟡 Mercado | 16 |
+| PL 2338/2023 (Marco Legal IA) | 🟡 Antecipação | 16 |
+
+### 🇪🇺 União Europeia
+
+| Diploma | Obrigatoriedade | Fase |
+|:---|:---|:---|
+| EU AI Act 2024/1689 — Alto Risco (prazo **ago/2026**) | 🔴 Legal (€35M / 7% global) | 17 |
+| GDPR 2016/679 — utilizadores UE | 🔴 Legal (€20M / 4% global) | 17 |
+| eIDAS 2.0 — Reg. 2024/1183 (QES + EUDI Wallet) | 🔴 Legal/Judicial | 17 |
+| NIS2 — Diretiva 2022/2555 (cibersegurança) | 🟡 Mercado | 17 |
+
+### 🇺🇸 Estados Unidos
+
+| Diploma | Obrigatoriedade | Fase |
+|:---|:---|:---|
+| Colorado AI Act SB 205 (vigente **jun/2026**) | 🔴 Legal (Colorado) | 18 |
+| CCPA/CPRA — utilizadores Califórnia | 🔴 Legal (California) | 18 |
+| California SB 53 (jan/2026) | 🟡 Legal (California) | 18 |
+| ABA Formal Opinion 512 (jul/2024) — Rules 1.1, 1.6, 5.3 | 🟡 Advocacia | 18 |
+| NIST AI RMF 1.0 — boas práticas federais | 🟢 Enterprise | 18 |
+
+### 🇦🇪 Emirados Árabes Unidos
+
+| Diploma | Obrigatoriedade | Fase |
+|:---|:---|:---|
+| UAE PDPL — Decreto-Lei 45/2021 (AED 5M) | 🔴 Legal | 19 |
+| DIFC Data Protection Law 5/2020 | 🔴 Legal (DIFC) | 19 |
+| UAE AI Charter 2024 | 🟡 Mercado | 19 |
+| Dubai AI Seal (contratos governamentais) | 🟡 Mercado | 19 |
+
+### 🇬🇧 🇸🇬 🇦🇺 Outros mercados
+
+| Diploma | Jurisdição | Fase |
+|:---|:---|:---|
+| UK GDPR + AI Code of Practice Regs 2026 | Reino Unido | 20 |
+| PDPA + Agentic AI Framework (jan/2026) | Singapura | 20 |
+| Privacy Act 1988 — automated decisions (dez/2026) | Austrália | 20 |
+| Quebec Law 25 (mais rigorosa do Canadá) | Canadá | 20 |
+
+### 🏅 Certificações internacionais
+
+| Padrão | Cobertura | Fase |
+|:---|:---|:---|
+| ISO 42001:2023 — AI Management System (AIMS) | Global | 21 |
+| ISO 27001:2022 — ISMS (certificação completa) | Global | 21 |
+| ISO 27701:2019 — PIMS (privacidade) | Global | 21 |
+| SOC 2 Type II — TSC (enterprise EUA/global) | EUA / Global | 21 |
 
 ## Variáveis de ambiente (resumo)
 
