@@ -83,6 +83,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str | None = Field(default=None, description="When set, analysis-agent binds to Chat Completions API.")
     OPENAI_API_BASE_URL: str = "https://api.openai.com/v1"
     OPENAI_MODEL: str = "gpt-4o-mini"
+    # LGPD Fase 14 — DPO settings
+    DPO_NAME: str = Field(default="Encarregado de Dados", description="Nome do DPO (LGPD art. 41)")
+    DPO_EMAIL: str = Field(default="dpo@heillon.com", description="E-mail público do DPO (LGPD art. 41)")
 
     model_config = SettingsConfigDict(
         env_file=".env",
