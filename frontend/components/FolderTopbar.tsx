@@ -143,7 +143,7 @@ function FolderTab({ item, active, onClick }: FolderTabProps) {
       aria-current={active ? "page" : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="relative shrink-0 select-none whitespace-nowrap text-[11px] font-medium tracking-[0.06em] outline-none focus-visible:ring-1 focus-visible:ring-gold-400/60"
+      className="relative shrink-0 select-none whitespace-nowrap text-[11px] outline-none focus-visible:ring-1 focus-visible:ring-gold-400/60"
       style={{
         // Folder-tab ear shape: one rounded corner (top-left), one sharp (top-right)
         // — mimics a real physical folder label/ear in a filing drawer
@@ -152,37 +152,41 @@ function FolderTab({ item, active, onClick }: FolderTabProps) {
         display: "inline-flex",
         alignItems: "center",
         borderRadius: "6px 0 0 0",
-        border: `1px solid ${G.border}`,
-        borderBottom: active ? "none" : `1px solid ${G.border}`,
+        // Active: 2 px gold border on top + sides only — no bottom.
+        // The strip's continuous gold rim closes the shape, making the line
+        // visually "contour" the ear: it runs the full width, rises up the
+        // tab's left side, crosses the top, and descends the right side.
+        border: active
+          ? "2px solid rgba(212,175,55,0.75)"
+          : hovered
+          ? "1px solid rgba(212,175,55,0.35)"
+          : "1px solid rgba(212,175,55,0.14)",
+        borderBottom: active
+          ? "none"
+          : hovered
+          ? "1px solid rgba(212,175,55,0.35)"
+          : "1px solid rgba(212,175,55,0.14)",
+        // Background stays dark — no gold fill
         background: active
-          ? G.active_bg
+          ? G.strip_bg
           : hovered
-          ? G.hover_bg
-          : G.inactive_bg,
+          ? "rgba(212,175,55,0.06)"
+          : "transparent",
+        backgroundImage: "none",
         color: active
-          ? G.active_text
+          ? "rgba(212,175,55,0.96)"
           : hovered
-          ? G.hover_text
-          : G.inactive_text,
-        // Specular highlight — strong on active (folder ear catching light), soft on hover
-        backgroundImage: active
-          ? "linear-gradient(180deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.04) 55%, rgba(0,0,0,0) 100%)"
-          : hovered
-          ? "linear-gradient(180deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 60%)"
-          : "none",
+          ? "rgba(212,175,55,0.75)"
+          : "rgba(212,175,55,0.46)",
         transition: "background 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
-        // Active tab: top glow gives a "lit folder ear" look; no bottom border creates open-folder illusion
         boxShadow: active
-          ? "0 -2px 10px rgba(212,175,55,0.18), inset 0 1px 0 rgba(255,255,255,0.2)"
-          : hovered
-          ? "0 -1px 6px rgba(212,175,55,0.08)"
+          ? "0 -4px 18px rgba(212,175,55,0.14), inset 0 1px 0 rgba(255,255,255,0.05)"
           : "none",
-        // Active tab sits flush with the strip bottom border (marginBottom -1px
-        // so it visually overlaps the rim line, creating the "open folder" illusion)
-        marginBottom: active ? "-1px" : "0",
-        fontWeight: active ? "600" : "500",
-        letterSpacing: active ? "0.04em" : "0.06em",
-        zIndex: active ? 2 : 1,
+        // Overlap the strip's 2 px bottom border so the contour is seamless
+        marginBottom: active ? "-2px" : "0",
+        fontWeight: active ? "700" : "400",
+        letterSpacing: "0.06em",
+        zIndex: active ? 3 : 1,
       }}
     >
       {item.label}
@@ -232,9 +236,10 @@ export function FolderTopbar() {
           background: G.strip_bg,
           backdropFilter: "blur(28px)",
           WebkitBackdropFilter: "blur(28px)",
-          borderBottom: `1px solid ${G.rim}`,
-          // Shadow lifts topbar; inner glow reinforces the "drawer rim"
-          boxShadow: "0 4px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(212,175,55,0.18) inset, 0 -1px 0 rgba(212,175,55,0.06) inset",
+          // 2 px continuous gold rim — the line that "contours" the active tab
+          borderBottom: "2px solid rgba(212,175,55,0.62)",
+          // Shadow lifts topbar; outer glow on the rim reinforces the "drawer edge"
+          boxShadow: "0 4px 32px rgba(0,0,0,0.55), 0 2px 12px rgba(212,175,55,0.18), 0 1px 0 rgba(212,175,55,0.10) inset",
         }}
       >
         {/* ── Logo ── */}
