@@ -1,0 +1,236 @@
+name: Deploy — Heillon Legal
+
+# Triggered automatically after CI passes on main,
+# or manually via workflow_dispatch for emergency deploys.
+on:
+  workflow_run:
+    workflows: ["CI — Heillon Legal"]
+    branches: ["main"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy target"
+        required: false
+        default: "all"
+        type: choice
+        options:
+          - all
+          - frontend
+          - backend
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false   # never cancel a deploy in flight
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/heillon-legal-backend
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GUARD — only deploy when CI passed (ignored on manual dispatch)
+# ──────────────────────────────────────────────────────────────────────────────
+jobs:
+  guard:
+    name: Guard — CI must have passed
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check.outputs.ok }}
+    steps:
+      - name: Check CI result
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "ok=true" >> $GITHUB_OUTPUT
+            echo "Manual dispatch — skipping CI gate"
+          elif [[ "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+            echo "ok=true" >> $GITHUB_OUTPUT
+            echo "CI passed — proceeding with deploy"
+          else
+            echo "ok=false" >> $GITHUB_OUTPUT
+            echo "CI did not pass (conclusion: ${{ github.event.workflow_run.conclusion }}) — skipping deploy"
+          fi
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 1. BACKEND — Docker → GHCR → VPS via SSH
+  # ──────────────────────────────────────────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend (Docker → VPS)
+    runs-on: ubuntu-latest
+    needs: guard
+    if: |
+      needs.guard.outputs.should_deploy == 'true' &&
+      (github.event.inputs.target == 'all' || github.event.inputs.target == 'backend' || github.event.inputs.target == '')
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Build & push Docker image ─────────────────────────────────────────
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Deploy to VPS via SSH ────────────────────────────────────────────
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            set -euo pipefail
+            echo "=== Heillon Legal — Backend Deploy ==="
+
+            # Pull latest image
+            echo "${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}" | \
+              docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+            # Restart stack (docker compose in /opt/heillon-legal)
+            cd /opt/heillon-legal
+            docker compose pull backend
+            docker compose up -d --no-deps backend
+
+            # Wait for health check
+            for attempt in $(seq 1 30); do
+              if curl -sf http://localhost:8000/health; then
+                echo ""
+                echo "Backend healthy after ${attempt} attempts ✓"
+                break
+              fi
+              echo "Waiting for backend ($attempt/30)…"
+              sleep 3
+            done
+
+            # Print running containers
+            docker compose ps
+            echo "=== Deploy complete ==="
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 2. FRONTEND — Vercel production deploy
+  # ──────────────────────────────────────────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend (Vercel)
+    runs-on: ubuntu-latest
+    needs: guard
+    if: |
+      needs.guard.outputs.should_deploy == 'true' &&
+      (github.event.inputs.target == 'all' || github.event.inputs.target == 'frontend' || github.event.inputs.target == '')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel environment
+        working-directory: frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+
+      - name: Build for Vercel
+        working-directory: frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: vercel build --prod --token=$VERCEL_TOKEN
+
+      - name: Deploy to Vercel production
+        id: vercel_deploy
+        working-directory: frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+          echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $DEPLOY_URL"
+
+      - name: Smoke test frontend
+        run: |
+          DEPLOY_URL="${{ steps.vercel_deploy.outputs.deploy_url }}"
+          echo "Smoke testing $DEPLOY_URL"
+          for attempt in $(seq 1 10); do
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "$DEPLOY_URL" || echo "000")
+            if [[ "$HTTP_STATUS" == "200" ]]; then
+              echo "Frontend responding 200 ✓"
+              break
+            fi
+            echo "Attempt $attempt: HTTP $HTTP_STATUS — retrying…"
+            sleep 5
+          done
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 3. DEPLOY SUMMARY
+  # ──────────────────────────────────────────────────────────────────────────
+  deploy-summary:
+    name: Deploy Summary
+    runs-on: ubuntu-latest
+    needs: [guard, deploy-backend, deploy-frontend]
+    if: always()
+    steps:
+      - name: Write summary
+        run: |
+          echo "## 🚀 Deploy Summary — Heillon Legal" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Guard (CI gate) | ${{ needs.guard.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend (Docker → VPS) | ${{ needs.deploy-backend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend (Vercel) | ${{ needs.deploy-frontend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** \`${{ github.event_name }}\` on \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.deploy-backend.result }}" == "failure" || \
+                "${{ needs.deploy-frontend.result }}" == "failure" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ One or more deploy jobs failed — check logs above." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All deploy jobs succeeded." >> $GITHUB_STEP_SUMMARY

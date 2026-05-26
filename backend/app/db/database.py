@@ -134,7 +134,7 @@ def apply_postgres_bootstrap(conn: CompatConnection) -> None:
 
 
 def init_database(settings: Settings | None = None) -> None:
-    """Bootstrap storage directory and DDL scripts."""
+    """Bootstrap storage directory, DDL scripts, and normative corpus seed."""
 
     settings = settings or runtime_config.get_settings()
     migrations_path = Path(__file__).resolve().parent / "migrations"
@@ -143,11 +143,63 @@ def init_database(settings: Settings | None = None) -> None:
         with open_connection(settings) as conn:
             apply_postgres_bootstrap(conn)
             apply_rls_if_enabled(conn, enabled=settings.ENABLE_POSTGRES_RLS)
+            _seed_corpus_if_needed(conn)
         return
 
     with db_connection(settings.DATABASE_URL) as conn:
         apply_migrations(conn, migrations_path)
+        _seed_corpus_if_needed(conn)
         conn.commit()
+
+
+def _seed_corpus_if_needed(conn: Any) -> None:
+    """Seed normative corpus rules into FTS5 if the table is empty or outdated.
+
+    Safe to call on every startup — the seed function uses upsert semantics
+    so existing rules are updated in-place without duplicates.
+    """
+    try:
+        from app.domain.normative.corpus_seed import CORPUS_VERSION, seed_normative_corpus
+
+        # Check if corpus_meta table exists and version matches
+        try:
+            row = conn.execute(
+                "SELECT value FROM corpus_meta WHERE key = 'version'"
+            ).fetchone()
+            if row is not None and row[0] == CORPUS_VERSION:
+                return  # Already seeded with this version
+        except Exception:
+            pass  # Table doesn't exist yet — proceed with seed
+
+        count = seed_normative_corpus(conn)
+
+        # Persist version marker (best-effort — table may not exist in older DBs)
+        try:
+            conn.execute(
+                """CREATE TABLE IF NOT EXISTS corpus_meta (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )"""
+            )
+            conn.execute(
+                """INSERT INTO corpus_meta (key, value) VALUES ('version', ?)
+                   ON CONFLICT(key) DO UPDATE SET value = excluded.value,
+                   updated_at = CURRENT_TIMESTAMP""",
+                (CORPUS_VERSION,),
+            )
+        except Exception:
+            pass  # Non-fatal if corpus_meta table can't be created
+
+        import logging
+        logging.getLogger("heillon.legal").info(
+            "Normative corpus seeded: %d rules (v%s)", count, CORPUS_VERSION
+        )
+    except Exception as exc:
+        import logging
+        logging.getLogger("heillon.legal").warning(
+            "Corpus seed skipped (non-fatal): %s", exc
+        )
 
 
 def insert_hdr(conn: Any, hdr: HDR, *, organization_id: str | None = None) -> None:
