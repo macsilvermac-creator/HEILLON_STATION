@@ -516,6 +516,211 @@ _GENERAL_RULES: list[NormativeRule] = [
 ]
 
 # ---------------------------------------------------------------------------
+# Brasil — Códigos processuais e legislação setorial (F24C)
+# ---------------------------------------------------------------------------
+_CPC_RULES: list[NormativeRule] = [
+    NormativeRule(
+        rule_id="CPC-001",
+        name="CPC art. 5º: Boa-fé objetiva em peças assistidas por IA",
+        description=(
+            "Peças processuais com auxílio de IA devem ter citações jurisprudenciais verificadas; "
+            "alucinações de IA configuram violação do dever de boa-fé."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Output de IA usado em peça processual sem citation_verified=True",
+        action_on_violation=ViolationAction.BLOCK,
+        priority=100,
+    ),
+    NormativeRule(
+        rule_id="CPC-002",
+        name="CPC art. 411: Autenticidade de documento eletrônico",
+        description=(
+            "Artefatos de IA submetidos como prova devem ter cadeia HDR + selo ICP-Brasil "
+            "para autenticidade aceitável em juízo."
+        ),
+        category=NormativeCategory.COMPLIANCE,
+        condition="Documento eletrônico submetido sem hdr_id encadeado e selo qualificado",
+        action_on_violation=ViolationAction.REALIGN,
+        priority=92,
+    ),
+    NormativeRule(
+        rule_id="CPC-003",
+        name="CPC art. 158-A: Cadeia de custódia analógica em prova digital",
+        description=(
+            "Vestígios digitais usados em processo civil seguem cadeia de custódia análoga ao CPP."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Transformação de evidência sem HDR registrando operador e timestamps",
+        action_on_violation=ViolationAction.BLOCK,
+        priority=98,
+    ),
+]
+
+_CPP_RULES: list[NormativeRule] = [
+    NormativeRule(
+        rule_id="CPP-001",
+        name="CPP art. 158-A: Cadeia de custódia de vestígio digital",
+        description=(
+            "Toda operação sobre vestígio digital (acesso, OCR, análise por IA) deve gerar HDR."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Operação sobre vestígio criminal sem HDR identificando operador e timestamp",
+        action_on_violation=ViolationAction.BLOCK,
+        priority=100,
+    ),
+    NormativeRule(
+        rule_id="CPP-002",
+        name="CPP art. 158-B: Etapas obrigatórias documentadas",
+        description=(
+            "Cada uma das 10 etapas (reconhecimento, isolamento, fixação, coleta, "
+            "acondicionamento, transporte, recebimento, processamento, armazenamento, descarte) "
+            "deve mapear para um hdr_type."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Vestígio digital com etapas em branco na trilha HDR",
+        action_on_violation=ViolationAction.WARN,
+        priority=90,
+    ),
+    NormativeRule(
+        rule_id="CPP-003",
+        name="CPP art. 158-F: Quebra de cadeia → inadmissibilidade",
+        description=(
+            "Ausência de HDR para qualquer transformação configura risco de nulidade; sistema deve "
+            "sinalizar e bloquear submissão em juízo."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Tentativa de gerar relatório forense com gap na cadeia HDR",
+        action_on_violation=ViolationAction.BLOCK,
+        priority=100,
+    ),
+    NormativeRule(
+        rule_id="CPP-004",
+        name="CPP art. 6º: Preservar estado original do vestígio",
+        description=(
+            "Pré-processamento (limpeza, conversão) do arquivo bruto exige HDR dedicado e "
+            "preservação do hash original."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Modificação de arquivo bruto sem HDR de pré-processamento separado",
+        action_on_violation=ViolationAction.REALIGN,
+        priority=92,
+    ),
+]
+
+_CLT_RULES: list[NormativeRule] = [
+    NormativeRule(
+        rule_id="CLT-001",
+        name="CLT/CF: Não-discriminação em triagem por IA",
+        description=(
+            "Algoritmos usados em triagem de candidatos exigem auditoria de viés registrada e "
+            "explicabilidade documentada."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Score de candidato sem bias_assessment_id e model card documentado",
+        action_on_violation=ViolationAction.WARN,
+        priority=88,
+    ),
+    NormativeRule(
+        rule_id="CLT-002",
+        name="CLT art. 482: Justa causa exige decisão humana",
+        description=(
+            "Atos disciplinares (advertência, suspensão, demissão por JC) não podem ser "
+            "automatizados; gestor humano identificado deve aprovar."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Ato disciplinar emitido sem human_approved=True com identificação de gestor",
+        action_on_violation=ViolationAction.BLOCK,
+        priority=98,
+    ),
+    NormativeRule(
+        rule_id="CLT-003",
+        name="Súmula 342 TST: Monitoramento eletrônico — comunicação prévia",
+        description=(
+            "Análise de IA sobre dados do trabalhador requer comunicação prévia registrada e "
+            "minimização de dados."
+        ),
+        category=NormativeCategory.COMPLIANCE,
+        condition="Análise comportamental de IA sem worker_notification_id registrado",
+        action_on_violation=ViolationAction.WARN,
+        priority=80,
+    ),
+]
+
+_NBC_TP01_RULES: list[NormativeRule] = [
+    NormativeRule(
+        rule_id="NBCTP-001",
+        name="NBC TP 01: Responsabilidade técnica do perito-contador",
+        description=(
+            "Laudo pericial assistido por IA exige assinatura humana com CRC/UF do perito."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Laudo pericial submetido sem CRC do perito registrado em HDR",
+        action_on_violation=ViolationAction.BLOCK,
+        priority=98,
+    ),
+    NormativeRule(
+        rule_id="NBCTP-002",
+        name="NBC TP 01: Papéis de trabalho documentados",
+        description=(
+            "Cada análise de IA usada em perícia deve registrar prompt, modelo, versão, output "
+            "bruto e interpretação humana."
+        ),
+        category=NormativeCategory.COMPLIANCE,
+        condition="HDR pericial sem agent.model + agent.version + intent.description preenchidos",
+        action_on_violation=ViolationAction.REALIGN,
+        priority=90,
+    ),
+    NormativeRule(
+        rule_id="NBCTP-003",
+        name="NBC TP 01: Resposta a quesitos requer interpretação humana",
+        description=(
+            "Análise de IA não responde quesitos por si só; perito assume posição técnica."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Resposta a quesito gerada por IA sem revisão humana registrada",
+        action_on_violation=ViolationAction.BLOCK,
+        priority=95,
+    ),
+]
+
+_MARCO_CIVIL_RULES: list[NormativeRule] = [
+    NormativeRule(
+        rule_id="MCI-001",
+        name="Marco Civil art. 13: Guarda de registros de conexão (1 ano)",
+        description=(
+            "Acesso a logs de conexão exige base legal (judicial_order) registrada em HDR."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Consulta a log de conexão sem judicial_order_id em HDR",
+        action_on_violation=ViolationAction.BLOCK,
+        priority=100,
+    ),
+    NormativeRule(
+        rule_id="MCI-002",
+        name="Marco Civil art. 15: Retenção mínima de access_logs (6 meses)",
+        description=(
+            "Plataformas com IA generativa devem manter access_logs por no mínimo 6 meses."
+        ),
+        category=NormativeCategory.COMPLIANCE,
+        condition="Configuração de purge de access_logs < 6 meses",
+        action_on_violation=ViolationAction.WARN,
+        priority=80,
+    ),
+    NormativeRule(
+        rule_id="MCI-003",
+        name="Marco Civil art. 7º X: Inviolabilidade do fluxo de comunicações",
+        description=(
+            "Análise de IA sobre comunicações exige base legal expressa (ordem judicial ou "
+            "consentimento) registrada antes do processamento."
+        ),
+        category=NormativeCategory.LEGAL,
+        condition="Análise de IA sobre comunicação sem legal_basis registrada em HDR",
+        action_on_violation=ViolationAction.BLOCK,
+        priority=100,
+    ),
+]
+
+# ---------------------------------------------------------------------------
 # Corpus completo ordenado por prioridade
 # ---------------------------------------------------------------------------
 ALL_CORPUS_RULES: tuple[NormativeRule, ...] = tuple(
@@ -524,6 +729,11 @@ ALL_CORPUS_RULES: tuple[NormativeRule, ...] = tuple(
         + _LGPD_RULES
         + _CNJ_RULES
         + _OAB_RULES
+        + _CPC_RULES
+        + _CPP_RULES
+        + _CLT_RULES
+        + _NBC_TP01_RULES
+        + _MARCO_CIVIL_RULES
         + _EU_AI_ACT_RULES
         + _GDPR_RULES
         + _COLORADO_RULES
@@ -537,10 +747,14 @@ ALL_CORPUS_RULES: tuple[NormativeRule, ...] = tuple(
     )
 )
 
-CORPUS_VERSION = "21.0.0"
+CORPUS_VERSION = "24.0.0"
 CORPUS_JURISDICTIONS = ["BR", "EU", "US-CO", "US-CA", "AE", "GB", "SG", "GLOBAL"]
 CORPUS_FRAMEWORKS = [
-    "LGPD-BR", "CNJ-615-2025", "OAB-REC001-2024",
+    # Brasil
+    "LGPD-BR", "MARCO-CIVIL-BR-2014",
+    "CPC-BR-2015", "CPP-BR-1941", "CLT-BR-1943",
+    "CNJ-615-2025", "OAB-REC001-2024", "NBC-TP01-BR-2016",
+    # Internacional
     "EU-AI-ACT-2024", "GDPR-EU-2016",
     "CO-SB205-2024", "CCPA-CPRA",
     "UAE-PDPL-2021", "UK-GDPR-2021",
