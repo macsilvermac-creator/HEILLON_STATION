@@ -16,13 +16,36 @@ function authorizedHeaders(extra?: HeadersInit): HeadersInit {
   return new Headers(extra);
 }
 
-function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+// Default timeout: backend has 60s for LLM calls but UI requests should not hang past 15s.
+const DEFAULT_TIMEOUT_MS = 15_000;
+
+async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+  // Compose AbortSignal: caller-provided signal AND our timeout signal.
+  const timeoutSignal = AbortSignal.timeout(DEFAULT_TIMEOUT_MS);
+  const callerSignal = init?.signal ?? null;
+  const signal: AbortSignal = callerSignal
+    ? AbortSignal.any([callerSignal, timeoutSignal])
+    : timeoutSignal;
+
   const next: RequestInit = {
     ...init,
     headers: authorizedHeaders(init?.headers),
     credentials: "include",
+    signal,
   };
-  return fetch(input, next);
+
+  const response = await fetch(input, next);
+
+  // Session-expiry handling: 401 in browser → trigger global logout-redirect.
+  if (response.status === 401 && typeof window !== "undefined") {
+    const url = new URL(input, window.location.origin);
+    const isAuthEndpoint = url.pathname.includes("/auth/login") || url.pathname.includes("/auth/register");
+    if (!isAuthEndpoint) {
+      window.dispatchEvent(new CustomEvent("heillon:session-expired"));
+    }
+  }
+
+  return response;
 }
 
 /** @deprecated JWT is now carried exclusively via HttpOnly cookie. */

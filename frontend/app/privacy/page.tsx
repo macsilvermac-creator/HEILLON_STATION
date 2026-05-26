@@ -398,7 +398,7 @@ export default function PrivacyPage() {
                   href={privacyExportUrl()}
                   className="btn-glass block w-full text-center text-sm"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                 >
                   📦 Exportar todos os meus dados (ZIP)
                 </a>
@@ -615,7 +615,7 @@ export default function PrivacyPage() {
                         <a
                           href={ripdDownloadUrl(r.ripd_id)}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="btn-glass text-xs"
                         >
                           PDF

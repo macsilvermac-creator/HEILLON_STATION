@@ -40,9 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt" className={`${inter.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen overflow-x-hidden bg-deep-space-900 text-white antialiased">
         <Providers>
-          <ConditionalAppShell>
-            <main className="relative">{children}</main>
-          </ConditionalAppShell>
+          <ConditionalAppShell>{children}</ConditionalAppShell>
         </Providers>
       </body>
     </html>

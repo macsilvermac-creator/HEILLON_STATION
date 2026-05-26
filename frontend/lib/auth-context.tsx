@@ -85,8 +85,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })();
 
+    // Global session-expiry handler — fired by apiFetch on 401 responses
+    const handleSessionExpired = () => {
+      localStorage.removeItem("heillon_user");
+      setUserState(null);
+      // Redirect to login preserving original destination
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+        const from = window.location.pathname + window.location.search;
+        window.location.href = `/login?from=${encodeURIComponent(from)}&expired=1`;
+      }
+    };
+    window.addEventListener("heillon:session-expired", handleSessionExpired);
+
     return () => {
       cancelled = true;
+      window.removeEventListener("heillon:session-expired", handleSessionExpired);
     };
   }, []);
 

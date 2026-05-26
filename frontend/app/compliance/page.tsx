@@ -303,7 +303,7 @@ export default function CompliancePage() {
               <a
                 href={complianceReportDownloadUrl(report.mission_id, report.framework_id)}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="btn-glass text-sm"
               >
                 Descarregar PDF

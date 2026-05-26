@@ -20,7 +20,8 @@ export function ConditionalAppShell({ children }: { children: React.ReactNode })
   const isMobilePwaShell = pathname === "/m" || pathname.startsWith("/m/");
 
   if (isMobilePwaShell) {
-    return <>{children}</>;
+    // Mobile PWA: bare shell with single <main> landmark (a11y)
+    return <main className="relative">{children}</main>;
   }
 
   return (
