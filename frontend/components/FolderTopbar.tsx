@@ -145,12 +145,13 @@ function FolderTab({ item, active, onClick }: FolderTabProps) {
       onMouseLeave={() => setHovered(false)}
       className="relative shrink-0 select-none whitespace-nowrap text-[11px] font-medium tracking-[0.06em] outline-none focus-visible:ring-1 focus-visible:ring-gold-400/60"
       style={{
-        // Folder-tab ear shape: rounded top, flat bottom
+        // Folder-tab ear shape: one rounded corner (top-left), one sharp (top-right)
+        // — mimics a real physical folder label/ear in a filing drawer
         height: "28px",
         padding: "0 12px",
         display: "inline-flex",
         alignItems: "center",
-        borderRadius: "5px 5px 0 0",
+        borderRadius: "6px 0 0 0",
         border: `1px solid ${G.border}`,
         borderBottom: active ? "none" : `1px solid ${G.border}`,
         background: active
