@@ -63,6 +63,15 @@ class Settings(BaseSettings):
         default="",
         description="URL-safe base64 Fernet key for agent API material; must differ from JWT secret.",
     )
+    FERNET_ENCRYPTION_KEY_LEGACY: str = Field(
+        default="",
+        description=(
+            "Optional comma-separated list of LEGACY Fernet keys for rotation. "
+            "MultiFernet tries each key on decrypt; new ciphertext always uses "
+            "FERNET_ENCRYPTION_KEY (the active key). Rotate by: (1) generate new active key, "
+            "(2) move old key to LEGACY, (3) re-encrypt records over time, (4) drop LEGACY."
+        ),
+    )
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60, ge=5, le=10080)
     MISSION_ROUTES_REQUIRE_AUTH: bool = Field(
         default=True,
@@ -173,6 +182,19 @@ class Settings(BaseSettings):
             if key_in == auth:
                 msg = "FERNET_ENCRYPTION_KEY must not equal AUTH_SECRET_KEY"
                 raise ValueError(msg)
+            # Reject overlap between active key and legacy ring
+            if self.FERNET_ENCRYPTION_KEY_LEGACY.strip():
+                legacy_keys = {
+                    k.strip()
+                    for k in self.FERNET_ENCRYPTION_KEY_LEGACY.split(",")
+                    if k.strip()
+                }
+                if key_in in legacy_keys:
+                    msg = (
+                        "FERNET_ENCRYPTION_KEY (active) must not appear in "
+                        "FERNET_ENCRYPTION_KEY_LEGACY — rotate properly"
+                    )
+                    raise ValueError(msg)
             return self
         if self.ENVIRONMENT == "production":
             msg = "FERNET_ENCRYPTION_KEY is mandatory in production"
