@@ -70,16 +70,19 @@ function breadcrumbTrail(pathname: string): { label: string; href: string }[] {
   const tail = pathname.replace(/^\/docs\/?/, "").split("/")[0];
 
   const labelMap: Record<string, string> = {
-    usage: "Manual de uso",
-    "chain-of-custody": "Cadeia de custódia",
-    lgpd: "LGPD",
-    faq: "FAQ",
-    terms: "Termos",
-    privacy: "Privacidade",
-    compliance: "Conformidade",
-    expert: "Perito",
-    admin: "Administrador",
-    changelog: "Changelog",
+    quickstart:           "Início rápido",
+    architecture:         "Arquitetura",
+    regulations:          "Regulatório",
+    usage:                "Manual de uso",
+    "chain-of-custody":   "Cadeia de custódia",
+    lgpd:                 "LGPD",
+    faq:                  "FAQ",
+    terms:                "Termos",
+    privacy:              "Privacidade",
+    compliance:           "Conformidade",
+    expert:               "Perito",
+    admin:                "Administrador",
+    changelog:            "Changelog",
   };
 
   const label = labelMap[tail] ?? "Documentação";

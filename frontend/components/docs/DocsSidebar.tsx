@@ -7,7 +7,7 @@ import type { Dispatch, ReactNode, SetStateAction } from "react";
 import type { DocsCategoryKey } from "@/lib/docs-registry";
 import { DOC_ENTRIES, DOCS_CATEGORY_LABELS } from "@/lib/docs-registry";
 
-const ORDER: DocsCategoryKey[] = ["manuals", "legal", "guides", "faq", "changelog"];
+const ORDER: DocsCategoryKey[] = ["start", "manuals", "legal", "guides", "faq", "changelog"];
 
 export function DocsSidebar(props: {
   mobileOpen?: boolean;

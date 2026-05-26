@@ -43,17 +43,75 @@ class ForensicPackageService:
 
     @staticmethod
     def generate_pdf_report(mission_id: str, hdrs: list[HDR]) -> bytes:
-        """Produce deterministic executive summary bytes (plaintext stub preceding PDF/A)."""
+        """Produce structured executive summary (plaintext, stub mode only — FORENSICS_USE_STUB_PDF=true).
 
+        Production environments use render_hdr_lineage_pdf (PDF/A-1/B) from pdfa_service.
+        This path is retained exclusively for CI / offline dev environments where ReportLab
+        is unavailable or stub timestamps are active.
+
+        NOTE: Output of this method is NOT juridically binding — it carries an explicit
+        disclaimer and must never be presented as a signed forensic document.
+        """
         ordered = sorted(hdrs, key=lambda item: item.hdr_id)
-        rows = [
-            f"{hdr.hdr_id}\t{hdr.hdr_type}\t{hdr.timestamp}\t{hdr.mission_id}" for hdr in ordered
+        # Use last HDR timestamp (deterministic — same chain → same report)
+        emitted_at = ordered[-1].timestamp if ordered else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+        divider = "═" * 72
+        thin    = "─" * 72
+
+        lines: list[str] = [
+            divider,
+            "  HEILLON LEGAL — RELATÓRIO EXECUTIVO FORENSE (MODO STUB)",
+            f"  Plataforma: Heillon Legal v20 · Legitimidade Computacional",
+            divider,
+            "",
+            f"  Missão ID  : {mission_id}",
+            f"  HDRs       : {len(hdrs)}",
+            f"  Emitido em : {emitted_at}",
+            f"  Modo       : STUB (FORENSICS_USE_STUB_PDF=true) — NÃO JURIDICAMENTE VINCULANTE",
+            "",
+            "  ⚠  AVISO LEGAL: Este documento foi gerado em modo stub de desenvolvimento.",
+            "     Para relatório com valor probatório, configure FORENSICS_USE_STUB_PDF=false",
+            "     e forneça chave ICP-Brasil A1 válida (FORENSICS_ICP_PKCS12_PATH).",
+            "",
+            thin,
+            f"  {'HDR ID':<44} {'TIPO':<18} {'TIMESTAMP'}",
+            thin,
         ]
-        header = (
-            f"Heillon Legal EASY Forensic Executive Summary — Mission `{mission_id}`\nHDR Count: {len(hdrs)}\n"
-        )
-        body = "\n".join(rows)
-        return (header + body).encode("utf-8")
+
+        for hdr in ordered:
+            lines.append(f"  {hdr.hdr_id:<44} {hdr.hdr_type:<18} {hdr.timestamp}")
+
+        # Chain integrity summary
+        if ordered:
+            root = ordered[0]
+            tail = ordered[-1]
+            lines += [
+                "",
+                thin,
+                "  INTEGRIDADE DA CADEIA",
+                thin,
+                f"  Raiz   : {root.hdr_id}",
+                f"  Cauda  : {tail.hdr_id}",
+                f"  Hash raiz  : {getattr(root, 'payload_hash', 'n/a')}",
+                f"  Hash cauda : {getattr(tail, 'payload_hash', 'n/a')}",
+            ]
+
+        lines += [
+            "",
+            thin,
+            "  VERIFICAÇÃO PÚBLICA",
+            thin,
+            f"  Portal : /verification?hdr_id={ordered[-1].hdr_id if ordered else ''}",
+            "  Qualquer tribunal ou terceiro pode validar hashes e carimbos",
+            "  sem autenticação via GET /api/v1/verify/{hdr_id}",
+            "",
+            divider,
+            "  Heillon Legal · hdr.heillon.com · LGPD · ISO 42001:2023",
+            divider,
+        ]
+
+        return "\n".join(lines).encode("utf-8")
 
     @staticmethod
     def generate_json_chain(hdrs: list[HDR]) -> str:

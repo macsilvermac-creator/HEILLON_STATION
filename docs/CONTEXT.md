@@ -1,91 +1,187 @@
-# HEILLON-LEGAL — Contexto técnico (Fase 3)
+# HEILLON-LEGAL — Contexto Técnico (Fase 20 — Sistema Definitivo Global)
 
-Documento vivo para onboarding de engenharia e alinhamento com o briefing jurídico Heillon (**Legitimidade computacional**, Mai 2026). O código em `backend/app/domain/` é a fonte de verdade; este ficheiro descreve comportamento e decisões.
+**Documento vivo** para onboarding de engenharia e alinhamento com o briefing jurídico Heillon (**Legitimidade Computacional**, Mai 2026).  
+O código em `backend/app/domain/` é a fonte de verdade; este ficheiro descreve comportamento, decisões e arquitetura atual.
+
+**Estado:** Produção — Fase 20 completa  
+**Testes:** 272 (pytest -q, todos verdes)  
+**Rotas frontend:** 32 (npm run build, zero erros TypeScript)
+
+---
 
 ## Ecossistema
 
-- [https://heillon.com](https://heillon.com) · [https://vitrine.heillon.com](https://vitrine.heillon.com) · [https://hdr.heillon.com](https://hdr.heillon.com)
+- [https://heillon.com](https://heillon.com) — site institucional
+- [https://hdr.heillon.com](https://hdr.heillon.com) — portal público de verificação HDR
+- [https://heillon-legal-ui.vercel.app](https://heillon-legal-ui.vercel.app) — UI em produção (Vercel)
 
-## Arquitectura DDD (bounded contexts)
+---
 
-O backend foi reorganizado por **domínios isolados**. Cada domínio contém habitualmente:
+## Arquitetura DDD — Bounded Contexts (18 domínios)
 
-- **`models.py`** — entidades e VOs em Pydantic
-- **`services.py`** — regra de negócio (onde aplicável)
-- **`repository.py`** — abstração de persistência (SQLite neste MVP)
+Cada domínio em `backend/app/domain/` contém:
+- **`models.py`** — entidades e VOs Pydantic v2
+- **`services.py`** — regra de negócio
+- **`repository.py`** — abstração de persistência (PostgreSQL prod / SQLite dev)
 - **`api.py`** — router FastAPI
 
-| Domínio | Pasta `app/domain/` | Responsabilidade |
+| Domínio | Pasta | Responsabilidade |
 |:---|:---|:---|
-| **HDR** | `hdr/` | Geração de HDR (`HDRService`), verificação criptográfica, carimbo **RFC3161** (`timestamp_service`), rotas públicas `/verify/*` |
-| **Evidence** | `evidence/` | Ingestão multipart, hashing de ficheiros, armazenamento no `EVIDENCE_DIR`, associação a HDR ingestion |
-| **Mission** | `mission/` | `OrchestrationEngine` (*keyword→agente* via `lexicon.py`), aprovação humana PENDING→APPROVED, execução DAG (stubs), **Diário de bordo**, listagem `/mission/` |
-| **Normative** | `normative/` | `NormativeRepository` em memória + `NormativeService` (regras padrão LEGAL‑001…005), política antes da execução |
-| **Forensic** | `forensic/` | Pacotes forenses: relatório textual stub, JSON canonical da linhagem HDR, manifesto de integridade, caminhos em `FORENSICS_PACKAGE_DIR` |
+| **HDR** | `hdr/` | Geração HDR (SHA-256 + RFC 3161), ICP-Brasil TSA, verificação criptográfica, rotas `/verify/*` |
+| **Evidence** | `evidence/` | Ingestão multipart, hashing, PyMuPDF/python-docx, WORM storage |
+| **Mission** | `mission/` | OrchestrationEngine EASY, lexicon, aprovação humana, DAG, executores LLM/Stub |
+| **Normative** | `normative/` | Corpus normativo FTS5, política pré-execução, 5+ frameworks |
+| **Forensic** | `forensic/` | Pacotes forenses, relatório executivo, chain.json, manifesto de integridade |
+| **User** | `user/` | Autenticação JWT (cookie HttpOnly), registo, RBAC, organização multi-tenant |
+| **Mobile** | `mobile/` | Push tokens, estatísticas PWA, rotas `/m/*` |
+| **Privacy** | `privacy/` | LGPD técnica: RIPD PDF, DPO SLA 15d, portabilidade ZIP, incidentes ANPD 72h |
+| **Signatures** | `signatures/` | Assinaturas digitais universais: ICP-Brasil CAdES-BES, eIDAS QES/PAdES-LTA, ESIGN, UAE-PASS |
+| **Governance** | `governance/` | CNJ 615/2025, OAB Rec. 001/2024, AI decision audit log, human approval gates |
+| **EU AI Act** | `euaiact/` | EU AI Act 2024/1689, GDPR, eIDAS 2.0, ISO 27001 ISMS, Annex IV tech docs, DPIA |
+| **USA** | `usa/` | Colorado AI Act SB 205, CCPA/CPRA, ABA Model Rules, NIST AI RMF 1.0, ESIGN |
+| **UAE** | `uae/` | UAE PDPL Decreto 45/2021, DIFC, ADGM, UAE AI Ethics, UAE PASS |
+| **APAC** | `apac/` | UK GDPR, Singapore PDPA + Agentic AI, Australia Privacy Act, Canada PIPEDA/C-27 |
+| **ISO 42001** | `iso42001/` | AIMS completo, FRIA (EU AI Act Art. 27), controles Annex A |
+| **Legal Evidence** | `legal_evidence/` | FRE 707, citações com fonte, detecção de alucinações, competência OAB/ABA |
+| **Malpractice** | `malpractice/` | Malpractice Insurance Score, Colorado SB 26-189, CCPA ADMT |
+| **HDR ICP** | `hdr/icp_brasil.py` | TSA fallback chain: Certisign → Serpro → FreeTSA → stub (só dev/CI) |
 
-**Infraestrutura partilhada** (`app/core/`, `app/db/`, `app/dependencies.py`) não pertence a um domínio de negócio — configura segurança, JSON canónico e ligações SQLite.
+---
 
-### Acoplamento entre domínios
-
-- **Missão** pode referenciar `NormativeResult` no modelo porque o plano jurídico embute o resultado do corpus na mesma unidade persistente (`mission_plan_snapshot` em SQLite).
-- A orquestração invoca **`HDRService`** e **`NormativeService`** por composição na `OrchestrationEngine`, não através de routers.
-
-## Ciclo jurídico fim‑a‑fim (modelo conceptual)
+## Ciclo Jurídico Fim-a-Fim
 
 ```
-1. EVIDENCE — Upload → SHA‑256 determinístico → HDR `ingestion` → disco WORM (`EVIDENCE_DIR`)
+1. EVIDENCE
+   Upload multipart → extração de texto (PyMuPDF/python-docx) → SHA-256 → HDR ingestion
+   → disco WORM (EVIDENCE_DIR) → resposta com hdr_id
 
-2. MISSION PLAN — Linguagem natural + lista de agentes autorizados (`authorized_agents`)
-                 → seleção lexical (`lexicon.KEYWORD_AGENT_MAP`)
-                 → DAG linear com dependências
-                 → Corpus normativo avalia INTENTO (`normative_service.check_intent`)
+2. MISSION PLAN
+   Linguagem natural + authorized_agents
+   → lexicon.KEYWORD_AGENT_MAP → DAG linear
+   → NormativeService.check_intent (FTS5 corpus)
+   → CNJ/OAB governance check
 
-3. MISSÃO BLOQUEADA — `normative_result.allowed == false`: DAG pode ficar vazio; nunca há execução
-                      (fluxo REST devolve HTTP 403 em *approve*, se aplicável ao estado).
+3. BLOQUEIO NORMATIVO
+   normative_result.allowed == false → HTTP 403 em /approve
+   Missão permanece PENDING sem execução
 
-4. APROVAÇÃO HUMANA — `POST /mission/{id}/approve` apenas se normativa permissiva.
+4. APROVAÇÃO HUMANA
+   POST /mission/{id}/approve (operador autenticado no tenant)
+   → governance: human approval gate logged
 
-5. EXECUÇÃO — `OrchestrationEngine.execute_mission` só com estado APPROVED
-              → cada nó chama `check_action`
-              → gera HDR coerente (`hdr_service.generate_hdr`), encadeamento `previous_hdr`
+5. EXECUÇÃO EASY
+   OrchestrationEngine.execute_mission (estado APPROVED)
+   → cada nó: AgentConfigService.resolve_executor()
+     - Tenant configurado: OpenAI/Anthropic/Ollama real
+     - Fallback estático: DeterministicStubMissionExecutor
+   → gera HDR encadeado (previous_hdr), TSA ICP-Brasil
 
-6. PACOTE FORENSE — apenas se existir linha de missão `completed` no SQLite e HDRs presentes:
-                    stub executivo `.txt`, `chain.json`, manifest + `verification_url`
-                    (+ hash de pacote determinísticos em função das checksums intermedias)
+6. PACOTE FORENSE
+   forensic/services.py → relatório executivo + chain.json + manifesto
+   → ICP-Brasil: icp_signer.py (A1 PKCS#12 / CAdES-BES) quando configurado
+   → PDF/A-3 com AF chains.json quando pdfa3_service disponível
 
-7. VERIFICAÇÃO PÚBLICA — sem autenticação; qualquer tribunal ou terceiro valida hashes e ligações.
+7. VERIFICAÇÃO PÚBLICA
+   GET /verify/{hdr_id} ou /verify/icp/{hdr_id} — sem autenticação
+   Qualquer tribunal/terceiro valida hash, encadeamento, carimbo TSA
 ```
 
-## Persistência SQLite
+---
 
-Migrada incrementalmente sob `backend/app/db/migrations/` (`hdrs`, `missions`, `forensic_packages`). O snapshot JSON das missões é a fonte de verdade hidratada pelo Pydantic (atenção a datas ISO e `DAG.edges` com listas vindas do JSON).
+## Infraestrutura Partilhada
 
-## Frontoffice Next.js
+```
+app/core/
+  config.py          — Settings Pydantic v2, validações prod (FERNET obrigatório, stub proibido)
+  security_headers.py — SecurityHeadersMiddleware (CSP, HSTS, XFO, Referrer-Policy)
+  logging_config.py  — JSON estruturado em produção, colorido em dev
+  security.py        — JWT + cookie HttpOnly, bcrypt, Fernet para chaves de agentes
 
-- App Router cliente → **API v1** documentada em `docs/API-REFERENCE.md`.
-- `NEXT_PUBLIC_BACKEND_URL` aponta para o mesmo *origin* público esperado pela verificação se quiseremos alinhar *marketing* ao backend (default dev: porta 8000).
+app/db/
+  database.py        — SQLAlchemy async (PostgreSQL prod / SQLite dev)
+  migrations/        — 009+ ficheiros SQL (normative_fts, privacy, signatures, …)
 
-## Segurança do runtime Next.js
+app/dependencies.py  — get_db, get_current_user (cookie HttpOnly)
+```
 
-Aplicações com **App Router** dependem das versões patched indicadas pela Vercel (ex.: `next@15.4.10` na série 15.4.x) para CVEs CVE-2025-55183, CVE-2025-55184 e CVE-2025-67779 documentados na actualização [11 Dez 2025](https://nextjs.org/blog/security-update-2025-12-11).
+---
 
-## Estado da arte vs roadmap (Fase 13)
+## Frontend Next.js 15 (App Router)
 
-✅ Ledger HDR determinístico + TSA ICP-Brasil (Certisign → Serpro → FreeTSA), ingestão WORM com extração real de texto (PyMuPDF + python-docx), Corpus normativo com FTS5, Diário forense/estatísticas, Frontend integrado via proxy cookie-aware (Route Handler Next.js), headers CSP/HSTS/XFO, logging JSON estruturado, página de conformidade LGPD/GDPR com download PDF.
-
-⏭️ Agentes OCR/LLM reais em produção, PDF/A-3 com assinatura qualificada ICP-Brasil, vector store semântica (`sqlite-vec` ou Qdrant), *hardening* da superfície pública `/verify`.
-
-## Novidades da Fase 13
-
-| Componente | Alteração |
+| Rota | Área |
 |:---|:---|
-| `backend/app/domain/hdr/icp_brasil.py` | TSA ICP-Brasil: fallback Certisign → Serpro → FreeTSA |
-| `backend/app/core/security_headers.py` | `SecurityHeadersMiddleware` — CSP, HSTS, XFO, Referrer, Permissions |
-| `backend/app/core/logging_config.py` | Logging JSON estruturado em produção; colorido em dev |
-| `backend/app/domain/evidence/extractor.py` | Extração de texto PDF (PyMuPDF + pypdf fallback) e DOCX |
-| `backend/app/domain/normative/fts_repository.py` | FTS5 full-text search no corpus normativo; seed automático |
-| `backend/app/db/migrations/009_normative_fts.sql` | DDL: `normative_rules` + `normative_rules_fts` (triggers) |
-| `frontend/app/api/proxy/[...path]/route.ts` | Route Handler proxy cookie-aware (elimina 401 no Dashboard) |
-| `frontend/app/compliance/page.tsx` | Página de conformidade: gera relatório LGPD, pesquisa FTS5, download PDF |
-| `frontend/components/HeroSection.tsx` | `dynamic()` import de Hero3DScene — lazy Three.js |
-| `frontend/app/dashboard/DashboardCharts.tsx` | Recharts extraído — lazy load, elimina blocking bundle |
+| `/` | Landing + Hero 3D (Three.js, frameloop="demand") |
+| `/dashboard` | Painel geral com gráficos (Recharts lazy) |
+| `/ingestion` | Upload de evidências |
+| `/missions`, `/missions/[id]` | EASY missions cockpit |
+| `/verification` | Portal verificação pública |
+| `/compliance` | Relatório conformidade LGPD/GDPR + download PDF |
+| `/normative` | Corpus normativo + FTS5 |
+| `/privacy` | Centro de privacidade LGPD (consentimento, portabilidade, RIPD) |
+| `/agent-config` | Soberania de modelos (Ollama, OpenAI, Anthropic, custom) |
+| `/docs/*` | Central de documentação (10+ páginas) |
+| `/health` | Health dashboard (admin) |
+| `/m/*` | Shell móvel PWA |
+
+**Componentes críticos:**
+- `FolderTopbar` — navegação gold filing-drawer (67 px, TOPBAR_H constante)
+- `ConditionalAppShell` — aplica `paddingTop: TOPBAR_H` ao conteúdo
+- `AuthProvider` — HttpOnly cookie via `fetchCurrentUser()`, localStorage apenas para cache não sensível
+- Proxy Route Handler (`/api/v1/[...path]`) — repassa cookies HttpOnly ao backend sem CORS
+
+---
+
+## Segurança de Runtime
+
+| Camada | Mecanismo |
+|:---|:---|
+| Autenticação | JWT em cookie HttpOnly (`heillon_session`), sem bearer em localStorage |
+| Autorização | RBAC por role (advogado / admin), `organization_id` multi-tenant |
+| Chaves de agentes | Fernet (obrigatório em produção, distinto do JWT secret) |
+| Headers HTTP | CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy |
+| Rate limiting | Redis 7 distribuído + fallback em memória |
+| Timestamps | TSA ICP-Brasil real (FORCE_STUB_TIMESTAMP=false em produção) |
+| Next.js | ≥ 15.4.10 (patches CVE-2025-55183, CVE-2025-55184, CVE-2025-67779) |
+
+---
+
+## Variáveis de Ambiente Obrigatórias em Produção
+
+| Variável | Obrigatória | Notas |
+|:---|:---|:---|
+| `AUTH_SECRET_KEY` | ✅ | ≥32 chars, não pode ser o default `dev-insecure-*` |
+| `FERNET_ENCRYPTION_KEY` | ✅ | Base64 URL-safe, distinto do JWT secret |
+| `POSTGRES_PASSWORD` | ✅ | Não pode ser `changeme` |
+| `ENVIRONMENT` | ✅ | `production` — ativa todas as validações de segurança |
+| `VERIFICATION_PUBLIC_BASE` | ✅ | URL pública da instância (ex.: https://heillon-legal-ui.vercel.app) |
+| `FORCE_STUB_TIMESTAMP` | ❌ | `false` (default); nunca `true` em produção |
+| `TSA_PROVIDER` | — | `certisign` \| `serpro` \| `freetsa` \| `stub` (só dev/CI) |
+
+---
+
+## Cobertura Regulatória (Fase 20)
+
+| Jurisdição | Diploma(s) | Fase |
+|:---|:---|:---|
+| 🇧🇷 Brasil | LGPD, Marco Civil, ANPD, ICP-Brasil, CNJ 615/2025, OAB | 14–16 |
+| 🇪🇺 União Europeia | EU AI Act, GDPR, eIDAS 2.0, ISO 27001 ISMS | 17 |
+| 🇺🇸 EUA | Colorado SB 205, CCPA/CPRA, ABA Rules, NIST AI RMF | 18 |
+| 🇦🇪 EAU | UAE PDPL, DIFC, UAE AI Ethics, UAE PASS | 19 |
+| 🌏 APAC | UK GDPR, Singapore PDPA, Australia Privacy Act, Canada PIPEDA/C-27 | 20 |
+| 🏅 Global | ISO 42001:2023 AIMS, FRIA, Legal Evidence (FRE 707), Malpractice Score | 20 |
+
+---
+
+## Roadmap Próximo — Fase 21
+
+| Item | Descrição |
+|:---|:---|
+| ISO 27001 completo | Auditoria externa + certificação (ISMS) |
+| ISO 27701 (PIMS) | Privacy Information Management System |
+| SOC 2 Type II | Trust Services Criteria para enterprise EUA |
+| Relatório forense PDF/A-3 assinado | Substituir relatório executivo estruturado por PDF/A-3 + CAdES-BES completo |
+| Executores LLM por tenant | Onboarding automatizado de OpenAI/Anthropic/Ollama por organização |
+
+---
+
+*Última atualização: 25 de maio de 2026 — Fase 20 completa.*

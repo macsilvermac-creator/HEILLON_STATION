@@ -50,7 +50,7 @@ services:
       FORCE_STUB_TIMESTAMP: "false"
       ENVIRONMENT: production
       FORENSICS_PACKAGE_DIR: /app/data/forensics
-      VERIFICATION_PUBLIC_BASE: http://localhost:3000
+      VERIFICATION_PUBLIC_BASE: ${VERIFICATION_PUBLIC_BASE:-https://heillon-legal-ui.vercel.app}
     depends_on:
       postgres:
         condition: service_healthy
