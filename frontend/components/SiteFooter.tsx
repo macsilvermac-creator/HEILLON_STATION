@@ -21,9 +21,9 @@ const FOOTER_COLUMNS = [
   {
     title: "Operação",
     links: [
-      { label: "Missão", href: "/" },
-      { label: "Diário EASY", href: "/diary" },
-      { label: "Verificação", href: "/verification" },
+      { label: "Início", href: "/" },
+      { label: "Diário", href: "/diary" },
+      { label: "Verificação pública", href: "/verification" },
     ],
   },
 ] as const;
@@ -43,8 +43,8 @@ export function SiteFooter() {
             </div>
           </div>
           <p className="mt-4 max-w-sm leading-relaxed text-white/52">
-            Plataforma de legitimidade computacional com HDR Ledger, Corpus Normativo e conformidade jurídica integrada —
-            desenvolvimento contínuo (MVP).
+            Auditoria criptográfica do uso de IA em direito. Registro forense (HDR), corpus normativo
+            multi-jurisdição e timestamp qualificado ICP-Brasil — desenvolvimento contínuo (MVP).
           </p>
         </div>
         {FOOTER_COLUMNS.map((col) => (

@@ -48,19 +48,19 @@ const G = {
 interface NavItem { href: string; label: string; adminOnly?: boolean }
 
 const NAV: NavItem[] = [
-  { href: "/",              label: "Missão"       },
-  { href: "/dashboard",    label: "Painel"        },
-  { href: "/ingestion",    label: "Evidências"    },
-  { href: "/missions",     label: "Missões"       },
-  { href: "/verification", label: "Verificar"     },
-  { href: "/compliance",   label: "Conformidade"  },
-  { href: "/normative",    label: "Normativo"     },
-  { href: "/privacy",      label: "Privacidade"   },
-  { href: "/docs",         label: "Docs"          },
-  { href: "/agent-config", label: "Modelos"       },
-  { href: "/diary",        label: "Diário"        },
-  { href: "/m",            label: "Mobile"        },
-  { href: "/health",       label: "Health",       adminOnly: true },
+  { href: "/",              label: "Início"        },
+  { href: "/dashboard",    label: "Painel"         },
+  { href: "/ingestion",    label: "Evidências"     },
+  { href: "/missions",     label: "Casos"          },
+  { href: "/verification", label: "Verificar"      },
+  { href: "/compliance",   label: "Conformidade"   },
+  { href: "/normative",    label: "Normas"         },
+  { href: "/privacy",      label: "Privacidade"    },
+  { href: "/docs",         label: "Docs"           },
+  { href: "/agent-config", label: "Modelos de IA"  },
+  { href: "/diary",        label: "Diário"         },
+  { href: "/m",            label: "Mobile"         },
+  { href: "/health",       label: "Health",        adminOnly: true },
 ];
 
 // ── SVG icons ─────────────────────────────────────────────────────────────────

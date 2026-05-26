@@ -51,6 +51,14 @@ export const DOC_ENTRIES: DocEntryMeta[] = [
     searchBlob:
       "regulatório conformidade lgpd eu ai act gdpr eidas ccpa colorado oab cnj uae pdpl singapore australia iso 42001 apac jurisdições",
   },
+  {
+    href: "/docs/glossary",
+    title: "Glossário — vernáculo jurídico",
+    category: "start",
+    description: "Tradução dos termos técnicos (HDR, Caso, Cadeia de Custódia) para o português jurídico.",
+    searchBlob:
+      "glossário glossario dicionario termos técnicos hdr caso missão cadeia custódia conformidade auditada legitimidade computacional icp-brasil ripd dpia soberania modelos vernáculo jurídico tradução",
+  },
 
   // ── Manuais ────────────────────────────────────────────────────────────────
   {

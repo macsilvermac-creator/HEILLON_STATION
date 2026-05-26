@@ -31,8 +31,8 @@ export default function MobileMissionsListPage() {
 
   return (
     <div className="px-5">
-      <h1 className="text-lg font-semibold text-white">Missões EASY</h1>
-      <p className="mt-1 text-xs text-white/45">Toca para cronologia HDR compacto.</p>
+      <h1 className="text-lg font-semibold text-white">Casos</h1>
+      <p className="mt-1 text-xs text-white/45">Toca para ver a cadeia de auditoria de IA do caso.</p>
       {err ? <p className="mt-4 text-xs text-rose-300">{err}</p> : null}
       <ul className="mt-8 space-y-2 pb-36">
         {rows.map((m) =>

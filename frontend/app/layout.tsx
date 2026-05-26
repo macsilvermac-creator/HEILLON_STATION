@@ -22,8 +22,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Heillon Legal · Soberania de Modelos",
-  description: "Plataforma de legitimidade computacional com HDR Ledger, UI elite e soberania IA.",
+  title: {
+    default: "Heillon Legal · Auditoria forense de IA jurídica",
+    template: "%s",
+  },
+  description:
+    "Plataforma de auditoria criptográfica do uso de IA em advocacia, judiciário e perícia. Cadeia de custódia com timestamp ICP-Brasil, corpus normativo LGPD/GDPR/EU AI Act/CNJ 615.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

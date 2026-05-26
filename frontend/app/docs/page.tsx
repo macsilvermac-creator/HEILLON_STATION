@@ -36,7 +36,7 @@ export default function DocsHubPage() {
             <p className="mt-4 max-w-3xl text-sm leading-relaxed text-white/62">
               Manuais operacionais completos, guias regulatórios globais (LGPD, EU AI Act, ISO 42001, APAC),
               arquitetura técnica e FAQ por perfil — tudo o que precisa para operar o Heillon Legal
-              com legitimidade computacional plena.
+              com auditoria forense completa do uso de IA.
             </p>
           </div>
 

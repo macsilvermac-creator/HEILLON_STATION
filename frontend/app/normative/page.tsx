@@ -54,10 +54,10 @@ export default function NormativeHubPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 pb-36 pt-28">
       <div>
-        <h1 className="text-gradient text-3xl font-semibold tracking-tight">Hub normativo — âncoras de legitimidade</h1>
+        <h1 className="text-gradient text-3xl font-semibold tracking-tight">Hub normativo — corpus jurídico de auditoria</h1>
         <p className="mt-3 max-w-3xl text-sm text-white/60">
-          Âncoras normativas ativas em cada análise; relatórios de conformidade LGPD ligam os registos de custódia aos
-          artigos registados neste quadro jurídico.
+          Normas ativas em cada análise. Relatórios de conformidade ligam os registos de auditoria de IA
+          aos artigos legais (LGPD, GDPR, EU AI Act, CNJ 615, OAB 001, ISO 42001) deste quadro jurídico.
         </p>
       </div>
 
