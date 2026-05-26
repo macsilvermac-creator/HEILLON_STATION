@@ -11,7 +11,7 @@
  *
  * Design rules:
  *  • Single colour — gold (#D4AF37 palette) for all tabs
- *  • Compact — 48 px total height, tabs 28 px inside the strip
+ *  • Compact — 67 px total height, tabs 28 px inside the strip
  *  • No sidebar, no collapse button, no colour-per-section
  *  • Fullscreen toggle on the far right
  *
@@ -27,7 +27,7 @@ import { useAuth } from "@/lib/auth-context";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-export const TOPBAR_H = 48; // px — total height, used by ConditionalAppShell
+export const TOPBAR_H = 67; // px — total height, used by ConditionalAppShell
 
 // ── Colour tokens (all gold, single palette) ───────────────────────────────────
 
