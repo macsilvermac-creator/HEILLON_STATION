@@ -32,15 +32,15 @@ export const TOPBAR_H = 48; // px — total height, used by ConditionalAppShell
 // ── Colour tokens (all gold, single palette) ───────────────────────────────────
 
 const G = {
-  active_bg:      "rgba(212,175,55,0.92)",
-  active_text:    "#050914",
-  inactive_bg:    "rgba(212,175,55,0.07)",
-  inactive_text:  "rgba(212,175,55,0.65)",
-  hover_bg:       "rgba(212,175,55,0.16)",
-  hover_text:     "rgba(212,175,55,0.95)",
-  border:         "rgba(212,175,55,0.22)",
-  rim:            "rgba(212,175,55,0.20)",   // bottom "drawer rim" line
-  strip_bg:       "rgba(5,9,20,0.88)",
+  active_bg:      "rgba(212,175,55,0.93)",
+  active_text:    "#040810",
+  inactive_bg:    "rgba(212,175,55,0.06)",
+  inactive_text:  "rgba(212,175,55,0.60)",
+  hover_bg:       "rgba(212,175,55,0.14)",
+  hover_text:     "rgba(212,175,55,0.96)",
+  border:         "rgba(212,175,55,0.28)",   // slightly more visible folder edges
+  rim:            "rgba(212,175,55,0.30)",   // brighter drawer rim line
+  strip_bg:       "rgba(4,7,18,0.92)",       // deeper, richer dark
 };
 
 // ── Nav catalogue ──────────────────────────────────────────────────────────────
@@ -116,7 +116,7 @@ function FullscreenBtn() {
       onClick={toggle}
       aria-label={full ? "Sair de ecrã inteiro" : "Ecrã inteiro"}
       title={full ? "Sair de ecrã inteiro" : "Ecrã inteiro"}
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[rgba(212,175,55,0.5)] transition-colors hover:text-[rgba(212,175,55,0.9)]"
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[rgba(212,175,55,0.65)] transition-colors hover:text-[rgba(212,175,55,0.95)]"
     >
       <span className="h-4 w-4">
         {full ? <IcoExitFullscreen /> : <IcoFullscreen />}
@@ -163,13 +163,19 @@ function FolderTab({ item, active, onClick }: FolderTabProps) {
           : hovered
           ? G.hover_text
           : G.inactive_text,
-        // Subtle specular highlight on the top edge
+        // Specular highlight — strong on active (folder ear catching light), soft on hover
         backgroundImage: active
-          ? "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 60%)"
+          ? "linear-gradient(180deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.04) 55%, rgba(0,0,0,0) 100%)"
           : hovered
-          ? "linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0) 60%)"
+          ? "linear-gradient(180deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 60%)"
           : "none",
-        transition: "background 0.18s ease, color 0.18s ease, border-color 0.18s ease",
+        transition: "background 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
+        // Active tab: top glow gives a "lit folder ear" look; no bottom border creates open-folder illusion
+        boxShadow: active
+          ? "0 -2px 10px rgba(212,175,55,0.18), inset 0 1px 0 rgba(255,255,255,0.2)"
+          : hovered
+          ? "0 -1px 6px rgba(212,175,55,0.08)"
+          : "none",
         // Active tab sits flush with the strip bottom border (marginBottom -1px
         // so it visually overlaps the rim line, creating the "open folder" illusion)
         marginBottom: active ? "-1px" : "0",
@@ -226,8 +232,8 @@ export function FolderTopbar() {
           backdropFilter: "blur(28px)",
           WebkitBackdropFilter: "blur(28px)",
           borderBottom: `1px solid ${G.rim}`,
-          // Subtle bottom shadow to lift the topbar off the page
-          boxShadow: "0 2px 24px rgba(0,0,0,0.45), 0 1px 0 rgba(212,175,55,0.08) inset",
+          // Shadow lifts topbar; inner glow reinforces the "drawer rim"
+          boxShadow: "0 4px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(212,175,55,0.18) inset, 0 -1px 0 rgba(212,175,55,0.06) inset",
         }}
       >
         {/* ── Logo ── */}
@@ -237,16 +243,20 @@ export function FolderTopbar() {
           className="flex shrink-0 items-center gap-2 self-center px-4"
         >
           <span
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[13px] font-bold text-deep-space-900"
-            style={{ background: "linear-gradient(135deg,#F0E0A0,#D4AF37)" }}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[13px] font-bold"
+            style={{
+              background: "linear-gradient(135deg,#EDD97A,#C9A227)",
+              color: "#050A18",
+              boxShadow: "0 1px 6px rgba(212,175,55,0.35), inset 0 1px 0 rgba(255,255,255,0.25)",
+            }}
           >
             H
           </span>
           <div className="hidden flex-col leading-none sm:flex">
-            <span className="text-[8px] font-semibold uppercase tracking-[0.25em] text-white/35">
+            <span className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/40">
               Legal
             </span>
-            <span className="text-[12px] font-semibold tracking-tight text-white/80">
+            <span className="text-[12px] font-semibold tracking-tight text-white/85">
               Heillon
             </span>
           </div>
