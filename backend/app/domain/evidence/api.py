@@ -24,6 +24,24 @@ router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 _hdr_repository = HDRRepository()
 _evidence_filesystem = EvidenceRepository()
 
+# DoS protection: cap upload at 50 MB and gate by MIME allowlist
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
+ALLOWED_MIME_TYPES = frozenset(
+    {
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
+        "application/msword",  # .doc legacy
+        "text/plain",
+        "text/csv",
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+        "application/json",
+        "application/zip",
+        "application/octet-stream",  # fallback for forensic raw artefacts
+    }
+)
+
 
 @router.post("", response_model=IngestionResponse)
 async def ingest_evidence_file(
@@ -44,8 +62,24 @@ async def ingest_evidence_file(
 
     settings = runtime_config.get_settings()
 
+    # SECURITY: validate MIME type before reading bytes (defense against DoS)
+    if file.content_type and file.content_type not in ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=(
+                f"Content-Type '{file.content_type}' não permitido. "
+                f"Tipos aceites: {', '.join(sorted(ALLOWED_MIME_TYPES))}"
+            ),
+        )
+
     inferred_mission_id = mission_id or f"mission_{uuid4()}"
-    file_bytes = await file.read()
+    # SECURITY: bounded read to prevent memory-exhaustion DoS
+    file_bytes = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(file_bytes) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Arquivo excede o limite de {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.",
+        )
 
     checksum = generate_hash(file_bytes)
     extracted_text = await run_in_threadpool(extract_text, file.filename or "", file_bytes)

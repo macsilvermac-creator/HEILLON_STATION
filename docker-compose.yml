@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: heillon
       POSTGRES_USER: heillon
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obrigatório — sem default em produção}
     ports:
       - "5432:5432"
     volumes:
@@ -42,11 +42,11 @@ services:
       POSTGRES_PORT: "5432"
       POSTGRES_DB: heillon
       POSTGRES_USER: heillon
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obrigatório}
       POSTGRES_SSL_MODE: disable
       REDIS_URL: redis://redis:6379/0
-      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:-dev-insecure-heillon-secret-change-in-production-min-32-characters-long}
-      FERNET_ENCRYPTION_KEY: ${FERNET_ENCRYPTION_KEY:-}
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?AUTH_SECRET_KEY obrigatório — mínimo 32 chars}
+      FERNET_ENCRYPTION_KEY: ${FERNET_ENCRYPTION_KEY:?FERNET_ENCRYPTION_KEY obrigatório (gerar com Fernet.generate_key())}
       FORCE_STUB_TIMESTAMP: "false"
       ENVIRONMENT: production
       FORENSICS_PACKAGE_DIR: /app/data/forensics

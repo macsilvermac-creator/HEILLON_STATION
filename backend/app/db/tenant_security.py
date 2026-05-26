@@ -44,13 +44,38 @@ CREATE POLICY tenant_isolation_users ON users
 def set_tenant_context(conn: Any, organization_id: str) -> None:
     """Set per-session variable consumed by RLS policies.
 
+    SECURITY: The third arg ``true`` makes the setting **transaction-local**:
+    it is automatically rolled back at COMMIT/ROLLBACK, preventing tenant
+    bleeding when the connection is returned to a pool and re-used by another
+    request. Callers MUST be inside an explicit transaction (FastAPI dependency
+    wraps each request in BEGIN/COMMIT).
+
+    Previous behaviour (``false``, session-scoped) could leak organization_id
+    across requests sharing a pooled connection. See security audit Fix #5.
+
     ``conn`` must be a ``CompatConnection`` — the execute() wrapper handles
     the ``?`` → ``%s`` placeholder translation for PostgreSQL.
     """
     conn.execute(
-        "SELECT set_config('app.current_organization_id', ?, false)",
+        "SELECT set_config('app.current_organization_id', ?, true)",
         (organization_id,),
     )
+
+
+def reset_tenant_context(conn: Any) -> None:
+    """Best-effort safeguard: clear tenant context on connection release.
+
+    Defense-in-depth complement to ``SET LOCAL``. Call from connection close /
+    dependency teardown. Safe to call multiple times; safe to call on SQLite
+    (no-op since SQLite ignores ``set_config``).
+    """
+    try:
+        conn.execute(
+            "SELECT set_config('app.current_organization_id', '', false)",
+            (),
+        )
+    except Exception:  # noqa: BLE001 - best-effort; never block teardown
+        pass
 
 
 def apply_rls_if_enabled(conn: Any, *, enabled: bool) -> None:

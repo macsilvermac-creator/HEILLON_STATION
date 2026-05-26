@@ -135,8 +135,24 @@ def login_operator(
 
 
 @router.post("/logout")
-def logout_operator() -> JSONResponse:
-    """Clear HttpOnly session cookie (JSON body remains compatible with proxies)."""
+def logout_operator(
+    request: Request,
+    auth_service: AuthService = Depends(get_auth_service),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_credentials),
+) -> JSONResponse:
+    """Revoke JWT server-side (Redis blacklist by jti) AND clear HttpOnly cookie.
+
+    Token continues invalid until natural expiry even if intercepted (defense in
+    depth: cookie clear + bearer token blacklisted).
+    """
+
+    token: str | None = None
+    if credentials is not None:
+        token = credentials.credentials
+    if token is None:
+        token = request.cookies.get(AUTH_COOKIE_NAME)
+    if token is not None:
+        auth_service.revoke_token(token)
 
     response = JSONResponse(content={"detail": "Sessão terminada."}, status_code=status.HTTP_200_OK)
     response.delete_cookie(key=AUTH_COOKIE_NAME, path="/")

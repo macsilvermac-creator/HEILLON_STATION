@@ -76,21 +76,30 @@ jobs:
       - name: Install tools
         run: pip install bandit pip-audit
 
-      - name: bandit SAST scan
+      - name: bandit SAST — HIGH severity gate (CI fails)
+        run: |
+          bandit -r app \
+            --severity-level high \
+            --confidence-level high \
+            --exclude app/tests \
+            -f txt
+        continue-on-error: false
+
+      - name: bandit SAST — MEDIUM/LOW (informational only)
         run: |
           bandit -r app \
             --severity-level medium \
             --confidence-level medium \
             --exclude app/tests \
             -f txt \
-            || true   # report but don't block
+            || echo "::warning::bandit found MEDIUM/LOW findings — review above"
         continue-on-error: true
 
-      - name: pip-audit (CVE scan)
+      - name: pip-audit (CVE scan — fails on any vulnerability)
         run: |
           pip install -r requirements.txt
-          pip-audit --desc --output-format columns || true
-        continue-on-error: true
+          pip-audit --desc --output-format columns
+        continue-on-error: false
 
   # ──────────────────────────────────────────────────────────────────────────
   # 3. BACKEND TESTS — SQLite (fast, no services)
