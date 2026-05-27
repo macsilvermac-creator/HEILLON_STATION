@@ -13,6 +13,8 @@ from app.core.security import generate_hash
 from app.domain.hdr.models import HDR
 from app.domain.hdr.repository import HDRRepository
 from app.domain.hdr.services import HDRService
+from app.domain.tier.dependencies import enforce_hdr_quota
+from app.domain.tier.models import QuotaSnapshot
 from app.domain.user.models import UserRecord
 from app.domain.evidence.extractor import extract_text
 from app.domain.evidence.models import IngestionResponse
@@ -57,8 +59,13 @@ async def ingest_evidence_file(
     conn=Depends(database_dependency),
     hdr_service: HDRService = Depends(hdr_service_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
+    quota: QuotaSnapshot = Depends(enforce_hdr_quota),  # 402 if exceeded
 ) -> IngestionResponse:
-    """Hash evidence bytes, persist WORM artefacts, mint HDR ingestion record."""
+    """Hash evidence bytes, persist WORM artefacts, mint HDR ingestion record.
+
+    Quota: each successful ingestion counts as 1 HDR against the org's monthly
+    limit. Returns HTTP 402 Payment Required if the org has exhausted its tier.
+    """
 
     settings = runtime_config.get_settings()
 

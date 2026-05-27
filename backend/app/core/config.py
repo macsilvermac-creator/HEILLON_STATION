@@ -104,6 +104,14 @@ class Settings(BaseSettings):
         default="",
         description="Password for the PKCS#12 ICP-Brasil A1 certificate (empty = no password).",
     )
+    # Freemium Fase 26 — billing webhook from external marketing site
+    BILLING_WEBHOOK_SECRET: str = Field(
+        default="",
+        description=(
+            "HMAC-SHA256 secret for /api/v1/billing/webhook. When empty, the "
+            "webhook endpoint returns 503 (disabled). Set in production."
+        ),
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

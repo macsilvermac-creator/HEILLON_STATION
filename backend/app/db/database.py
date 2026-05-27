@@ -203,17 +203,24 @@ def _seed_corpus_if_needed(conn: Any) -> None:
 
 
 def insert_hdr(conn: Any, hdr: HDR, *, organization_id: str | None = None) -> None:
-    """Insert immutable HDR enforcing primary key collisions."""
+    """Insert immutable HDR enforcing primary key collisions.
+
+    `created_at` is set server-side (UTC ISO-8601) for quota counting and
+    retention purge. Distinct from `timestamp_iso` (HDR's own client-set ts).
+    """
+
+    from datetime import datetime, timezone
 
     tenant = organization_id or "org_default"
     payload = hdr.model_dump_json()
+    server_created_at = datetime.now(timezone.utc).isoformat()
 
     conn.execute(
         """INSERT INTO hdrs (
                    hdr_id, mission_id, previous_hdr,
                    hdr_type, timestamp_iso, canonical_hash,
-                   payload, organization_id
-               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                   payload, organization_id, created_at
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             hdr.hdr_id,
@@ -224,6 +231,7 @@ def insert_hdr(conn: Any, hdr: HDR, *, organization_id: str | None = None) -> No
             hdr.canonical_hash,
             payload,
             tenant,
+            server_created_at,
         ),
     )
 

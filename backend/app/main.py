@@ -44,6 +44,8 @@ from app.domain.iso42001.api import router as iso42001_router
 from app.domain.legal_evidence.api import router as legal_evidence_router
 from app.domain.apac.api import router as apac_router
 from app.domain.malpractice.api import router as malpractice_router
+from app.domain.tier.api import router_billing as billing_router
+from app.domain.tier.api import router_quota as quota_router
 from app.domain.user.api import router as identity_router
 from app.domain.user.services import AuthService
 
@@ -170,6 +172,8 @@ def create_application() -> FastAPI:
     application.include_router(legal_evidence_router, prefix=api_prefix)
     application.include_router(apac_router, prefix=api_prefix)
     application.include_router(malpractice_router, prefix=api_prefix)
+    application.include_router(quota_router, prefix=api_prefix)
+    application.include_router(billing_router, prefix=api_prefix)
     application.include_router(health_router)
     application.include_router(health_router, prefix=api_prefix)
 
