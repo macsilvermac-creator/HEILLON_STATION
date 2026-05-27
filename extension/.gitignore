@@ -1,0 +1,18 @@
+# Build artifacts
+dist/
+*.zip
+*.crx
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Local
+node_modules/
+.env
+.env.local

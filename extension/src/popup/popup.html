@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heillon — Status</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">
+      <span class="brand-dot"></span>
+      Heillon Legal
+    </span>
+    <button id="open-options" class="link" aria-label="Abrir opções">⚙</button>
+  </header>
+
+  <section id="status" class="status">
+    <p id="status-message" class="status-message">Carregando…</p>
+  </section>
+
+  <section id="quota-card" class="card hidden">
+    <p class="card-label">Plano</p>
+    <p class="card-value" id="tier-value">—</p>
+    <div class="quota-row">
+      <div>
+        <p class="card-label">Capturados este mês</p>
+        <p class="card-value" id="quota-used">—</p>
+      </div>
+      <div>
+        <p class="card-label">Limite</p>
+        <p class="card-value" id="quota-limit">—</p>
+      </div>
+    </div>
+    <div class="progress" aria-hidden="true">
+      <div id="progress-bar" class="progress-bar"></div>
+    </div>
+  </section>
+
+  <section class="card recent">
+    <p class="card-label">Últimos registos auditados</p>
+    <ul id="recent-list" class="recent-list">
+      <li class="empty">Nenhum registo ainda.</li>
+    </ul>
+  </section>
+
+  <footer class="footer">
+    <button id="refresh" class="btn-secondary">Atualizar</button>
+    <a id="open-console" class="btn-primary" target="_blank" rel="noopener noreferrer">Abrir Console →</a>
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

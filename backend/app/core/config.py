@@ -51,6 +51,13 @@ class Settings(BaseSettings):
     )
     API_V1_PREFIX: str = "/api/v1"
     CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    CORS_ORIGIN_REGEX: str = Field(
+        default=r"^chrome-extension://[a-z]{32}$|^moz-extension://[0-9a-f-]{36}$",
+        description=(
+            "Regex for additional allowed origins (browser extensions). "
+            "Default permits Chrome (32-char IDs) and Firefox (UUID-like) extension origins."
+        ),
+    )
     FORENSICS_PACKAGE_DIR: Path = Field(default_factory=lambda: Path("data/forensic_packages"))
     VERIFICATION_PUBLIC_BASE: str = "http://127.0.0.1:8000"
 

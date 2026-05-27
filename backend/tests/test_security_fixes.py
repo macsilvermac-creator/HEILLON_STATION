@@ -34,6 +34,15 @@ def test_derived_fernet_key_differs_from_jwt_material():
     assert s.FERNET_ENCRYPTION_KEY == _derive_fernet_key_from_auth(s.AUTH_SECRET_KEY)
 
 
-def test_production_requires_explicit_fernet():
+def test_production_requires_explicit_fernet(monkeypatch: pytest.MonkeyPatch):
+    # Clear any pollution from other tests/smoke runs that may have set these.
+    for var in (
+        "FERNET_ENCRYPTION_KEY",
+        "FERNET_ENCRYPTION_KEY_LEGACY",
+        "FORCE_STUB_TIMESTAMP",
+        "DISABLE_RATE_LIMIT",
+        "MISSION_ROUTES_REQUIRE_AUTH",
+    ):
+        monkeypatch.delenv(var, raising=False)
     with pytest.raises(ValidationError, match="FERNET_ENCRYPTION_KEY is mandatory"):
         Settings(ENVIRONMENT="production", FERNET_ENCRYPTION_KEY="", AUTH_SECRET_KEY="x" * 40)

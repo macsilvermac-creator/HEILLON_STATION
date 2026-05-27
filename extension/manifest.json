@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "Heillon Legal — Auditoria de IA Jurídica",
+  "short_name": "Heillon",
+  "version": "0.1.0",
+  "description": "Auditoria criptográfica do uso de IA jurídica. Cadeia de custódia HDR + selo ICP-Brasil — invisível no uso, defensável em juízo.",
+  "author": "Heillon Legal",
+  "homepage_url": "https://heillon.com",
+
+  "minimum_chrome_version": "114",
+
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "Heillon Legal — status da auditoria",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+
+  "background": {
+    "service_worker": "src/background/sw.js",
+    "type": "module"
+  },
+
+  "options_page": "src/options/options.html",
+
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+
+  "host_permissions": [
+    "https://chat.openai.com/*",
+    "https://chatgpt.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": ["https://chat.openai.com/*", "https://chatgpt.com/*"],
+      "js": ["src/content/notifier.js", "src/content/adapters/chatgpt.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://claude.ai/*"],
+      "js": ["src/content/notifier.js", "src/content/adapters/claude.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://gemini.google.com/*"],
+      "js": ["src/content/notifier.js", "src/content/adapters/gemini.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

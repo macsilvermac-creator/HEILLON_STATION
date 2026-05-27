@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heillon — Opções</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Heillon Legal — Configuração</h1>
+      <p class="lead">A extensão captura interações com IA jurídica e envia para o substrato Heillon. Configure abaixo.</p>
+    </header>
+
+    <section class="card">
+      <h2>1. Conexão</h2>
+      <label for="server-url">URL do servidor Heillon</label>
+      <input type="url" id="server-url" placeholder="https://api.heillon.com" autocomplete="off">
+      <p class="help">Use <code>http://127.0.0.1:8000</code> para desenvolvimento local.</p>
+
+      <label for="api-key">Chave de API (<code>heillon_live_…</code>)</label>
+      <input type="password" id="api-key" placeholder="heillon_live_…" autocomplete="off">
+      <p class="help">Gere em <a id="link-keys" target="_blank" rel="noopener noreferrer">Console → Conta → Chaves de API</a>.</p>
+
+      <button id="save-connection" class="btn-primary">Salvar e testar</button>
+      <p id="connection-status" class="status" role="status"></p>
+    </section>
+
+    <section class="card">
+      <h2>2. Provedores de IA monitorizados</h2>
+      <p class="help">Desmarque os provedores em que NÃO quer que a extensão capture interações (opt-out).</p>
+      <label class="toggle">
+        <input type="checkbox" id="opt-openai">
+        <span>OpenAI (ChatGPT)</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="opt-anthropic">
+        <span>Anthropic (Claude)</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="opt-google">
+        <span>Google (Gemini)</span>
+      </label>
+      <p class="help">Mudanças são aplicadas imediatamente — sem necessidade de recarregar a página.</p>
+    </section>
+
+    <section class="card privacy">
+      <h2>3. Privacidade</h2>
+      <ul>
+        <li>A chave de API fica armazenada APENAS neste dispositivo (chrome.storage.local).</li>
+        <li>Prompts e respostas são enviados apenas para o servidor configurado.</li>
+        <li>Cada captura gera 1 HDR com selo ICP-Brasil — consulte em <a id="link-quota" target="_blank" rel="noopener noreferrer">Console → Conta</a>.</li>
+        <li>Para parar imediatamente: desmarque todos os provedores acima ou apague a chave.</li>
+      </ul>
+    </section>
+
+    <section class="card stats">
+      <h2>4. Estatísticas locais</h2>
+      <div class="stats-grid">
+        <div>
+          <p class="card-label">Total capturado</p>
+          <p class="card-value" id="metric-total">—</p>
+        </div>
+        <div>
+          <p class="card-label">Hoje</p>
+          <p class="card-value" id="metric-today">—</p>
+        </div>
+        <div>
+          <p class="card-label">Erros</p>
+          <p class="card-value" id="metric-errors">—</p>
+        </div>
+      </div>
+      <p class="help" id="metric-last-error"></p>
+    </section>
+  </main>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>
