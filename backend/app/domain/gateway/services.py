@@ -1,14 +1,19 @@
 """Gateway forwarding service.
 
 We use httpx.AsyncClient for upstream calls (no blocking I/O). HDR creation
-runs in a FastAPI BackgroundTask so the response returns to the client as
-fast as the upstream allows.
+runs synchronously in the request so X-Heillon-Hdr-Id can be returned in
+response headers (non-streaming) or via SSE comment (streaming).
+
+Streaming (F31.1): forward_chat_completion_stream yields SSE bytes verbatim
+to the client while a StreamAccumulator captures delta.content in parallel.
+After the stream ends, caller reads accumulator.text and creates the HDR.
 """
 
 from __future__ import annotations
 
+import json
 import logging
-from typing import Any
+from typing import Any, AsyncIterator
 
 import httpx
 
@@ -107,3 +112,129 @@ def extract_response_text(response: ChatCompletionResponse) -> str:
         if content:
             parts.append(content)
     return "\n\n---\n\n".join(parts) if parts else "(empty response)"
+
+
+# ── Streaming (F31.1) ────────────────────────────────────────────────────────
+
+
+class StreamAccumulator:
+    """Captures delta.content fragments as they stream through.
+
+    Single-stream, not thread-safe; one per request. Caller reads `text`
+    after the streaming generator exhausts, then persists HDR.
+    """
+
+    __slots__ = ("_parts", "had_error", "upstream_status")
+
+    def __init__(self) -> None:
+        self._parts: list[str] = []
+        self.had_error: bool = False
+        self.upstream_status: int = 0
+
+    def append(self, fragment: str) -> None:
+        if fragment:
+            self._parts.append(fragment)
+
+    @property
+    def text(self) -> str:
+        return "".join(self._parts) if self._parts else "(empty streamed response)"
+
+
+def _parse_sse_data_line(line: str) -> dict[str, Any] | None:
+    """Parse 'data: {...}' → dict. Returns None for [DONE], comments, or invalid JSON."""
+    if not line.startswith("data:"):
+        return None
+    payload = line[len("data:"):].strip()
+    if not payload or payload == "[DONE]":
+        return None
+    try:
+        return json.loads(payload)
+    except json.JSONDecodeError:
+        return None
+
+
+def _extract_delta_content(parsed_chunk: dict[str, Any]) -> str | None:
+    """OpenAI stream chunk → assistant delta.content fragment (if any)."""
+    choices = parsed_chunk.get("choices") or []
+    for choice in choices:
+        delta = choice.get("delta") or {}
+        content = delta.get("content")
+        if isinstance(content, str) and content:
+            return content
+    return None
+
+
+async def forward_chat_completion_stream(
+    *,
+    request_body: dict[str, Any],
+    upstream: GatewayUpstreamConfig,
+    accumulator: StreamAccumulator,
+) -> AsyncIterator[bytes]:
+    """Yield SSE bytes verbatim from upstream while accumulating delta.content.
+
+    Caller responsibilities:
+    - Pass an empty StreamAccumulator that will be populated as chunks flow
+    - After generator exhausts: read accumulator.text to persist HDR
+    - Check accumulator.had_error for upstream non-2xx (HDR not created in that case)
+
+    Connection/timeout failures surface as a synthetic SSE error event so
+    OpenAI-compatible clients can handle them in their event loop instead of
+    seeing an opaque connection drop.
+    """
+    url = f"{upstream.upstream_base_url}/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {upstream.upstream_api_key}",
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream",
+        "User-Agent": "HeillonGateway/1.0",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT) as client:
+            async with client.stream(
+                "POST", url, headers=headers, json=request_body
+            ) as response:
+                accumulator.upstream_status = response.status_code
+
+                if response.status_code >= 400:
+                    accumulator.had_error = True
+                    raw = await response.aread()
+                    try:
+                        err_payload = json.loads(raw.decode("utf-8"))
+                    except Exception:  # noqa: BLE001
+                        err_payload = {
+                            "error": {
+                                "message": raw.decode("utf-8", errors="replace")[:500],
+                                "type": "upstream_error",
+                            }
+                        }
+                    yield f"data: {json.dumps(err_payload)}\n\n".encode("utf-8")
+                    yield b"data: [DONE]\n\n"
+                    return
+
+                async for line in response.aiter_lines():
+                    # httpx aiter_lines strips the trailing newline; reassemble SSE format.
+                    # Per SSE spec, events are terminated by a blank line.
+                    if line == "":
+                        yield b"\n"
+                        continue
+
+                    # Accumulate content chunks in parallel with forwarding
+                    parsed = _parse_sse_data_line(line)
+                    if parsed is not None:
+                        delta = _extract_delta_content(parsed)
+                        if delta:
+                            accumulator.append(delta)
+
+                    yield (line + "\n").encode("utf-8")
+    except httpx.HTTPError as exc:
+        logger.warning("Streaming upstream HTTP error: %s", exc)
+        accumulator.had_error = True
+        err_payload = {
+            "error": {
+                "message": f"Upstream unreachable: {exc}",
+                "type": "heillon_gateway_error",
+            }
+        }
+        yield f"data: {json.dumps(err_payload)}\n\n".encode("utf-8")
+        yield b"data: [DONE]\n\n"

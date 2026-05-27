@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import tempfile
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
@@ -116,12 +116,73 @@ def test_gateway_requires_upstream_api_key():
     assert "X-Upstream-Api-Key" in r.json()["detail"]
 
 
-# ── 3. stream=true rejected with 400 ───────────────────────────────────────────
+# ── 3. Streaming: forwards SSE + accumulates + creates HDR + emits metadata ──
 
 
-def test_gateway_rejects_streaming_in_mvp():
+def _mock_streaming_sse_lines():
+    """Standard OpenAI streaming SSE chunks (3 deltas + finish + [DONE])."""
+    return [
+        'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","created":1700000000,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{"role":"assistant","content":"O "},"finish_reason":null}]}',
+        "",
+        'data: {"id":"chatcmpl-1","choices":[{"index":0,"delta":{"content":"art. "},"finish_reason":null}]}',
+        "",
+        'data: {"id":"chatcmpl-1","choices":[{"index":0,"delta":{"content":"7º LGPD."},"finish_reason":null}]}',
+        "",
+        'data: {"id":"chatcmpl-1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}',
+        "",
+        "data: [DONE]",
+        "",
+    ]
+
+
+class _FakeAsyncLineIterator:
+    """httpx response.aiter_lines() async iterator stand-in."""
+
+    def __init__(self, lines):
+        self._lines = list(lines)
+        self._i = 0
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if self._i >= len(self._lines):
+            raise StopAsyncIteration
+        line = self._lines[self._i]
+        self._i += 1
+        return line
+
+
+class _FakeStreamResponse:
+    """httpx.AsyncClient.stream() context-manager stand-in."""
+
+    def __init__(self, status_code=200, lines=None, error_body=None):
+        self.status_code = status_code
+        self._lines = lines or []
+        self._error_body = error_body or b""
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    def aiter_lines(self):
+        return _FakeAsyncLineIterator(self._lines)
+
+    async def aread(self):
+        return self._error_body
+
+
+@patch("app.domain.gateway.services.httpx.AsyncClient")
+def test_gateway_streaming_happy_path(MockClient):
     client, settings = _fresh_app()
     key = _bootstrap_user_and_key(settings)
+
+    fake_stream = _FakeStreamResponse(status_code=200, lines=_mock_streaming_sse_lines())
+    instance = MockClient.return_value.__aenter__.return_value
+    instance.stream = lambda *a, **kw: fake_stream
+
     payload = _valid_chat_payload()
     payload["stream"] = True
     r = client.post(
@@ -129,8 +190,105 @@ def test_gateway_rejects_streaming_in_mvp():
         json=payload,
         headers={"X-Heillon-Api-Key": key, "X-Upstream-Api-Key": "sk-fake"},
     )
-    assert r.status_code == 400
-    assert "stream" in r.json()["detail"].lower()
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/event-stream")
+    assert r.headers.get("x-accel-buffering") == "no"
+
+    text = r.text
+    assert "data: {" in text
+    assert "data: [DONE]" in text
+    assert ": heillon-hdr-id=" in text
+    assert ": heillon-quota-used=1" in text
+    assert ": heillon-quota-tier=free" in text
+
+    hdr_id = None
+    for line in text.splitlines():
+        if line.startswith(": heillon-hdr-id="):
+            hdr_id = line.split("=", 1)[1].strip()
+            break
+    assert hdr_id is not None and len(hdr_id) == 64
+
+    from app.db.compat import open_connection
+
+    with open_connection(settings) as conn:
+        row = conn.execute(
+            "SELECT hdr_type, payload FROM hdrs WHERE hdr_id = ?", (hdr_id,)
+        ).fetchone()
+    assert row is not None
+    assert row[0] == "analysis"
+    import json as _json
+
+    payload_decoded = _json.loads(row[1])
+    cognitive = payload_decoded.get("cognitive_snapshot", {})
+    assert "O " in cognitive["result"]
+    assert "art." in cognitive["result"]
+    assert "7º LGPD" in cognitive["result"]
+
+
+@patch("app.domain.gateway.services.httpx.AsyncClient")
+def test_gateway_streaming_upstream_error_surfaces_in_sse(MockClient):
+    client, settings = _fresh_app()
+    key = _bootstrap_user_and_key(settings)
+
+    err_body = b'{"error":{"message":"Invalid model","type":"invalid_request_error"}}'
+    fake_stream = _FakeStreamResponse(status_code=400, error_body=err_body)
+    instance = MockClient.return_value.__aenter__.return_value
+    instance.stream = lambda *a, **kw: fake_stream
+
+    payload = _valid_chat_payload()
+    payload["stream"] = True
+    payload["model"] = "gpt-fake-9000"
+    r = client.post(
+        "/api/v1/gateway/v1/chat/completions",
+        json=payload,
+        headers={"X-Heillon-Api-Key": key, "X-Upstream-Api-Key": "sk-fake"},
+    )
+    # Streaming returns 200 to client; upstream error surfaces inside the SSE
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/event-stream")
+    text = r.text
+    assert "Invalid model" in text
+    assert "data: [DONE]" in text
+    # No HDR created on upstream error
+    assert ": heillon-hdr-id=" not in text
+
+
+@patch("app.domain.gateway.services.httpx.AsyncClient")
+def test_gateway_streaming_respects_quota_402(MockClient):
+    """When quota is exceeded, streaming returns 402 BEFORE any upstream call."""
+    client, settings = _fresh_app()
+    key = _bootstrap_user_and_key(settings)
+
+    from app.db.compat import open_connection
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    with open_connection(settings) as conn:
+        for i in range(50):
+            conn.execute(
+                """INSERT INTO hdrs (hdr_id, mission_id, previous_hdr, hdr_type,
+                                      timestamp_iso, canonical_hash, payload,
+                                      organization_id, created_at)
+                   VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)""",
+                (
+                    f"qpad_{i:03d}", "mq", "analysis", now_iso,
+                    "h" * 64, "{}", "org_default", now_iso,
+                ),
+            )
+
+    instance = MockClient.return_value.__aenter__.return_value
+    instance.stream = MagicMock()
+
+    payload = _valid_chat_payload()
+    payload["stream"] = True
+    r = client.post(
+        "/api/v1/gateway/v1/chat/completions",
+        json=payload,
+        headers={"X-Heillon-Api-Key": key, "X-Upstream-Api-Key": "sk-fake"},
+    )
+    assert r.status_code == 402
+    assert r.json()["detail"]["error"] == "quota_exceeded"
+    # Upstream stream must NOT have been called
+    instance.stream.assert_not_called()
 
 
 # ── 4. Happy path: forwards + creates HDR + returns headers ───────────────────

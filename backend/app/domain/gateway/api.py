@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.dependencies import database_dependency, hdr_service_dependency
 from app.domain.api_keys.dependencies import get_user_from_api_key
@@ -21,10 +21,12 @@ from app.domain.gateway.models import (
     GatewayUpstreamConfig,
 )
 from app.domain.gateway.services import (
+    StreamAccumulator,
     UpstreamError,
     extract_prompt_text,
     extract_response_text,
     forward_chat_completion,
+    forward_chat_completion_stream,
 )
 from app.domain.hdr.repository import HDRRepository
 from app.domain.hdr.services import HDRService
@@ -101,6 +103,109 @@ def _persist_hdr_for_capture(
         return None
 
 
+async def _handle_streaming(
+    *,
+    conn,  # used only for synchronous phase, not the stream generator
+    hdr_svc: HDRService,
+    user: UserRecord,
+    upstream: GatewayUpstreamConfig,
+    body: ChatCompletionRequest,
+) -> StreamingResponse:
+    """Stream upstream SSE to the client while accumulating for HDR.
+
+    Heillon metadata is emitted as SSE comments (prefix `:`) AFTER the upstream
+    stream completes. Spec-ignored by standard parsers; Heillon-aware clients
+    can parse `: heillon-hdr-id=...` lines.
+
+    IMPORTANT: FastAPI tears down request-scoped dependencies (incl. DB conn)
+    AS SOON AS the endpoint function returns. With StreamingResponse the
+    generator keeps running after that, so we MUST open a fresh DB connection
+    inside the generator for the post-stream HDR persistence.
+    """
+    accumulator = StreamAccumulator()
+    provider_enum = _provider_for(upstream.upstream_provider)
+    prompt_text = extract_prompt_text(body)
+    request_body = body.model_dump(exclude_none=True, mode="json")
+    organization_id = user.organization_id
+
+    # Capture immutable settings + user data BEFORE the generator (dependencies
+    # may be released before the generator's first call to `conn`).
+    from app.core import config as runtime_config
+    from app.db.compat import open_connection
+
+    settings_snapshot = runtime_config.get_settings()
+
+    async def event_generator():
+        # Phase 1: stream upstream chunks verbatim while accumulating
+        async for chunk in forward_chat_completion_stream(
+            request_body=request_body,
+            upstream=upstream,
+            accumulator=accumulator,
+        ):
+            yield chunk
+
+        # Phase 2: upstream ended. Skip HDR on error (don't bill quota).
+        if accumulator.had_error:
+            return
+
+        synthetic_source = (
+            f"https://gateway.heillon.local/{upstream.upstream_provider}/"
+            f"{body.model.replace('/', '_')}"
+        )
+
+        # Open a FRESH connection — the request's conn was closed when the
+        # endpoint function returned the StreamingResponse object.
+        try:
+            with open_connection(settings_snapshot) as fresh_conn:
+                hdr_id = _persist_hdr_for_capture(
+                    conn=fresh_conn,
+                    hdr_svc=hdr_svc,
+                    user=user,
+                    prompt_text=prompt_text,
+                    response_text=accumulator.text,
+                    model=body.model,
+                    provider=provider_enum,
+                    source_url=synthetic_source,
+                )
+                # Phase 3: emit Heillon metadata as SSE comments (spec-ignored)
+                if hdr_id:
+                    try:
+                        snap = QuotaService.snapshot(
+                            fresh_conn, organization_id=organization_id
+                        )
+                        limit_str = (
+                            str(snap.monthly_hdr_limit)
+                            if snap.monthly_hdr_limit is not None
+                            else "unlimited"
+                        )
+                        meta = (
+                            f": heillon-hdr-id={hdr_id}\n"
+                            f": heillon-quota-used={snap.used_in_period}\n"
+                            f": heillon-quota-limit={limit_str}\n"
+                            f": heillon-quota-tier={snap.tier.value}\n\n"
+                        )
+                    except Exception:  # noqa: BLE001
+                        meta = f": heillon-hdr-id={hdr_id}\n\n"
+                    yield meta.encode("utf-8")
+        except Exception as exc:  # noqa: BLE001
+            # Persistence failure: log but don't bubble up — the stream
+            # already delivered the response to the user. They'd just see
+            # no `heillon-hdr-id` comment, which is the right signal.
+            logger.error("Streaming HDR persistence failed: %s", exc, exc_info=True)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            # Disable proxy buffering (Nginx, Cloudflare, etc.) so chunks
+            # arrive at the client as soon as we yield them.
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
+
+
 @router.post(
     "/v1/chat/completions",
     summary="Drop-in OpenAI Chat Completions proxy with HDR audit",
@@ -125,15 +230,10 @@ async def openai_chat_completions(
         if persistence failed — call still succeeds for the client)
       - X-Heillon-Quota-Used / -Limit / -Tier
     """
-    # 1) Reject streaming for MVP
-    if body.stream:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="stream=true not supported in MVP — use synchronous calls.",
-        )
-
-    # 2) Enforce quota BEFORE upstream call (so we don't burn user's upstream quota
-    # if Heillon is at limit). Quota errors return 402.
+    # 1) Enforce quota BEFORE upstream call (so we don't burn user's upstream
+    # quota if Heillon is at limit). Quota errors return 402 in non-streaming
+    # mode. For streaming mode we still check upfront (the 402 path doesn't
+    # need to be SSE since the stream hasn't started yet).
     try:
         QuotaService.enforce(conn, organization_id=user.organization_id)
     except QuotaExceededError as exc:
@@ -152,6 +252,16 @@ async def openai_chat_completions(
                 "period_end": snap.period_end.isoformat(),
             },
         ) from exc
+
+    # 2) Branch: streaming vs synchronous
+    if body.stream:
+        return await _handle_streaming(
+            conn=conn,
+            hdr_svc=hdr_svc,
+            user=user,
+            upstream=upstream,
+            body=body,
+        )
 
     # 3) Forward to upstream
     try:
