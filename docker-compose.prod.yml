@@ -1,0 +1,139 @@
+# Heillon Legal — production stack
+#
+# Bring up:   docker compose -f docker-compose.prod.yml up -d
+# Logs:       docker compose -f docker-compose.prod.yml logs -f backend
+# Restart:    docker compose -f docker-compose.prod.yml restart backend
+# Migrate:    handled automatically by app on startup (init_database)
+#
+# REQUIRED env (otherwise compose REFUSES to start — see ${VAR:?} below):
+#   POSTGRES_PASSWORD          (>= 24 chars random)
+#   AUTH_SECRET_KEY            (>= 32 chars random)
+#   FERNET_ENCRYPTION_KEY      (Fernet.generate_key() → URL-safe base64)
+#   VERIFICATION_PUBLIC_BASE   (public URL of THIS backend, e.g. https://api.heillon.com)
+#   FRONTEND_PUBLIC_ORIGIN     (public URL of frontend, e.g. https://heillon-legal-ui.vercel.app)
+#
+# OPTIONAL:
+#   BILLING_WEBHOOK_SECRET     (HMAC for /api/v1/billing/webhook from marketing site)
+#   FERNET_ENCRYPTION_KEY_LEGACY (CSV of old keys during rotation; see Fase 24B)
+#   TSA_PROVIDER               (certisign | serpro | freetsa, default: freetsa)
+#   ICP_CERT_PATH / ICP_CERT_PASSWORD (ICP-Brasil A1 cert in PKCS#12)
+#   WEB_CONCURRENCY            (uvicorn workers, default: 2)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: heillon
+      POSTGRES_USER: heillon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obrigatório}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heillon -d heillon"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - heillon-internal
+    # Do NOT expose Postgres publicly. Only inside the internal network.
+    # If you need DBA access, use docker exec or an SSH tunnel.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - heillon-internal
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    image: heillon-legal-backend:latest
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: production
+      DATABASE_TYPE: postgresql
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: heillon
+      POSTGRES_USER: heillon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obrigatório}
+      POSTGRES_SSL_MODE: disable  # internal network = TLS terminated upstream
+      REDIS_URL: redis://redis:6379/0
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?AUTH_SECRET_KEY obrigatório (>= 32 chars)}
+      FERNET_ENCRYPTION_KEY: ${FERNET_ENCRYPTION_KEY:?FERNET_ENCRYPTION_KEY obrigatório (Fernet.generate_key())}
+      FERNET_ENCRYPTION_KEY_LEGACY: ${FERNET_ENCRYPTION_KEY_LEGACY:-}
+      BILLING_WEBHOOK_SECRET: ${BILLING_WEBHOOK_SECRET:-}
+      FORCE_STUB_TIMESTAMP: "false"
+      DISABLE_RATE_LIMIT: "false"
+      MISSION_ROUTES_REQUIRE_AUTH: "true"
+      ENABLE_POSTGRES_RLS: "true"
+      VERIFICATION_PUBLIC_BASE: ${VERIFICATION_PUBLIC_BASE:?VERIFICATION_PUBLIC_BASE obrigatório (URL pública deste backend)}
+      CORS_ORIGINS: '["${FRONTEND_PUBLIC_ORIGIN:?FRONTEND_PUBLIC_ORIGIN obrigatório (URL pública do frontend)}"]'
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      TSA_PROVIDER: ${TSA_PROVIDER:-freetsa}
+      ICP_CERT_PATH: ${ICP_CERT_PATH:-}
+      ICP_CERT_PASSWORD: ${ICP_CERT_PASSWORD:-}
+    volumes:
+      - heillon_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - heillon-internal
+      - heillon-public
+    labels:
+      # Traefik/Caddy auto-discovery (uncomment if using reverse proxy):
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.heillon.rule=Host(`api.heillon.com`)"
+      # - "traefik.http.routers.heillon.entrypoints=websecure"
+      # - "traefik.http.routers.heillon.tls.certresolver=letsencrypt"
+      # - "traefik.http.services.heillon.loadbalancer.server.port=8000"
+      - "heillon.role=backend"
+
+  # ── OPTIONAL: nginx as TLS-terminating reverse proxy ─────────────────────────
+  # Uncomment if you don't have Traefik/Caddy/Cloudflare already.
+  # Provide /etc/nginx/conf.d/heillon.conf + certs in ./nginx/.
+  #
+  # nginx:
+  #   image: nginx:1.27-alpine
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/conf.d:/etc/nginx/conf.d:ro
+  #     - ./nginx/certs:/etc/nginx/certs:ro
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - heillon-public
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  heillon_data:
+    driver: local
+
+networks:
+  heillon-internal:
+    driver: bridge
+    internal: false  # set to true if backend doesn't need outbound (it does — TSA calls)
+  heillon-public:
+    driver: bridge

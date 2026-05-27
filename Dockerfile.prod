@@ -1,0 +1,88 @@
+# Heillon Legal — production multi-stage Dockerfile
+#
+# Builder stage compiles wheels; runtime stage is minimal (slim + non-root).
+# Resulting image ~120MB (vs ~500MB for non-multi-stage).
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Stage 1: builder
+# ───────────────────────────────────────────────────────────────────────────────
+FROM python:3.12-slim AS builder
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /build
+
+# Build deps (only needed for wheel compilation; not copied to runtime)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        libffi-dev \
+        libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backend/requirements.txt .
+
+# Build all wheels into /wheels (runtime stage installs from these)
+RUN pip wheel --wheel-dir=/wheels -r requirements.txt
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Stage 2: runtime
+# ───────────────────────────────────────────────────────────────────────────────
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    # Default to production unless overridden
+    ENVIRONMENT=production
+
+WORKDIR /app
+
+# Runtime-only deps: fonts for PDF generation + curl for healthcheck
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        fonts-dejavu-core \
+        curl \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 10001 heillon \
+    && useradd  --uid 10001 --gid heillon --no-create-home --shell /bin/false heillon
+
+# Copy wheels from builder + install
+COPY --from=builder /wheels /wheels
+COPY backend/requirements.txt .
+RUN pip install --no-index --find-links=/wheels -r requirements.txt \
+    && rm -rf /wheels /root/.cache /tmp/*
+
+# App code (read-only at runtime)
+COPY --chown=heillon:heillon backend/app ./app
+COPY --chown=heillon:heillon supabase/migrations /app/supabase/migrations
+
+# Writable data dirs (overlay via volume mount in prod)
+RUN mkdir -p /app/data/forensic_packages /app/data/evidence /app/data \
+    && chown -R heillon:heillon /app/data
+
+USER heillon
+
+EXPOSE 8000
+
+# HEALTHCHECK: docker / k8s probes via /health every 30s; 3 failures = unhealthy
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl --fail --silent --show-error http://localhost:8000/health || exit 1
+
+# Uvicorn with production-tuned defaults:
+# - 2 workers per CPU (override via WEB_CONCURRENCY env)
+# - 100s graceful timeout (long LLM calls + TSA round-trip)
+# - access log goes to stdout (Docker collects)
+CMD ["sh", "-c", "exec uvicorn app.main:app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers ${WEB_CONCURRENCY:-2} \
+    --timeout-graceful-shutdown 100 \
+    --access-log \
+    --proxy-headers \
+    --forwarded-allow-ips=*"]

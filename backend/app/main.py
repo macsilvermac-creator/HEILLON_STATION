@@ -44,6 +44,7 @@ from app.domain.iso42001.api import router as iso42001_router
 from app.domain.legal_evidence.api import router as legal_evidence_router
 from app.domain.apac.api import router as apac_router
 from app.domain.malpractice.api import router as malpractice_router
+from app.domain.admin.api import router as admin_router
 from app.domain.api_keys.api import router as api_keys_router
 from app.domain.extension.api import router as extension_router
 from app.domain.gateway.api import router as gateway_router
@@ -181,6 +182,7 @@ def create_application() -> FastAPI:
     application.include_router(api_keys_router, prefix=api_prefix)
     application.include_router(extension_router, prefix=api_prefix)
     application.include_router(gateway_router, prefix=api_prefix)
+    application.include_router(admin_router, prefix=api_prefix)
     application.include_router(health_router)
     application.include_router(health_router, prefix=api_prefix)
 

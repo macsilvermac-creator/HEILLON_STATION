@@ -119,6 +119,14 @@ class Settings(BaseSettings):
             "webhook endpoint returns 503 (disabled). Set in production."
         ),
     )
+    # Admin Fase 30 — beta metrics token (separate from user JWT/API keys)
+    HEILLON_ADMIN_TOKEN: str = Field(
+        default="",
+        description=(
+            "Shared-secret token for /api/v1/admin/* endpoints. Min 24 chars "
+            "recommended. When empty, admin endpoints return 503 (disabled)."
+        ),
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
