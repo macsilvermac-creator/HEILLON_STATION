@@ -238,3 +238,209 @@ async def forward_chat_completion_stream(
         }
         yield f"data: {json.dumps(err_payload)}\n\n".encode("utf-8")
         yield b"data: [DONE]\n\n"
+
+
+# ── Anthropic /v1/messages (F31.2) ───────────────────────────────────────────
+
+DEFAULT_ANTHROPIC_VERSION = "2023-06-01"
+
+
+def _anthropic_headers(*, upstream_api_key: str, anthropic_version: str) -> dict[str, str]:
+    """Build the exact header set that api.anthropic.com expects."""
+    return {
+        "x-api-key": upstream_api_key,
+        "anthropic-version": anthropic_version or DEFAULT_ANTHROPIC_VERSION,
+        "content-type": "application/json",
+        "User-Agent": "HeillonGateway/1.0",
+    }
+
+
+def extract_anthropic_prompt_text(request_body: dict[str, Any]) -> str:
+    """Build a prompt blob from an Anthropic Messages request for HDR capture.
+
+    Handles both string and structured (`[{type: 'text', text: ...}]`) content,
+    plus the optional top-level `system` field (string or structured blocks).
+    """
+    parts: list[str] = []
+
+    # Top-level system message
+    system = request_body.get("system")
+    if isinstance(system, str) and system.strip():
+        parts.append(f"system: {system.strip()}")
+    elif isinstance(system, list):
+        for block in system:
+            if isinstance(block, dict) and block.get("type") == "text":
+                text = (block.get("text") or "").strip()
+                if text:
+                    parts.append(f"system: {text}")
+
+    # Conversation messages
+    for msg in request_body.get("messages") or []:
+        if not isinstance(msg, dict):
+            continue
+        role = msg.get("role") or "user"
+        content = msg.get("content")
+        if isinstance(content, str):
+            text = content.strip()
+            if text:
+                parts.append(f"{role}: {text}")
+        elif isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    text = (block.get("text") or "").strip()
+                    if text:
+                        parts.append(f"{role}: {text}")
+
+    return "\n\n".join(parts) if parts else "(empty prompt)"
+
+
+def extract_anthropic_response_text(response_body: dict[str, Any]) -> str:
+    """Concatenate text blocks from Anthropic Messages response.content[]."""
+    content = response_body.get("content") or []
+    parts: list[str] = []
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "text":
+            text = block.get("text") or ""
+            if text:
+                parts.append(text)
+    return "\n".join(parts) if parts else "(empty response)"
+
+
+async def forward_anthropic_messages(
+    *,
+    request_body: dict[str, Any],
+    upstream: GatewayUpstreamConfig,
+    anthropic_version: str = DEFAULT_ANTHROPIC_VERSION,
+) -> dict[str, Any]:
+    """Synchronous forward to api.anthropic.com/v1/messages.
+
+    Raises UpstreamError on non-2xx (preserving status + body for proxying).
+    """
+    url = f"{upstream.upstream_base_url}/v1/messages"
+    headers = _anthropic_headers(
+        upstream_api_key=upstream.upstream_api_key,
+        anthropic_version=anthropic_version,
+    )
+
+    # Ensure stream=False in the forwarded body for the sync path
+    body = dict(request_body)
+    body["stream"] = False
+
+    async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT) as client:
+        try:
+            response = await client.post(url, headers=headers, json=body)
+        except httpx.HTTPError as exc:
+            logger.warning("Anthropic upstream HTTP error to %s: %s", url, exc)
+            raise UpstreamError(
+                502, {"error": {"message": f"Upstream unreachable: {exc}"}}
+            ) from exc
+
+    if response.status_code >= 400:
+        try:
+            err_body: Any = response.json()
+        except Exception:  # noqa: BLE001
+            err_body = {"error": {"message": response.text[:500]}}
+        raise UpstreamError(response.status_code, err_body)
+
+    try:
+        return response.json()
+    except Exception as exc:  # noqa: BLE001
+        raise UpstreamError(
+            502, {"error": {"message": f"Anthropic returned non-JSON: {exc}"}}
+        ) from exc
+
+
+def _extract_anthropic_stream_delta(parsed_event: dict[str, Any]) -> str | None:
+    """Extract text from an Anthropic SSE event.
+
+    Anthropic stream event types:
+      - message_start / message_delta / message_stop  (envelope, no text)
+      - content_block_start / content_block_stop      (envelope, no text)
+      - content_block_delta with delta.type='text_delta'  ← text content here
+      - ping  (keepalive)
+    """
+    if parsed_event.get("type") != "content_block_delta":
+        return None
+    delta = parsed_event.get("delta") or {}
+    if delta.get("type") != "text_delta":
+        return None
+    text = delta.get("text")
+    return text if isinstance(text, str) and text else None
+
+
+async def forward_anthropic_messages_stream(
+    *,
+    request_body: dict[str, Any],
+    upstream: GatewayUpstreamConfig,
+    accumulator: StreamAccumulator,
+    anthropic_version: str = DEFAULT_ANTHROPIC_VERSION,
+) -> AsyncIterator[bytes]:
+    """Forward Anthropic SSE stream while accumulating content_block_delta text.
+
+    Anthropic's SSE format uses NAMED events (event: message_start, etc.) with
+    JSON data lines. We forward each line verbatim and parse only
+    `content_block_delta` events to populate the accumulator.
+    """
+    url = f"{upstream.upstream_base_url}/v1/messages"
+    headers = _anthropic_headers(
+        upstream_api_key=upstream.upstream_api_key,
+        anthropic_version=anthropic_version,
+    )
+    headers["Accept"] = "text/event-stream"
+
+    body = dict(request_body)
+    body["stream"] = True
+
+    try:
+        async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT) as client:
+            async with client.stream(
+                "POST", url, headers=headers, json=body
+            ) as response:
+                accumulator.upstream_status = response.status_code
+
+                if response.status_code >= 400:
+                    accumulator.had_error = True
+                    raw = await response.aread()
+                    try:
+                        err_payload = json.loads(raw.decode("utf-8"))
+                    except Exception:  # noqa: BLE001
+                        err_payload = {
+                            "error": {
+                                "message": raw.decode("utf-8", errors="replace")[:500],
+                                "type": "upstream_error",
+                            }
+                        }
+                    # Anthropic-style error event
+                    yield b"event: error\n"
+                    yield f"data: {json.dumps(err_payload)}\n\n".encode("utf-8")
+                    return
+
+                async for line in response.aiter_lines():
+                    if line == "":
+                        yield b"\n"
+                        continue
+
+                    # Parse content_block_delta to accumulate text
+                    if line.startswith("data:"):
+                        payload = line[len("data:"):].strip()
+                        if payload:
+                            try:
+                                event = json.loads(payload)
+                                text = _extract_anthropic_stream_delta(event)
+                                if text:
+                                    accumulator.append(text)
+                            except json.JSONDecodeError:
+                                pass
+
+                    yield (line + "\n").encode("utf-8")
+    except httpx.HTTPError as exc:
+        logger.warning("Streaming Anthropic upstream HTTP error: %s", exc)
+        accumulator.had_error = True
+        err_payload = {
+            "error": {
+                "message": f"Upstream unreachable: {exc}",
+                "type": "heillon_gateway_error",
+            }
+        }
+        yield b"event: error\n"
+        yield f"data: {json.dumps(err_payload)}\n\n".encode("utf-8")

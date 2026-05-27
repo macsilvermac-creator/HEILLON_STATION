@@ -13,6 +13,7 @@ from app.domain.gateway.models import GatewayUpstreamConfig
 
 DEFAULT_UPSTREAM_BASE = "https://api.openai.com"
 DEFAULT_UPSTREAM_PROVIDER = "openai"
+DEFAULT_ANTHROPIC_BASE = "https://api.anthropic.com"
 
 
 def _validate_upstream_url(url: str) -> str:
@@ -118,4 +119,37 @@ def get_upstream_config(
         upstream_base_url=base_url,
         upstream_api_key=x_upstream_api_key.strip(),
         upstream_provider=provider,
+    )
+
+
+def get_anthropic_upstream_config(
+    x_upstream_api_key: Annotated[
+        str | None, Header(alias="X-Upstream-Api-Key")
+    ] = None,
+    x_heillon_upstream_url: Annotated[
+        str | None, Header(alias="X-Heillon-Upstream-Url")
+    ] = None,
+) -> GatewayUpstreamConfig:
+    """Resolve upstream config for Anthropic /v1/messages calls.
+
+    Default base URL is api.anthropic.com. Provider is hardcoded to
+    "anthropic" so the HDR is labelled correctly even if the user overrides
+    upstream_url (e.g. self-hosted Claude proxy).
+    """
+    if not x_upstream_api_key or not x_upstream_api_key.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Missing X-Upstream-Api-Key header — supply your Anthropic "
+                "API key (sk-ant-...). Gateway forwards it as x-api-key."
+            ),
+        )
+
+    base_url = (x_heillon_upstream_url or DEFAULT_ANTHROPIC_BASE).strip()
+    base_url = _validate_upstream_url(base_url)
+
+    return GatewayUpstreamConfig(
+        upstream_base_url=base_url,
+        upstream_api_key=x_upstream_api_key.strip(),
+        upstream_provider="anthropic",
     )

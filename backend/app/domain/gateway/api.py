@@ -1,11 +1,12 @@
-"""Gateway HTTP surface: OpenAI-compatible /v1/chat/completions proxy."""
+"""Gateway HTTP surface: OpenAI-compatible + Anthropic-compatible proxies."""
 
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.dependencies import database_dependency, hdr_service_dependency
@@ -15,16 +16,24 @@ from app.domain.extension.models import (
     ExtensionCaptureRequest,
 )
 from app.domain.extension.services import build_capture_hdr
-from app.domain.gateway.dependencies import get_upstream_config
+from app.domain.gateway.dependencies import (
+    get_anthropic_upstream_config,
+    get_upstream_config,
+)
 from app.domain.gateway.models import (
     ChatCompletionRequest,
     GatewayUpstreamConfig,
 )
 from app.domain.gateway.services import (
+    DEFAULT_ANTHROPIC_VERSION,
     StreamAccumulator,
     UpstreamError,
+    extract_anthropic_prompt_text,
+    extract_anthropic_response_text,
     extract_prompt_text,
     extract_response_text,
+    forward_anthropic_messages,
+    forward_anthropic_messages_stream,
     forward_chat_completion,
     forward_chat_completion_stream,
 )
@@ -348,3 +357,226 @@ async def list_models(
     except Exception:  # noqa: BLE001
         body = {"error": {"message": r.text[:500]}}
     return JSONResponse(status_code=r.status_code, content=body)
+
+
+# ── Anthropic Messages compat (F31.2) ────────────────────────────────────────
+
+
+async def _handle_anthropic_streaming(
+    *,
+    hdr_svc: HDRService,
+    user: UserRecord,
+    upstream: GatewayUpstreamConfig,
+    request_body: dict[str, Any],
+    anthropic_version: str,
+) -> StreamingResponse:
+    """Stream Anthropic SSE to the client while accumulating for HDR.
+
+    Same lifecycle pattern as OpenAI streaming — open a fresh DB connection
+    inside the generator (FastAPI tears down the request's conn before the
+    generator finishes). Heillon metadata emitted as SSE comments after
+    the upstream stream completes.
+    """
+    accumulator = StreamAccumulator()
+    prompt_text = extract_anthropic_prompt_text(request_body)
+    model_name = str(request_body.get("model") or "claude-unknown")
+    organization_id = user.organization_id
+
+    from app.core import config as runtime_config
+    from app.db.compat import open_connection
+
+    settings_snapshot = runtime_config.get_settings()
+
+    async def event_generator():
+        async for chunk in forward_anthropic_messages_stream(
+            request_body=request_body,
+            upstream=upstream,
+            accumulator=accumulator,
+            anthropic_version=anthropic_version,
+        ):
+            yield chunk
+
+        if accumulator.had_error:
+            return
+
+        synthetic_source = (
+            f"https://gateway.heillon.local/anthropic/{model_name.replace('/', '_')}"
+        )
+
+        try:
+            with open_connection(settings_snapshot) as fresh_conn:
+                hdr_id = _persist_hdr_for_capture(
+                    conn=fresh_conn,
+                    hdr_svc=hdr_svc,
+                    user=user,
+                    prompt_text=prompt_text,
+                    response_text=accumulator.text,
+                    model=model_name,
+                    provider=AiProvider.ANTHROPIC,
+                    source_url=synthetic_source,
+                )
+                if hdr_id:
+                    try:
+                        snap = QuotaService.snapshot(
+                            fresh_conn, organization_id=organization_id
+                        )
+                        limit_str = (
+                            str(snap.monthly_hdr_limit)
+                            if snap.monthly_hdr_limit is not None
+                            else "unlimited"
+                        )
+                        meta = (
+                            f": heillon-hdr-id={hdr_id}\n"
+                            f": heillon-quota-used={snap.used_in_period}\n"
+                            f": heillon-quota-limit={limit_str}\n"
+                            f": heillon-quota-tier={snap.tier.value}\n\n"
+                        )
+                    except Exception:  # noqa: BLE001
+                        meta = f": heillon-hdr-id={hdr_id}\n\n"
+                    yield meta.encode("utf-8")
+        except Exception as exc:  # noqa: BLE001
+            logger.error(
+                "Streaming Anthropic HDR persistence failed: %s", exc, exc_info=True
+            )
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+@router.post(
+    "/anthropic/v1/messages",
+    summary="Drop-in Anthropic Messages proxy with HDR audit",
+)
+async def anthropic_messages(
+    request: Request,
+    conn=Depends(database_dependency),
+    hdr_svc: HDRService = Depends(hdr_service_dependency),
+    user: UserRecord = Depends(get_user_from_api_key),
+    upstream: GatewayUpstreamConfig = Depends(get_anthropic_upstream_config),
+    anthropic_version: Annotated[
+        str, Header(alias="anthropic-version")
+    ] = DEFAULT_ANTHROPIC_VERSION,
+) -> JSONResponse:
+    """Anthropic-compatible endpoint for `client.messages.create(...)` SDK calls.
+
+    Headers (all required for upstream):
+      - X-Heillon-Api-Key — your Heillon API key
+      - X-Upstream-Api-Key — your Anthropic API key (sk-ant-...)
+      - X-Heillon-Upstream-Url (optional) — defaults to https://api.anthropic.com
+      - anthropic-version (optional) — defaults to "2023-06-01"
+
+    Returns the upstream JSON response verbatim PLUS:
+      - X-Heillon-Hdr-Id, X-Heillon-Quota-Used/-Limit/-Tier on success
+
+    For streaming (`stream: true`): returns text/event-stream with verbatim
+    Anthropic events. Heillon metadata emitted as SSE comments after [DONE].
+
+    Body validation: lenient (Anthropic schema is large + evolving). Required
+    fields (model, messages, max_tokens) are enforced by upstream.
+    """
+    # Parse body permissively — anthropic-python sends many optional fields
+    try:
+        body = await request.json()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid JSON body: {exc}",
+        ) from exc
+
+    if not isinstance(body, dict):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Body must be a JSON object",
+        )
+    if not body.get("model"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Missing required field: 'model'",
+        )
+    if not body.get("messages"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Missing required field: 'messages'",
+        )
+
+    # Quota enforce BEFORE upstream call
+    try:
+        QuotaService.enforce(conn, organization_id=user.organization_id)
+    except QuotaExceededError as exc:
+        snap = exc.snapshot
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail={
+                "error": "quota_exceeded",
+                "message": (
+                    f"Heillon: limite de {snap.monthly_hdr_limit} HDRs/mês "
+                    f"atingido no plano {snap.tier.value}."
+                ),
+                "tier": snap.tier.value,
+                "used": snap.used_in_period,
+                "limit": snap.monthly_hdr_limit,
+                "period_end": snap.period_end.isoformat(),
+            },
+        ) from exc
+
+    if body.get("stream"):
+        return await _handle_anthropic_streaming(
+            hdr_svc=hdr_svc,
+            user=user,
+            upstream=upstream,
+            request_body=body,
+            anthropic_version=anthropic_version,
+        )
+
+    # Synchronous path
+    try:
+        upstream_response = await forward_anthropic_messages(
+            request_body=body,
+            upstream=upstream,
+            anthropic_version=anthropic_version,
+        )
+    except UpstreamError as exc:
+        return JSONResponse(status_code=exc.status_code, content=exc.body)
+
+    prompt_text = extract_anthropic_prompt_text(body)
+    response_text = extract_anthropic_response_text(upstream_response)
+    model_name = str(body.get("model") or "claude-unknown")
+    synthetic_source = (
+        f"https://gateway.heillon.local/anthropic/{model_name.replace('/', '_')}"
+    )
+    hdr_id = _persist_hdr_for_capture(
+        conn=conn,
+        hdr_svc=hdr_svc,
+        user=user,
+        prompt_text=prompt_text,
+        response_text=response_text,
+        model=model_name,
+        provider=AiProvider.ANTHROPIC,
+        source_url=synthetic_source,
+    )
+
+    try:
+        snap_after = QuotaService.snapshot(conn, organization_id=user.organization_id)
+        quota_headers = {
+            "X-Heillon-Quota-Used": str(snap_after.used_in_period),
+            "X-Heillon-Quota-Limit": (
+                str(snap_after.monthly_hdr_limit)
+                if snap_after.monthly_hdr_limit
+                else "unlimited"
+            ),
+            "X-Heillon-Quota-Tier": snap_after.tier.value,
+        }
+    except Exception:  # noqa: BLE001
+        quota_headers = {}
+
+    return JSONResponse(
+        content=upstream_response,
+        headers={"X-Heillon-Hdr-Id": hdr_id or "", **quota_headers},
+    )
