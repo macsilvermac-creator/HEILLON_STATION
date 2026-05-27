@@ -1,0 +1,17 @@
+{
+  "name": "heillon-legal-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Repo root — declares `next` only so Vercel's framework detector finds it. The actual Next.js app lives in `frontend/` and is installed/built via vercel.json's installCommand/buildCommand. For the cleanest setup, set Root Directory = `frontend` in Vercel project settings (see DEPLOY.md).",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "npm run build --prefix frontend",
+    "dev": "npm run dev --prefix frontend",
+    "start": "npm run start --prefix frontend"
+  },
+  "dependencies": {
+    "next": "15.4.10"
+  }
+}
