@@ -387,6 +387,94 @@ export async function fetchCurrentUser(): Promise<unknown> {
   return payload;
 }
 
+// ── Quota / Tier (Fase 26) ──────────────────────────────────────────────────
+
+export interface QuotaSnapshot {
+  organization_id: string;
+  tier: "free" | "pro" | "team" | "enterprise";
+  monthly_hdr_limit: number | null;
+  used_in_period: number;
+  remaining: number | null;
+  period_start: string;
+  period_end: string;
+  is_exceeded: boolean;
+  retention_days: number | null;
+  forensic_pdf_enabled: boolean;
+}
+
+export async function fetchMyQuota(): Promise<QuotaSnapshot> {
+  const response = await apiFetch(`${PREFIX}/me/quota`, { headers: authorizedHeaders() });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(formatProblemDetail(payload));
+  }
+  return payload as QuotaSnapshot;
+}
+
+/**
+ * Compute usage percent (0-1) and warning thresholds.
+ * Returns null when unlimited (Pro/Team/Enterprise).
+ */
+export function quotaUsagePct(snap: QuotaSnapshot): number | null {
+  if (snap.monthly_hdr_limit === null || snap.monthly_hdr_limit === 0) return null;
+  return Math.min(snap.used_in_period / snap.monthly_hdr_limit, 1);
+}
+
+// ── API Keys (Fase 27) ─────────────────────────────────────────────────────
+
+export interface ApiKeyPublic {
+  api_key_id: string;
+  name: string;
+  prefix: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
+}
+
+export interface ApiKeyMintResponse {
+  api_key_id: string;
+  name: string;
+  plaintext_key: string;
+  prefix: string;
+  created_at: string;
+}
+
+export async function listApiKeys(): Promise<ApiKeyPublic[]> {
+  const response = await apiFetch(`${PREFIX}/me/api-keys`, { headers: authorizedHeaders() });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(formatProblemDetail(payload));
+  }
+  return payload as ApiKeyPublic[];
+}
+
+export async function mintApiKey(name: string): Promise<ApiKeyMintResponse> {
+  const response = await apiFetch(`${PREFIX}/me/api-keys`, {
+    method: "POST",
+    headers: {
+      ...authorizedHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name }),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(formatProblemDetail(payload));
+  }
+  return payload as ApiKeyMintResponse;
+}
+
+export async function revokeApiKey(apiKeyId: string): Promise<void> {
+  const response = await apiFetch(`${PREFIX}/me/api-keys/${encodeURIComponent(apiKeyId)}`, {
+    method: "DELETE",
+    headers: authorizedHeaders(),
+  });
+  if (!response.ok && response.status !== 204) {
+    const payload = await parseJsonResponse(response);
+    throw new Error(formatProblemDetail(payload));
+  }
+}
+
 export async function listMissions(skip = 0, limit = 20): Promise<unknown> {
   const response = await apiFetch(`${PREFIX}/mission/?skip=${skip}&limit=${limit}`, {
     headers: authorizedHeaders(),

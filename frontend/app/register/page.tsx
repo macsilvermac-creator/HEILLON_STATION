@@ -52,7 +52,7 @@ export default function RegisterPage() {
         throw new Error("Registo incompleto — tente novamente.");
       }
       login(toAuthUser(userRaw as Record<string, unknown>));
-      router.push("/dashboard");
+      router.push("/conta/onboarding");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registo falhou.");
     } finally {

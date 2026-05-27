@@ -59,6 +59,7 @@ const NAV: NavItem[] = [
   { href: "/docs",         label: "Docs"           },
   { href: "/agent-config", label: "Modelos de IA"  },
   { href: "/diary",        label: "Diário"         },
+  { href: "/conta/quota",  label: "Conta"          },
   { href: "/m",            label: "Mobile"         },
   { href: "/health",       label: "Health",        adminOnly: true },
 ];

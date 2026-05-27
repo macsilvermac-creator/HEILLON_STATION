@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 
 import { CustomCursor } from "@/components/CustomCursor";
 import { FolderTopbar, TOPBAR_H } from "@/components/FolderTopbar";
+import { QuotaBanner } from "@/components/QuotaBanner";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export function ConditionalAppShell({ children }: { children: React.ReactNode }) {
@@ -35,6 +36,7 @@ export function ConditionalAppShell({ children }: { children: React.ReactNode })
         style={{ paddingTop: `${TOPBAR_H}px` }}
         className="min-h-screen"
       >
+        <QuotaBanner />
         <main className="relative">{children}</main>
         <SiteFooter />
       </div>
