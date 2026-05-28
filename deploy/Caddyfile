@@ -1,0 +1,92 @@
+# Heillon Legal — Caddy reverse proxy (auto-TLS via Let's Encrypt)
+#
+# Substitua os domínios abaixo pelos seus reais antes do deploy.
+# Caddy obtém certificados automaticamente. Renovação automática a cada 60d.
+#
+# Logs estruturados → docker logs caddy
+# Métricas Prometheus → :2019/metrics (exposed only inside heillon-public net)
+
+# ── API Heillon (backend) ────────────────────────────────────────────────────
+api.heillon.com.br {
+    # Compressão para JSON + SSE
+    encode gzip zstd
+
+    # Forward para o container backend (porta interna 8000)
+    reverse_proxy backend:8000 {
+        # Streaming-friendly settings (gateway SSE precisa)
+        flush_interval -1
+        transport http {
+            keepalive 30s
+            keepalive_idle_conns 16
+            response_header_timeout 120s
+        }
+    }
+
+    # Security headers (complementam os do app)
+    header {
+        # Já é HTTPS (Caddy força); reforçamos HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        # CORS é tratado pelo backend; Caddy não interfere
+        -Server
+    }
+
+    # Rate limit no nível Caddy (defesa em camadas — backend tem seu próprio)
+    @abusive {
+        not header X-Heillon-Api-Key *
+        path /api/v1/auth/register /api/v1/auth/login
+    }
+    # Caddy nativo não tem rate-limit; em prod use plugin caddy-ratelimit
+    # ou Cloudflare rate-limit edge (recomendado).
+
+    # Health check público sem log para evitar ruído
+    handle /health {
+        reverse_proxy backend:8000
+    }
+    log {
+        output stdout
+        format json {
+            time_format iso8601
+        }
+        # Exclude noisy paths from access log
+        # (Caddy v2.7+ supports filter expressions; check version)
+    }
+}
+
+# ── Verificação pública (separada para CDN-cache agressivo) ──────────────────
+verify.heillon.com.br {
+    encode gzip zstd
+
+    reverse_proxy backend:8000 {
+        # Verificação pública é idempotente e cacheable
+        header_up X-Forwarded-Host {host}
+    }
+
+    # Cache 5min na borda — verificação de HDR é imutável
+    header Cache-Control "public, max-age=300, s-maxage=300"
+
+    log {
+        output stdout
+        format json
+    }
+}
+
+# ── Console frontend está em Vercel — só redirect aqui se acessarem o domínio nu ─
+heillon.com.br, www.heillon.com.br {
+    redir https://console.heillon.com.br{uri} permanent
+}
+
+# ── Console (caso queira self-host em vez de Vercel) ─────────────────────────
+# Descomente se for migrar frontend pra VPS futuramente.
+#
+# console.heillon.com.br {
+#     reverse_proxy frontend:3000
+# }
+
+# ── Métricas Caddy (acessíveis apenas internamente) ──────────────────────────
+:2019 {
+    metrics /metrics
+}

@@ -1,0 +1,41 @@
+# Heillon Legal — Caddy reverse proxy add-on
+#
+# Combine com docker-compose.prod.yml para deploy completo:
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.caddy.yml up -d
+#
+# Cobre TLS automático (Let's Encrypt), HTTPS forçado, compressão,
+# headers de segurança, métricas Prometheus internas.
+#
+# Requisitos:
+# - Apontar DNS (api.heillon.com.br, verify.heillon.com.br) para o IP do VPS
+# - Portas 80 + 443 livres no host
+# - DOMAIN_EMAIL setado para alertas Let's Encrypt
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"     # HTTP (ACME challenge + redirect)
+      - "443:443"   # HTTPS
+      # 2019 é interno (apenas dentro do compose network) — NÃO expor
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data           # Certificados Let's Encrypt persistem aqui
+      - caddy_config:/config
+    environment:
+      DOMAIN_EMAIL: ${DOMAIN_EMAIL:?DOMAIN_EMAIL obrigatório (admin@heillon.com.br)}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - heillon-public
+    labels:
+      - "heillon.role=reverse-proxy"
+
+volumes:
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local

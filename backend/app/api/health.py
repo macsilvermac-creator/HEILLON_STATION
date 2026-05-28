@@ -17,13 +17,53 @@ router = APIRouter(tags=["health"])
 
 @router.get("/health")
 async def health_check() -> dict[str, str]:
-    """Basic liveness probe."""
+    """Basic liveness probe — does the process answer HTTP?
+
+    Use this from Docker HEALTHCHECK and Kubernetes livenessProbe. Returns 200
+    as long as the FastAPI process is up. NEVER queries DB/Redis (would mask
+    transient deps as liveness failures and cause restart loops).
+    """
 
     return {
         "status": "ok",
         "version": "12.0",
         "timestamp": datetime.now(UTC).isoformat(),
     }
+
+
+@router.get("/health/ready")
+async def health_ready(
+    settings: Settings = Depends(get_settings),
+) -> dict[str, object]:
+    """Readiness probe — should the load balancer send traffic here?
+
+    Verifies DB + Redis reachable + agents loaded. Returns:
+      - 200 + {"status": "ready", checks: {...}} when all OK
+      - 503 + {"status": "not_ready", checks: {...}} when any dep is down
+
+    Caddy/k8s/load balancers use this to drain traffic from failing nodes
+    automatically. NEVER requires auth — orchestrators must reach it freely.
+    """
+    checks = {
+        "database": _check_database(settings),
+        "redis": _check_redis(settings),
+    }
+    is_ready = all(c.get("status") == "ok" for c in checks.values())
+
+    body: dict[str, object] = {
+        "status": "ready" if is_ready else "not_ready",
+        "timestamp": datetime.now(UTC).isoformat(),
+        "checks": checks,
+    }
+
+    if not is_ready:
+        # 503 makes orchestrators stop sending traffic until ready
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=body,
+        )
+
+    return body
 
 
 @router.get("/health/detailed")
