@@ -603,6 +603,26 @@ export function privacyExportUrl(): string {
   return `${PREFIX}/privacy/export`;
 }
 
+/**
+ * DELETE /privacy/account — elimina a conta (LGPD art. 18 VI).
+ *
+ * Anonimiza o cadastro, revoga API keys e consentimentos. PRESERVA HDRs
+ * (cadeia de custódia imutável). Operação IRREVERSÍVEL — exige o token de
+ * confirmação literal. Retorna 204 (sem corpo) em caso de sucesso.
+ */
+export async function deleteAccount(): Promise<void> {
+  const response = await apiFetch(
+    `${PREFIX}/privacy/account?confirm=CONFIRMO_ELIMINACAO`,
+    {
+      method: "DELETE",
+      headers: authorizedHeaders(),
+    },
+  );
+  if (response.status === 204) return;
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+}
+
 /** POST /privacy/ripd */
 export async function createRipd(body: Record<string, unknown>): Promise<unknown> {
   const response = await apiFetch(`${PREFIX}/privacy/ripd`, {

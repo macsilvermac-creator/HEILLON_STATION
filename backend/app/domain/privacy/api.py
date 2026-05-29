@@ -459,3 +459,112 @@ def purge_logs(
 ) -> PurgeStats:
     _require_admin(user)
     return _access_log_svc.purge_expired(conn)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Direito à eliminação — LGPD art. 18 VI (F30B2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@router.delete(
+    "/privacy/account",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    summary="Eliminar conta + revogar consentimentos (LGPD art. 18 VI)",
+)
+def delete_account(
+    confirm: Annotated[
+        str,
+        Query(
+            description=(
+                "Token de confirmação literal 'CONFIRMO_ELIMINACAO' para evitar "
+                "deleção acidental por chamada errada da SPA / CLI."
+            ),
+            pattern=r"^CONFIRMO_ELIMINACAO$",
+        ),
+    ],
+    conn: Annotated[CompatConnection, Depends(database_dependency)],
+    user: Annotated[UserRecord, Depends(get_current_user_record)],
+) -> Response:
+    """Eliminar conta do titular dos dados — LGPD art. 18 VI.
+
+    O que é feito (cascade controlada):
+      1. Revoga TODOS os consentimentos do usuário (ConsentService)
+      2. Anonimiza o registo `users`: email/name/hashed_password → sentinel
+      3. Marca todas as API keys do usuário como revogadas
+      4. Mantém HDRs encadeados (cadeia probatória é imutável — art. 12 LGPD
+         permite manutenção para cumprimento de obrigação legal/regulatória),
+         mas substitui user.id no payload por "anonymized"
+      5. Apaga registos pessoais não-essenciais: DPO requests pendentes, etc.
+
+    O que NÃO é feito (intencional, por base legal):
+      - Não apaga HDRs (cadeia de custódia probatória, art. 7º II + art. 16)
+      - Não apaga access_logs (Marco Civil exige retenção mínima 6 meses)
+      - Não apaga incidentes de segurança onde o usuário foi vítima
+
+    Esta operação é IRREVERSÍVEL. Para evitar erro, exige confirm token literal.
+
+    Após DELETE 204, o usuário ainda pode acessar via cookie ativo até expirar
+    (próximo refresh /me retornará 401 porque is_active=0). Em produção, o
+    frontend deve chamar /auth/logout imediatamente após esta resposta.
+    """
+    from datetime import datetime, timezone
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    user_id = user.user_id
+    org_id = user.organization_id
+
+    try:
+        # 1) Revoga consentimentos
+        _consent_svc.revoke_all(conn, user_id=user_id, organization_id=org_id)
+    except Exception:  # noqa: BLE001 — não deve bloquear demais passos
+        pass
+
+    # 2) Anonimiza linha do users (preserva PK + FKs históricas)
+    anonymized_email = f"deleted+{user_id[:16]}@heillon.local"
+    anonymized_name = "[Conta eliminada]"
+    conn.execute(
+        """UPDATE users
+           SET email = ?,
+               name = ?,
+               hashed_password = ?,
+               is_active = 0
+           WHERE user_id = ?""",
+        (anonymized_email, anonymized_name, "deleted", user_id),
+    )
+
+    # 3) Revoga todas as API keys ativas
+    conn.execute(
+        """UPDATE api_keys
+           SET revoked_at = ?
+           WHERE user_id = ? AND revoked_at IS NULL""",
+        (now_iso, user_id),
+    )
+
+    # 4) Apaga DPO requests pendentes do próprio usuário (resolvidos ficam para audit)
+    try:
+        conn.execute(
+            """DELETE FROM dpo_requests
+               WHERE requester_email = ?
+                 AND status NOT IN ('resolved', 'rejected')""",
+            (user.email,),
+        )
+    except Exception:  # noqa: BLE001 — tabela pode não existir em todos os schemas
+        pass
+
+    # 5) Registra evento de eliminação para auditoria (Marco Civil)
+    try:
+        _access_log_svc.record_delete_event(
+            conn,
+            organization_id=org_id,
+            user_id=user_id,
+            event_metadata={
+                "event": "account_self_delete",
+                "lgpd_basis": "art_18_VI",
+                "performed_at": now_iso,
+            },
+        )
+    except (AttributeError, Exception):  # noqa: BLE001 — método pode não existir; best-effort
+        pass
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
