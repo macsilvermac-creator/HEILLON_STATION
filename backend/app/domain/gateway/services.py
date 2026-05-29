@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, cast
 
 import httpx
 
@@ -150,7 +150,7 @@ def _parse_sse_data_line(line: str) -> dict[str, Any] | None:
     if not payload or payload == "[DONE]":
         return None
     try:
-        return json.loads(payload)
+        return cast("dict[str, Any] | None", json.loads(payload))
     except json.JSONDecodeError:
         return None
 
@@ -347,7 +347,7 @@ async def forward_anthropic_messages(
         raise UpstreamError(response.status_code, err_body)
 
     try:
-        return response.json()
+        return cast("dict[str, Any]", response.json())
     except Exception as exc:  # noqa: BLE001
         raise UpstreamError(
             502, {"error": {"message": f"Anthropic returned non-JSON: {exc}"}}

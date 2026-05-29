@@ -37,6 +37,7 @@ from app.dependencies import (
 from app.core.config import Settings
 from app.db.compat import CompatConnection
 from app.domain.privacy.models import (
+    AccessLogCreate,
     ConsentBundle,
     ConsentRecord,
     ConsentUpdate,
@@ -585,19 +586,16 @@ def delete_account(
     except Exception:  # noqa: BLE001 — tabela pode não existir em todos os schemas
         pass
 
-    # 5) Registra evento de eliminação para auditoria (Marco Civil)
-    try:
-        _access_log_svc.record_delete_event(
-            conn,
-            organization_id=org_id,
+    # 5) Registra evento de eliminação para auditoria (Marco Civil / LGPD art. 18, VI).
+    #    AccessLogService.log() já trata suas próprias exceções (best-effort interno).
+    _access_log_svc.log(
+        conn,
+        payload=AccessLogCreate(
             user_id=user_id,
-            event_metadata={
-                "event": "account_self_delete",
-                "lgpd_basis": "art_18_VI",
-                "performed_at": now_iso,
-            },
-        )
-    except (AttributeError, Exception):  # noqa: BLE001 — método pode não existir; best-effort
-        pass
+            organization_id=org_id,
+            event_type="account_self_delete",
+            resource="lgpd:art_18_VI",
+        ),
+    )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

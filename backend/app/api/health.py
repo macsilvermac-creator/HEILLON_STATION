@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -78,7 +79,7 @@ async def detailed_health(
             status_code=status.HTTP_403_FORBIDDEN, detail="Apenas administradores."
         )
 
-    checks = {
+    checks: dict[str, dict[str, Any]] = {
         "database": _check_database(settings),
         "redis": _check_redis(settings),
         "timestamp_service": _check_tsa(settings),

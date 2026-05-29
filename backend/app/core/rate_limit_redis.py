@@ -101,10 +101,10 @@ def redis_is_allowed(key: str, max_requests: int, window_seconds: int) -> bool |
             _SLIDING_WINDOW_LUA,
             1,
             key,
-            now,
-            window_start,
-            max_requests,
-            window_seconds + 1,
+            str(now),
+            str(window_start),
+            str(max_requests),
+            str(window_seconds + 1),
             member,
         )
         return bool(result)

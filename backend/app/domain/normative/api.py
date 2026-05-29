@@ -15,7 +15,7 @@ router = APIRouter(prefix="/normative", tags=["normative"])
 def get_normative_service(request: Request) -> NormativeService:
     """Surface governance engine registered during lifespan."""
 
-    svc = getattr(request.app.state, "normative_service", None)
+    svc: NormativeService | None = getattr(request.app.state, "normative_service", None)
     if svc is None:
         msg = "Normative Corpus not initialized."
         raise RuntimeError(msg)

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
+from pydantic import HttpUrl
 
 from app.dependencies import database_dependency, hdr_service_dependency
 from app.domain.api_keys.dependencies import get_user_from_api_key
@@ -89,7 +90,7 @@ def _persist_hdr_for_capture(
             model=model,
             prompt=prompt_text[:64_000],  # respect MAX_PROMPT_CHARS
             response=response_text[:256_000],
-            source_url=source_url,
+            source_url=cast("HttpUrl", source_url),
             captured_at=datetime.now(timezone.utc),
             ai_session_id=None,
             extension_version="gateway_v1",
@@ -228,7 +229,7 @@ async def openai_chat_completions(
     hdr_svc: HDRService = Depends(hdr_service_dependency),
     user: UserRecord = Depends(get_user_from_api_key),
     upstream: GatewayUpstreamConfig = Depends(get_upstream_config),
-) -> JSONResponse:
+) -> Response:
     """OpenAI-compatible endpoint that forwards to upstream and audits in background.
 
     Headers:
@@ -468,7 +469,7 @@ async def anthropic_messages(
     anthropic_version: Annotated[
         str, Header(alias="anthropic-version")
     ] = DEFAULT_ANTHROPIC_VERSION,
-) -> JSONResponse:
+) -> Response:
     """Anthropic-compatible endpoint for `client.messages.create(...)` SDK calls.
 
     Headers (all required for upstream):

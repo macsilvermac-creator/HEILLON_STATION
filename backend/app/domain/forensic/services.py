@@ -42,7 +42,8 @@ class ForensicPackageService:
 
     def _settings(self) -> Settings:
         if self._settings_provider is not None:
-            return self._settings_provider()
+            provided: Settings = self._settings_provider()
+            return provided
         return runtime_config.get_settings()
 
     @staticmethod

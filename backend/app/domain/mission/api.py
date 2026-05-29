@@ -48,7 +48,9 @@ def mission_repository_dependency() -> MissionRepository:
 def get_orchestration(request: Request) -> OrchestrationEngine:
     """Resolve orchestrator bound during application lifespan."""
 
-    engine = getattr(request.app.state, "orchestration_engine", None)
+    engine: OrchestrationEngine | None = getattr(
+        request.app.state, "orchestration_engine", None
+    )
     if engine is None:
         msg = "Orchestration engine not initialized."
         raise RuntimeError(msg)
@@ -117,9 +119,9 @@ def diary_endpoint(
     """Diário de bordo — filtros plus pagination."""
 
     if skip < 0 or limit <= 0 or limit > 200:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid pagination window."
-        )
+        # NB: the `status` query-param shadows the FastAPI `status` module in this
+        # scope, so we use the literal 400 rather than status.HTTP_400_BAD_REQUEST.
+        raise HTTPException(status_code=400, detail="Invalid pagination window.")
 
     stat_value = status.value if status else None
     total, missions = mission_repo.diary_query(

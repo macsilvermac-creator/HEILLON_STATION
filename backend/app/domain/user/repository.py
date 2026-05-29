@@ -46,7 +46,7 @@ class UserRepository:
                 created_iso,
             ),
         )
-        return UserRepository.get_by_id(conn, resolved_id)  # type: ignore[arg-type]
+        return UserRepository.get_by_id(conn, resolved_id)
 
     @staticmethod
     def get_by_id(conn: sqlite3.Connection, user_id: str) -> UserRecord | None:

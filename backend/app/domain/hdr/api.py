@@ -183,7 +183,7 @@ def verify_icp(
     ).encode("utf-8")
 
     sig_valid = False
-    details: dict[str, Any] = {}
+    details = {}
 
     # Re-verify: reconstruct public key from stored cert DER is not feasible
     # without the PKCS#12.  Instead we trust the signature record and report

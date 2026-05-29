@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import sqlite3
 from collections.abc import Generator
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -154,7 +155,7 @@ def get_current_user_record(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token sem sujeito."
         )
 
-    record = UserRepository().get_by_id(conn, user_id)
+    record = UserRepository().get_by_id(cast("sqlite3.Connection", conn), user_id)
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Operador desconhecido."

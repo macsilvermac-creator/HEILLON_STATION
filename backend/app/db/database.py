@@ -261,7 +261,7 @@ def fetch_hdr(conn: Any, hdr_id: str) -> HDR | None:
     raw = row["payload"]
     if isinstance(raw, (dict, list)):
         return HDR.model_validate(raw)
-    return HDR.model_validate_json(raw)  # type: ignore[arg-type]
+    return HDR.model_validate_json(raw)
 
 
 def fetch_hdr_organization_id(conn: Any, hdr_id: str) -> str | None:
@@ -315,7 +315,7 @@ def fetch_mission_plan(conn: Any, mission_id: str) -> MissionPlan | None:
     raw = row["mission_plan_snapshot"]
     if isinstance(raw, (dict, list)):
         return MissionPlan.model_validate(raw)
-    return MissionPlan.model_validate_json(raw)  # type: ignore[arg-type]
+    return MissionPlan.model_validate_json(raw)
 
 
 def list_mission_plans(

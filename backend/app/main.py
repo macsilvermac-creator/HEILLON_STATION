@@ -164,7 +164,7 @@ def create_application() -> FastAPI:
     application.add_middleware(SecurityHeadersMiddleware, is_production=is_production)
 
     class RateLimitHttpMiddleware(BaseHTTPMiddleware):
-        async def dispatch(self, request, call_next):  # type: ignore[override]
+        async def dispatch(self, request, call_next):
             return await rate_limit_middleware(request, call_next)
 
     application.add_middleware(RateLimitHttpMiddleware)

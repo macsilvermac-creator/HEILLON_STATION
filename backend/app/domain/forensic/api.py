@@ -26,7 +26,9 @@ _repository_singleton = ForensicRepository()
 def get_forensic_package_service(request: Request) -> ForensicPackageService:
     """Resolve singleton forensic assembler registered during lifespan."""
 
-    svc = getattr(request.app.state, "forensic_service", None)
+    svc: ForensicPackageService | None = getattr(
+        request.app.state, "forensic_service", None
+    )
     if svc is None:
         msg = "Forensic package engine not initialized."
         raise RuntimeError(msg)

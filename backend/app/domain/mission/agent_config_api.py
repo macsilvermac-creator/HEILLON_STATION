@@ -19,7 +19,9 @@ router = APIRouter(prefix="/agent-config", tags=["agent-config"])
 
 
 def get_agent_config_runtime(request: Request) -> AgentConfigService:
-    svc = getattr(request.app.state, "agent_config_service", None)
+    svc: AgentConfigService | None = getattr(
+        request.app.state, "agent_config_service", None
+    )
     if svc is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -20,7 +20,7 @@ auth_scheme = HTTPBearer(auto_error=False)
 def get_auth_service(request: Request) -> AuthService:
     """Resolve cryptography helpers registered during lifespan wiring."""
 
-    service = getattr(request.app.state, "auth_service", None)
+    service: AuthService | None = getattr(request.app.state, "auth_service", None)
     if service is None:
         msg = "Auth service not wired — application startup incomplete."
         raise RuntimeError(msg)

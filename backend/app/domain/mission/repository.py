@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import sqlite3
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from app.domain.mission.models import MissionPlan
+
+if TYPE_CHECKING:
+    from app.db.compat import CompatConnection
 
 
 class MissionRepository:
@@ -123,4 +126,4 @@ class MissionRepository:
 
         from app.db.dialect_sql import aggregate_mission_stats
 
-        return aggregate_mission_stats(conn, organization_id)
+        return aggregate_mission_stats(cast("CompatConnection", conn), organization_id)

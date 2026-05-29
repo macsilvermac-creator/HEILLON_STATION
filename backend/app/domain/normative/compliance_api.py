@@ -5,8 +5,8 @@ from __future__ import annotations
 from io import BytesIO
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
-from reportlab.lib.pagesizes import A4  # type: ignore[import-untyped]
-from reportlab.pdfgen import canvas  # type: ignore[import-untyped]
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
 from app.dependencies import database_dependency, get_current_user_record
 from app.domain.mission.repository import MissionRepository
@@ -21,7 +21,9 @@ _missions = MissionRepository()
 
 
 def _anchoring(request: Request) -> NormativeAnchoringService:
-    svc = getattr(request.app.state, "anchoring_service", None)
+    svc: NormativeAnchoringService | None = getattr(
+        request.app.state, "anchoring_service", None
+    )
     if svc is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

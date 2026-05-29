@@ -30,7 +30,7 @@ class AuthCredentialsError(RuntimeError):
 def _redis_get_client():  # pragma: no cover - thin wrapper around rate_limit_redis
     """Return Redis client if available, else None (graceful degradation)."""
     try:
-        from app.core.rate_limit_redis import _get_redis  # type: ignore[attr-defined]
+        from app.core.rate_limit_redis import _get_redis
 
         return _get_redis()
     except Exception as exc:  # noqa: BLE001
@@ -59,10 +59,10 @@ class AuthService:
         self.expire_minutes = expire_minutes
 
     def hash_password(self, password: str) -> str:
-        return pwd_context.hash(password[:72])
+        return str(pwd_context.hash(password[:72]))
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password[:72], hashed_password)
+        return bool(pwd_context.verify(plain_password[:72], hashed_password))
 
     def create_access_token(
         self, *, subject: str, claims: dict[str, Any] | None = None

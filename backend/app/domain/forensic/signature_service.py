@@ -8,6 +8,11 @@ from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
 
+# Ed25519 raw seed length (RFC 8032 §5.1.5) — the `cryptography` library does
+# not expose this as a class attribute, so we pin the spec constant explicitly.
+_ED25519_SEED_BYTES = 32
+
+
 class ForensicManifestSigner:
     """Sign courtroom manifests with detachable Ed25519 envelopes."""
 
@@ -15,7 +20,7 @@ class ForensicManifestSigner:
         if private_key_seed is None:
             self._private_key = ed25519.Ed25519PrivateKey.generate()
         else:
-            if len(private_key_seed) != ed25519.Ed25519PrivateKey.SEED_BYTE_LENGTH:
+            if len(private_key_seed) != _ED25519_SEED_BYTES:
                 msg = (
                     "Ed25519 seed must unpack to 32 bytes — supply a 64-hex-character representation "
                     "via `FORENSICS_SIGNATURE_PRIVATE_KEY_HEX`."
@@ -32,7 +37,7 @@ class ForensicManifestSigner:
             seed = None
         else:
             seed = binascii.unhexlify(maybe_hex.strip())
-            if len(seed) != ed25519.Ed25519PrivateKey.SEED_BYTE_LENGTH:
+            if len(seed) != _ED25519_SEED_BYTES:
                 msg = (
                     "`FORENSICS_SIGNATURE_PRIVATE_KEY_HEX` deve representar uma seed raw "
                     "de 32 bytes (64 dígitos hex)."

@@ -309,7 +309,7 @@ class HumanApprovalGateRepository:
                WHERE status=? AND expires_at < ?""",
             (GateStatus.EXPIRED, GateStatus.PENDING, now),
         )
-        return cursor.rowcount
+        return int(cursor.rowcount)
 
 
 # ── AI Disclosures ─────────────────────────────────────────────────────────────

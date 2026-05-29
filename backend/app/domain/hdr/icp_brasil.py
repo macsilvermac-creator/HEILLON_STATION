@@ -88,7 +88,7 @@ def _build_req(data: bytes) -> bytes:
         }
     )
     req = tsp.TimeStampReq({"version": 1, "message_imprint": imprint, "cert_req": True})
-    return req.dump()
+    return bytes(req.dump())
 
 
 # ── Response validation ────────────────────────────────────────────────────────
@@ -238,4 +238,4 @@ def verify_icp_timestamp(data: bytes, token_b64: str) -> bool:
     except Exception:
         return False
 
-    return remote_digest == sha256(data).digest()
+    return bool(remote_digest == sha256(data).digest())

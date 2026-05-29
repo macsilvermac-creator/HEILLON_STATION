@@ -102,7 +102,7 @@ def open_connection(
     if dialect == "postgresql":
         import psycopg2
 
-        conn = psycopg2.connect(settings.effective_database_url)  # type: ignore[attr-defined]
+        conn = psycopg2.connect(settings.effective_database_url)
         wrapped = CompatConnection(conn, dialect)
         try:
             yield wrapped

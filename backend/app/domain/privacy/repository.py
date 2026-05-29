@@ -121,7 +121,7 @@ class RIPDRepository:
             ),
         )
         conn.commit()
-        return self.get(conn, ripd_id=ripd_id, organization_id=organization_id)  # type: ignore[return-value]
+        return self.get(conn, ripd_id=ripd_id, organization_id=organization_id)
 
     def get(
         self, conn: sqlite3.Connection, *, ripd_id: str, organization_id: str
@@ -237,7 +237,7 @@ class DPORepository:
             ),
         )
         conn.commit()
-        return self.get(conn, request_id=request_id, organization_id=organization_id)  # type: ignore[return-value]
+        return self.get(conn, request_id=request_id, organization_id=organization_id)
 
     def get(
         self, conn: sqlite3.Connection, *, request_id: str, organization_id: str
@@ -374,7 +374,7 @@ class IncidentRepository:
             ),
         )
         conn.commit()
-        return self.get(conn, incident_id=incident_id, organization_id=organization_id)  # type: ignore[return-value]
+        return self.get(conn, incident_id=incident_id, organization_id=organization_id)
 
     def get(
         self, conn: sqlite3.Connection, *, incident_id: str, organization_id: str
