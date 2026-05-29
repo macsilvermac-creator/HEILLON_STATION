@@ -408,7 +408,7 @@ export async function fetchMyQuota(): Promise<QuotaSnapshot> {
   if (!response.ok) {
     throw new Error(formatProblemDetail(payload));
   }
-  return payload as QuotaSnapshot;
+  return payload as unknown as QuotaSnapshot;
 }
 
 /**
@@ -445,7 +445,7 @@ export async function listApiKeys(): Promise<ApiKeyPublic[]> {
   if (!response.ok) {
     throw new Error(formatProblemDetail(payload));
   }
-  return payload as ApiKeyPublic[];
+  return payload as unknown as ApiKeyPublic[];
 }
 
 export async function mintApiKey(name: string): Promise<ApiKeyMintResponse> {
@@ -461,7 +461,7 @@ export async function mintApiKey(name: string): Promise<ApiKeyMintResponse> {
   if (!response.ok) {
     throw new Error(formatProblemDetail(payload));
   }
-  return payload as ApiKeyMintResponse;
+  return payload as unknown as ApiKeyMintResponse;
 }
 
 export async function revokeApiKey(apiKeyId: string): Promise<void> {

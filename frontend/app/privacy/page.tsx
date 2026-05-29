@@ -19,6 +19,7 @@ import {
   listIncidents,
   registerIncident,
   purgeLogs,
+  deleteAccount,
 } from "@/lib/api";
 
 /* ─── types ──────────────────────────────────────────────────────────── */
@@ -120,7 +121,7 @@ type Tab = "overview" | "consent" | "ripd" | "incidents" | "request";
 
 export default function PrivacyPage() {
   const router = useRouter();
-  const { isAuthenticated, isReady, user } = useAuth();
+  const { isAuthenticated, isReady, user, logout } = useAuth();
   const isAdmin = user?.role === "admin";
 
   const [tab, setTab] = useState<Tab>("overview");
@@ -162,6 +163,11 @@ export default function PrivacyPage() {
   /* purge */
   const [purging, setPurging] = useState(false);
   const [purgeResult, setPurgeResult] = useState<{ purged_count: number } | null>(null);
+
+  /* self-service account deletion (LGPD art. 18 VI) */
+  const [delConfirm, setDelConfirm] = useState("");
+  const [delDeleting, setDelDeleting] = useState(false);
+  const [delError, setDelError] = useState("");
 
   /* auth gate */
   useEffect(() => {
@@ -300,6 +306,25 @@ export default function PrivacyPage() {
       setPurgeResult(result);
     } catch { /* ignore */ }
     finally { setPurging(false); }
+  }
+
+  /* immediate self-service deletion — anonymizes account, revokes keys,
+     preserves HDRs (valor probatório). Irreversible. */
+  async function handleDeleteAccount() {
+    if (delConfirm !== "CONFIRMO_ELIMINACAO") {
+      setDelError('Digite exatamente CONFIRMO_ELIMINACAO para prosseguir.');
+      return;
+    }
+    setDelDeleting(true);
+    setDelError("");
+    try {
+      await deleteAccount();
+      await logout();
+      router.replace("/login?conta_eliminada=1");
+    } catch (err) {
+      setDelError(err instanceof Error ? err.message : "Erro ao eliminar conta.");
+      setDelDeleting(false);
+    }
   }
 
   if (!isReady || !isAuthenticated) {
@@ -751,6 +776,7 @@ export default function PrivacyPage() {
 
         {/* ─── TAB: REQUEST RIGHTS ─── */}
         {tab === "request" && (
+          <div className="space-y-6">
           <div className="glass-elite rounded-2xl border border-white/10 p-6">
             <h2 className="mb-2 text-base font-semibold text-white">
               Exercer direitos do titular (LGPD art. 18)
@@ -838,6 +864,43 @@ export default function PrivacyPage() {
                 </button>
               </form>
             )}
+          </div>
+
+          {/* danger zone — eliminação imediata da própria conta */}
+          <div className="glass-elite rounded-2xl border border-red-500/30 p-6">
+            <h2 className="mb-2 text-base font-semibold text-red-300">
+              Eliminar minha conta agora (LGPD art. 18 VI)
+            </h2>
+            <p className="mb-4 text-xs text-white/45">
+              Eliminação imediata e <strong className="text-white/70">irreversível</strong>: a sua
+              conta é anonimizada e todas as chaves de API são revogadas na hora. Os HDRs já
+              gerados são <strong className="text-white/70">preservados</strong> por terem valor
+              probatório (LGPD art. 7 II / art. 16). Para eliminação assistida pelo DPO, use o
+              formulário acima.
+            </p>
+            <label className="mb-1 block text-xs text-white/50">
+              Digite <span className="font-mono text-red-300">CONFIRMO_ELIMINACAO</span> para confirmar
+            </label>
+            <input
+              value={delConfirm}
+              onChange={(e) => setDelConfirm(e.target.value)}
+              placeholder="CONFIRMO_ELIMINACAO"
+              className="mb-3 w-full rounded-xl border border-red-500/30 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-red-500"
+            />
+            {delError && (
+              <p className="mb-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                {delError}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={handleDeleteAccount}
+              disabled={delDeleting || delConfirm !== "CONFIRMO_ELIMINACAO"}
+              className="rounded-xl border border-red-500/50 bg-red-500/15 px-5 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {delDeleting ? "A eliminar…" : "Eliminar conta permanentemente"}
+            </button>
+          </div>
           </div>
         )}
 
