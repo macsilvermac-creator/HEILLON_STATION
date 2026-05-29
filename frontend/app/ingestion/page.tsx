@@ -8,7 +8,7 @@ export default function IngestionPage() {
       <div>
         <h1 className="text-gradient text-3xl font-semibold tracking-tight">Enviar documentos</h1>
         <p className="mt-2 max-w-2xl text-sm text-white/60">
-          Cada documento enviado recebe um registo de custódia imutável com hash SHA-256 e carimbo temporal certificado.
+          Cada documento enviado recebe um registo de custódia imutável com hash SHA-256 e carimbo temporal RFC 3161.
         </p>
       </div>
       <EvidenceUploader />

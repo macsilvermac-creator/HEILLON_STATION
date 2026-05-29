@@ -16,6 +16,8 @@ export default function NormativeHubPage() {
   const [preview, setPreview] = useState<Record<string, unknown> | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -26,7 +28,12 @@ export default function NormativeHubPage() {
         setFrameworks(Array.isArray(fw) ? (fw as unknown[]) : []);
         setRules(Array.isArray(nw) ? (nw as unknown[]) : []);
       } catch (e) {
-        if (!ignore) setErr(e instanceof Error ? e.message : "Falha ao carregar âncoras.");
+        if (!ignore)
+          setLoadErr(
+            e instanceof Error ? e.message : "Não foi possível carregar o corpus normativo.",
+          );
+      } finally {
+        if (!ignore) setLoading(false);
       }
     })();
     return () => {
@@ -61,11 +68,24 @@ export default function NormativeHubPage() {
         </p>
       </div>
 
+      {loadErr ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-5 py-4 text-sm text-rose-200"
+        >
+          {loadErr}
+        </div>
+      ) : null}
+
       <section className="grid gap-6 md:grid-cols-2">
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
           <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400">Frameworks</h2>
           <ul className="mt-3 space-y-2 text-sm text-white/75">
-            {frameworks.length ? (
+            {loading ? (
+              <li className="text-xs text-white/45" aria-live="polite">
+                A carregar frameworks…
+              </li>
+            ) : frameworks.length ? (
               frameworks.map((fw) => {
                 const frame = fw as { framework_id?: string; name?: string; jurisdiction?: string };
                 return (
@@ -78,14 +98,18 @@ export default function NormativeHubPage() {
                 );
               })
             ) : (
-              <li className="text-xs text-white/45">Sem frameworks — verifique backend /api/v1/compliance/frameworks.</li>
+              <li className="text-xs text-white/45">
+                {loadErr ? "Não foi possível carregar os frameworks." : "Nenhum framework disponível no momento."}
+              </li>
             )}
           </ul>
         </div>
 
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
           <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400">Regras activas</h2>
-          <p className="mt-2 text-sm text-white/60">{rules.length} regras no corpus (prioridade global).</p>
+          <p className="mt-2 text-sm text-white/60">
+            {loading ? "A carregar regras…" : `${rules.length} regras no corpus (prioridade global).`}
+          </p>
           <Link href="/missions" className="mt-3 inline-block text-xs text-gold-400 underline-offset-4 hover:underline">
             Ver histórico de análises
           </Link>
@@ -122,7 +146,7 @@ export default function NormativeHubPage() {
       </section>
 
       <p className="text-[11px] text-white/40">
-        Fase 9 — primeira âncora: LGPD. Extensível para GDPR / ISO 42001 via o mesmo registo de frameworks no backend.
+        Âncora principal: LGPD. Extensível a GDPR, EU AI Act e ISO 42001 pelo mesmo registo de frameworks.
       </p>
     </div>
   );
