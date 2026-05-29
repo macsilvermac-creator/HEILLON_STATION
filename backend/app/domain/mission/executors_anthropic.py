@@ -107,7 +107,8 @@ class AnthropicMessagesMissionExecutor:
             out_hash = generate_hash(body_for_hash.encode("utf-8"))
 
             return MissionAgentExecutionOutcome(
-                cognitive_hypothesis=hypothesis or "Anthropic returned empty hypothesis.",
+                cognitive_hypothesis=hypothesis
+                or "Anthropic returned empty hypothesis.",
                 cognitive_action=f"Anthropic cognition for `{node.agent_id}:{node.action}`.",
                 cognitive_result=(summary or bundled)[:12000],
                 execution_status="completed",
@@ -117,7 +118,6 @@ class AnthropicMessagesMissionExecutor:
             )
 
         except Exception as exc:  # noqa: BLE001 — executor boundary contract
-
             return MissionAgentExecutionOutcome(
                 cognitive_hypothesis="Anthropic invocation failed.",
                 cognitive_action=f"node `{node.node_id}` `{node.agent_id}:{node.action}`",

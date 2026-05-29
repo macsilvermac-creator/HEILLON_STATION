@@ -43,7 +43,9 @@ class TierRepository:
             return None
 
         tier = Tier(str(row[0] if not hasattr(row, "keys") else row["tier"]))
-        period_start_raw = row[1] if not hasattr(row, "keys") else row["tier_period_start"]
+        period_start_raw = (
+            row[1] if not hasattr(row, "keys") else row["tier_period_start"]
+        )
         period_end_raw = row[2] if not hasattr(row, "keys") else row["tier_period_end"]
 
         now = datetime.now(timezone.utc)
@@ -52,18 +54,27 @@ class TierRepository:
         # Detect sentinel (new org via ensure_organization) → backfill from
         # the org's actual created_at (so HDRs inserted right after creation
         # are correctly captured in the first billing period).
-        if period_start_str == TierRepository._SENTINEL_PERIOD_START or period_start_str.startswith("1970"):
+        if (
+            period_start_str == TierRepository._SENTINEL_PERIOD_START
+            or period_start_str.startswith("1970")
+        ):
             org_created_row = conn.execute(
                 "SELECT created_at FROM organizations WHERE organization_id = ?",
                 (organization_id,),
             ).fetchone()
             org_created_raw = (
-                (org_created_row[0] if not hasattr(org_created_row, "keys") else org_created_row["created_at"])
+                (
+                    org_created_row[0]
+                    if not hasattr(org_created_row, "keys")
+                    else org_created_row["created_at"]
+                )
                 if org_created_row
                 else None
             )
             try:
-                org_created_at = _parse_db_timestamp(org_created_raw) if org_created_raw else now
+                org_created_at = (
+                    _parse_db_timestamp(org_created_raw) if org_created_raw else now
+                )
             except Exception:
                 org_created_at = now
             # Cap look-back to 30d to avoid runaway windows for legacy orgs
@@ -184,5 +195,7 @@ def _parse_db_timestamp(value: Any) -> datetime:
         dt = datetime.fromisoformat(text)
     except ValueError:
         # Fallback: try common SQLite default 'YYYY-MM-DD HH:MM:SS'
-        dt = datetime.strptime(str(value), "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        dt = datetime.strptime(str(value), "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=timezone.utc
+        )
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)

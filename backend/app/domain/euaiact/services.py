@@ -7,9 +7,6 @@ from typing import Any
 
 from app.domain.euaiact.models import (
     EUAIRiskCategory,
-    ISMSRiskLevel,
-    ISMSTreatment,
-    QESLevel,
     isms_risk_level,
 )
 from app.domain.euaiact.repository import (
@@ -289,7 +286,12 @@ class ISMSRiskService:
         limit: int = 50,
     ) -> list[dict[str, Any]]:
         return self._repo.list_by_org(
-            conn, organization_id, risk_level=risk_level, status=status, skip=skip, limit=limit
+            conn,
+            organization_id,
+            risk_level=risk_level,
+            status=status,
+            skip=skip,
+            limit=limit,
         )
 
     def close_risk(self, conn: Any, risk_id: str) -> None:

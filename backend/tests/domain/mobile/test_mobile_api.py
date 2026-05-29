@@ -17,7 +17,9 @@ def test_mobile_endpoints_require_bearer(api_client: TestClient) -> None:
     assert api_client.get("/api/v1/mobile/pending-approvals").status_code == 401
 
 
-def test_mobile_quick_stats_and_push_token(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_mobile_quick_stats_and_push_token(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     def _scoped() -> Settings:
         return Settings(
             DATABASE_URL=f"sqlite:///{(tmp_path / 'mobile.db').as_posix()}",

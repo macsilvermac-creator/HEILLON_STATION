@@ -25,17 +25,14 @@ from __future__ import annotations
 import io
 import json
 import zipfile
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
-from fastapi.responses import StreamingResponse
 
 from app.dependencies import (
     database_dependency,
     get_current_user_record,
-    resolve_mission_actor,
     settings_dependency,
-    MissionActor,
 )
 from app.core.config import Settings
 from app.db.compat import CompatConnection
@@ -46,7 +43,6 @@ from app.domain.privacy.models import (
     DPOContact,
     DPORequest,
     DPORequestCreate,
-    DPORequestStatus,
     DPORequestUpdate,
     IncidentCreate,
     IncidentStatus,
@@ -87,7 +83,10 @@ def _get_dpo_service(settings: Settings) -> DPOService:
 
 def _require_admin(user: UserRecord) -> UserRecord:
     if user.role != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito a administradores.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a administradores.",
+        )
     return user
 
 
@@ -101,7 +100,9 @@ def _require_admin(user: UserRecord) -> UserRecord:
     response_model=DPOContact,
     summary="Contacto público do DPO (LGPD art. 41)",
 )
-def dpo_contact(settings: Annotated[Settings, Depends(settings_dependency)]) -> DPOContact:
+def dpo_contact(
+    settings: Annotated[Settings, Depends(settings_dependency)],
+) -> DPOContact:
     """Return public DPO contact information — no authentication required."""
     return _get_dpo_service(settings).contact
 
@@ -124,7 +125,9 @@ def submit_dpo_request(
     settings: Annotated[Settings, Depends(settings_dependency)],
 ) -> DPORequest:
     dpo_svc = _get_dpo_service(settings)
-    ip = request.headers.get("x-forwarded-for", request.client.host if request.client else None)
+    ip = request.headers.get(
+        "x-forwarded-for", request.client.host if request.client else None
+    )
     ua = request.headers.get("user-agent")
     return dpo_svc.submit_request(
         conn,
@@ -180,7 +183,9 @@ def update_dpo_request(
         update=body,
     )
     if req is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitação não encontrada.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Solicitação não encontrada."
+        )
     return req
 
 
@@ -198,7 +203,9 @@ def get_consent(
     conn: Annotated[CompatConnection, Depends(database_dependency)],
     user: Annotated[UserRecord, Depends(get_current_user_record)],
 ) -> ConsentBundle:
-    return _consent_svc.get_bundle(conn, user_id=user.user_id, organization_id=user.organization_id)
+    return _consent_svc.get_bundle(
+        conn, user_id=user.user_id, organization_id=user.organization_id
+    )
 
 
 @router.post(
@@ -212,7 +219,9 @@ def set_consent(
     conn: Annotated[CompatConnection, Depends(database_dependency)],
     user: Annotated[UserRecord, Depends(get_current_user_record)],
 ) -> ConsentRecord:
-    ip = request.headers.get("x-forwarded-for", request.client.host if request.client else None)
+    ip = request.headers.get(
+        "x-forwarded-for", request.client.host if request.client else None
+    )
     ua = request.headers.get("user-agent")
     return _consent_svc.set_consent(
         conn,
@@ -233,7 +242,9 @@ def revoke_all_consent(
     conn: Annotated[CompatConnection, Depends(database_dependency)],
     user: Annotated[UserRecord, Depends(get_current_user_record)],
 ) -> list[ConsentRecord]:
-    return _consent_svc.revoke_all(conn, user_id=user.user_id, organization_id=user.organization_id)
+    return _consent_svc.revoke_all(
+        conn, user_id=user.user_id, organization_id=user.organization_id
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -250,7 +261,9 @@ def export_user_data(
     user: Annotated[UserRecord, Depends(get_current_user_record)],
 ) -> Response:
     """Return ZIP with all personal data for the authenticated user."""
-    bundle = _consent_svc.get_bundle(conn, user_id=user.user_id, organization_id=user.organization_id)
+    bundle = _consent_svc.get_bundle(
+        conn, user_id=user.user_id, organization_id=user.organization_id
+    )
 
     user_data = {
         "user_id": user.user_id,
@@ -265,7 +278,9 @@ def export_user_data(
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("profile.json", json.dumps(user_data, indent=2, ensure_ascii=False))
-        zf.writestr("consent.json", json.dumps(consent_data, indent=2, ensure_ascii=False))
+        zf.writestr(
+            "consent.json", json.dumps(consent_data, indent=2, ensure_ascii=False)
+        )
         zf.writestr(
             "README.txt",
             "Exportação de dados pessoais — Heillon Legal (LGPD art. 18 V)\n"
@@ -276,7 +291,9 @@ def export_user_data(
     return Response(
         content=buf.read(),
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="heillon_export_{user.user_id[:8]}.zip"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="heillon_export_{user.user_id[:8]}.zip"'
+        },
     )
 
 
@@ -319,7 +336,9 @@ def list_ripd(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ) -> list[RIPDReport]:
-    return _ripd_svc.list_by_org(conn, organization_id=user.organization_id, limit=limit, offset=offset)
+    return _ripd_svc.list_by_org(
+        conn, organization_id=user.organization_id, limit=limit, offset=offset
+    )
 
 
 @router.get(
@@ -334,7 +353,9 @@ def get_ripd(
 ) -> RIPDReport:
     report = _ripd_svc.get(conn, ripd_id=ripd_id, organization_id=user.organization_id)
     if report is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RIPD não encontrado.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="RIPD não encontrado."
+        )
     return report
 
 
@@ -350,12 +371,16 @@ def download_ripd(
 ) -> Response:
     report = _ripd_svc.get(conn, ripd_id=ripd_id, organization_id=user.organization_id)
     if report is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RIPD não encontrado.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="RIPD não encontrado."
+        )
     pdf_bytes = _ripd_svc.generate_pdf(report)
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="ripd_{ripd_id[:14]}.pdf"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="ripd_{ripd_id[:14]}.pdf"'
+        },
     )
 
 
@@ -395,7 +420,9 @@ def list_incidents(
     offset: int = Query(0, ge=0),
 ) -> list[SecurityIncident]:
     _require_admin(user)
-    return _incident_svc.list_by_org(conn, organization_id=user.organization_id, limit=limit, offset=offset)
+    return _incident_svc.list_by_org(
+        conn, organization_id=user.organization_id, limit=limit, offset=offset
+    )
 
 
 @router.put(
@@ -418,7 +445,9 @@ def update_incident(
         closed_by=user.user_id if body.status == IncidentStatus.CLOSED else None,
     )
     if incident is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incidente não encontrado.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Incidente não encontrado."
+        )
     return incident
 
 
@@ -432,9 +461,13 @@ def get_anpd_notification(
     user: Annotated[UserRecord, Depends(get_current_user_record)],
 ) -> dict[str, str]:
     _require_admin(user)
-    incident = _incident_svc.get(conn, incident_id=incident_id, organization_id=user.organization_id)
+    incident = _incident_svc.get(
+        conn, incident_id=incident_id, organization_id=user.organization_id
+    )
     if incident is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incidente não encontrado.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Incidente não encontrado."
+        )
     notification_text = _incident_svc.generate_anpd_notification_text(incident)
     return {
         "incident_id": incident_id,

@@ -90,9 +90,14 @@ class TestAIMSRecords:
                 "c8_operational_controls": True,
                 "c8_human_oversight_active": True,
                 "c9_internal_audit_done": True,
-                "annex_a2": True, "annex_a3": True, "annex_a4": True,
-                "annex_a5": True, "annex_a6": True, "annex_a7": True,
-                "annex_a8": True, "annex_a9": True,
+                "annex_a2": True,
+                "annex_a3": True,
+                "annex_a4": True,
+                "annex_a5": True,
+                "annex_a6": True,
+                "annex_a7": True,
+                "annex_a8": True,
+                "annex_a9": True,
             },
             headers=_auth(token),
         )
@@ -108,17 +113,27 @@ class TestAIMSRecords:
             "/api/v1/iso42001/aims",
             json={
                 "ai_system_ref": "test-full",
-                "c4_ai_policy_defined": True, "c5_top_mgmt_commitment": True,
-                "c5_roles_defined": True, "c6_risks_assessed": True,
+                "c4_ai_policy_defined": True,
+                "c5_top_mgmt_commitment": True,
+                "c5_roles_defined": True,
+                "c6_risks_assessed": True,
                 "c6_opportunities_noted": True,
                 "c6_objectives_set": ["obj-1"],
                 "c7_resources_allocated": True,
-                "c7_awareness_training": True, "c8_operational_controls": True,
-                "c8_human_oversight_active": True, "c9_internal_audit_done": True,
-                "c9_mgmt_review_done": True, "c10_continual_improvement_plan": "plan",
-                "annex_a2": True, "annex_a3": True, "annex_a4": True,
-                "annex_a5": True, "annex_a6": True, "annex_a7": True,
-                "annex_a8": True, "annex_a9": True,
+                "c7_awareness_training": True,
+                "c8_operational_controls": True,
+                "c8_human_oversight_active": True,
+                "c9_internal_audit_done": True,
+                "c9_mgmt_review_done": True,
+                "c10_continual_improvement_plan": "plan",
+                "annex_a2": True,
+                "annex_a3": True,
+                "annex_a4": True,
+                "annex_a5": True,
+                "annex_a6": True,
+                "annex_a7": True,
+                "annex_a8": True,
+                "annex_a9": True,
             },
             headers=_auth(token),
         )
@@ -229,7 +244,9 @@ class TestAIMSRecords:
                 json={"control_ref": ctrl, "evidence": f"Evidence for {ctrl}"},
                 headers=_auth(token),
             )
-        r = client.get(f"/api/v1/iso42001/aims/{aims_id}/controls", headers=_auth(token))
+        r = client.get(
+            f"/api/v1/iso42001/aims/{aims_id}/controls", headers=_auth(token)
+        )
         assert r.status_code == 200
         assert len(r.json()) == 3
 

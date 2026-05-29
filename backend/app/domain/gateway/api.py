@@ -104,7 +104,10 @@ def _persist_hdr_for_capture(
         _hdr_repository.insert(conn, hdr, organization_id=user.organization_id)
         logger.info(
             "Gateway HDR created: %s provider=%s model=%s user=%s",
-            hdr.hdr_id, provider.value, model, user.user_id,
+            hdr.hdr_id,
+            provider.value,
+            model,
+            user.user_id,
         )
         return hdr.hdr_id
     except Exception as exc:  # noqa: BLE001
@@ -313,7 +316,9 @@ async def openai_chat_completions(
         snap_after = QuotaService.snapshot(conn, organization_id=user.organization_id)
         quota_headers = {
             "X-Heillon-Quota-Used": str(snap_after.used_in_period),
-            "X-Heillon-Quota-Limit": str(snap_after.monthly_hdr_limit) if snap_after.monthly_hdr_limit else "unlimited",
+            "X-Heillon-Quota-Limit": str(snap_after.monthly_hdr_limit)
+            if snap_after.monthly_hdr_limit
+            else "unlimited",
             "X-Heillon-Quota-Tier": snap_after.tier.value,
         }
     except Exception:  # noqa: BLE001

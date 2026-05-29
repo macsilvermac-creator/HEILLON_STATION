@@ -21,6 +21,8 @@ const PUBLIC_PATH_PREFIXES = [
   "/register",
   "/docs",
   "/api/proxy",
+  "/api/v1", // API routes: auth enforced by the backend (401), not the edge guard.
+             // Gating these here would turn the login POST itself into an HTML redirect.
   "/health",
   "/verification",
   "/_next",

@@ -49,8 +49,11 @@ _isms_svc = ISMSRiskService()
 # ── Auth helpers ──────────────────────────────────────────────────────────────
 
 
-def _require_admin(current_user: UserRecord = Depends(get_current_user_record)) -> UserRecord:
+def _require_admin(
+    current_user: UserRecord = Depends(get_current_user_record),
+) -> UserRecord:
     from app.domain.user.models import UserRole
+
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin only.")
     return current_user
@@ -314,7 +317,10 @@ def list_qes(
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _qes_svc.list_by_org(
-        conn, current_user.organization_id or "org_default", skip=skip, limit=min(limit, 100)
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 

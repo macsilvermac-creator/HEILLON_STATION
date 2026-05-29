@@ -73,7 +73,9 @@ class NormativeAnchoringService:
     def get_framework(self, framework_id: str) -> NormativeFramework | None:
         return self._frameworks.get(framework_id)
 
-    def anchor_hdr(self, conn, hdr_id: str, framework_ids: list[str]) -> HDRAnchorRecord:
+    def anchor_hdr(
+        self, conn, hdr_id: str, framework_ids: list[str]
+    ) -> HDRAnchorRecord:
         hdr_model = self._hdr.fetch_hdr(conn, hdr_id)
         if hdr_model is None:
             msg = f"HDR {hdr_id} not found"
@@ -87,7 +89,9 @@ class NormativeAnchoringService:
                 msg = f"Framework {fid} not registered"
                 raise ValueError(msg)
 
-            arts = [_extract_article_evidence(hdr_model, art) for art in framework.articles]
+            arts = [
+                _extract_article_evidence(hdr_model, art) for art in framework.articles
+            ]
 
             anchor_blocks.append(
                 FrameworkAnchorBlock(
@@ -100,7 +104,9 @@ class NormativeAnchoringService:
 
         return HDRAnchorRecord(hdr_id=hdr_id, anchors=anchor_blocks)
 
-    def generate_compliance_report(self, conn, mission_id: str, framework_id: str) -> ComplianceReportSummary:
+    def generate_compliance_report(
+        self, conn, mission_id: str, framework_id: str
+    ) -> ComplianceReportSummary:
         framework = self._frameworks.get(framework_id)
         if framework is None:
             msg = f"Framework {framework_id} not registered"

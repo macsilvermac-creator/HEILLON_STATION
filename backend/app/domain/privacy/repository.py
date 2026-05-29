@@ -44,8 +44,8 @@ _CONSENT_LEGAL_BASIS: dict[ConsentPurpose, LegalBasis] = {
 
 # Marco Civil retention periods (in days)
 _LOG_RETENTION_DAYS: dict[LogType, int] = {
-    LogType.APPLICATION: 180,   # 6 months minimum
-    LogType.CONNECTION: 365,    # 1 year minimum
+    LogType.APPLICATION: 180,  # 6 months minimum
+    LogType.CONNECTION: 365,  # 1 year minimum
 }
 
 
@@ -133,7 +133,12 @@ class RIPDRepository:
         return self._hydrate(dict(row)) if row else None
 
     def list_by_org(
-        self, conn: sqlite3.Connection, *, organization_id: str, limit: int = 50, offset: int = 0
+        self,
+        conn: sqlite3.Connection,
+        *,
+        organization_id: str,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[RIPDReport]:
         rows = conn.execute(
             "SELECT * FROM ripd_reports WHERE organization_id=? ORDER BY created_at DESC LIMIT ? OFFSET ?",
@@ -152,7 +157,13 @@ class RIPDRepository:
     ) -> None:
         conn.execute(
             "UPDATE ripd_reports SET pdf_path=?, pdf_checksum=?, status=? WHERE ripd_id=? AND organization_id=?",
-            (pdf_path, pdf_checksum, RIPDStatus.APPROVED.value, ripd_id, organization_id),
+            (
+                pdf_path,
+                pdf_checksum,
+                RIPDStatus.APPROVED.value,
+                ripd_id,
+                organization_id,
+            ),
         )
         conn.commit()
 
@@ -281,7 +292,9 @@ class DPORepository:
             fields.append("response_notes=?")
             values.append(update.response_notes)
         if not fields:
-            return self.get(conn, request_id=request_id, organization_id=organization_id)
+            return self.get(
+                conn, request_id=request_id, organization_id=organization_id
+            )
         values.extend([request_id, organization_id])
         conn.execute(
             f"UPDATE dpo_requests SET {', '.join(fields)} WHERE request_id=? AND organization_id=?",
@@ -410,11 +423,17 @@ class IncidentRepository:
                 if closed_by:
                     _add("closed_by", closed_by)
         if update.anpd_notified_at is not None:
-            _add("anpd_notified_at", update.anpd_notified_at.strftime("%Y-%m-%dT%H:%M:%SZ"))
+            _add(
+                "anpd_notified_at",
+                update.anpd_notified_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            )
         if update.anpd_notification_ref is not None:
             _add("anpd_notification_ref", update.anpd_notification_ref)
         if update.subjects_notified_at is not None:
-            _add("subjects_notified_at", update.subjects_notified_at.strftime("%Y-%m-%dT%H:%M:%SZ"))
+            _add(
+                "subjects_notified_at",
+                update.subjects_notified_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            )
         if update.notification_method is not None:
             _add("notification_method", update.notification_method)
         if update.containment_measures is not None:
@@ -434,9 +453,7 @@ class IncidentRepository:
         now = datetime.now(timezone.utc)
         anpd_due = _parse_dt(row.get("anpd_notification_due_at"))
         anpd_notified = _parse_dt(row.get("anpd_notified_at"))
-        is_overdue = bool(
-            anpd_due and anpd_due < now and not anpd_notified
-        )
+        is_overdue = bool(anpd_due and anpd_due < now and not anpd_notified)
         return SecurityIncident(
             incident_id=row["incident_id"],
             organization_id=row["organization_id"],

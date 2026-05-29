@@ -102,12 +102,8 @@ def build_capture_hdr(
                 f"Operador busca auxílio de IA ({req.provider.value}/{req.model}) "
                 f"para tarefa jurídica em {req.captured_at.isoformat()}."
             ),
-            action=(
-                f"Prompt: «{_truncate_for_preview(req.prompt)}»"
-            ),
-            result=(
-                f"Resposta: «{_truncate_for_preview(req.response)}»"
-            ),
+            action=(f"Prompt: «{_truncate_for_preview(req.prompt)}»"),
+            result=(f"Resposta: «{_truncate_for_preview(req.response)}»"),
         ),
         normative=HDRNormative(
             checked=True,

@@ -80,7 +80,7 @@ class PDFA3Result:
     """Outcome of a PDF/A-3 upgrade operation."""
 
     pdf_bytes: bytes
-    checksum: str              # SHA-256 hex of the resulting PDF
+    checksum: str  # SHA-256 hex of the resulting PDF
     attachments: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -235,7 +235,9 @@ class PDFA3Service:
             len(attachments),
             checksum[:16],
         )
-        return PDFA3Result(pdf_bytes=pdf_bytes, checksum=checksum, attachments=attach_meta)
+        return PDFA3Result(
+            pdf_bytes=pdf_bytes, checksum=checksum, attachments=attach_meta
+        )
 
     def embed_chain_json(
         self,
@@ -253,7 +255,9 @@ class PDFA3Service:
             title: Document title for XMP.
             creator: Creator string for XMP.
         """
-        chain_bytes = chain_json.encode("utf-8") if isinstance(chain_json, str) else chain_json
+        chain_bytes = (
+            chain_json.encode("utf-8") if isinstance(chain_json, str) else chain_json
+        )
         att = EmbeddedAttachment(
             filename="chains.json",
             data=chain_bytes,

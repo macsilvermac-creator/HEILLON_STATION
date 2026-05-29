@@ -136,9 +136,7 @@ class ApiKeyService:
         )
 
     @staticmethod
-    def revoke(
-        conn: Any, *, api_key_id: str, organization_id: str
-    ) -> bool:
+    def revoke(conn: Any, *, api_key_id: str, organization_id: str) -> bool:
         """Mark a key as revoked. Returns True if a row was affected."""
         now = datetime.now(timezone.utc).isoformat()
         cursor = conn.execute(

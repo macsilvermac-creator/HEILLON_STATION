@@ -199,7 +199,7 @@ class TestCCPAADMT:
             json={
                 "ai_system_ref": "ccpa-partial",
                 "pre_use_notice_provided": False,  # Missing!
-                "opt_out_available": False,         # Missing!
+                "opt_out_available": False,  # Missing!
             },
             headers=_auth(token),
         )
@@ -232,7 +232,7 @@ class TestMalpracticeInsurance:
         assert r.status_code == 201, r.text
         data = r.json()
         assert "insurance_id" in data
-        assert data["ai_risk_adjustment"] < 0   # discount
+        assert data["ai_risk_adjustment"] < 0  # discount
         assert data["estimated_discount_pct"] == 20.0
 
     def test_hallucinations_add_surcharge(self, client):
@@ -313,11 +313,16 @@ class TestHeilonComplianceScore:
         ai_ref = "heillon-score-test"
         client.post(
             "/api/v1/malpractice/score",
-            json={"ai_system_ref": ai_ref, "score_hdr_coverage": 80,
-                  "score_iso42001": 75},
+            json={
+                "ai_system_ref": ai_ref,
+                "score_hdr_coverage": 80,
+                "score_iso42001": 75,
+            },
             headers=_auth(token),
         )
-        r = client.get(f"/api/v1/malpractice/score/latest/{ai_ref}", headers=_auth(token))
+        r = client.get(
+            f"/api/v1/malpractice/score/latest/{ai_ref}", headers=_auth(token)
+        )
         assert r.status_code == 200
         assert r.json()["ai_system_ref"] == ai_ref
 

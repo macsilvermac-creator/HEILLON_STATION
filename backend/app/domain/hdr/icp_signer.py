@@ -15,10 +15,9 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import json
 import logging
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -44,7 +43,6 @@ _ICP_ISSUER_MARKERS: frozenset[str] = frozenset(
 
 try:
     from cryptography.hazmat.primitives import hashes as _hashes
-    from cryptography.hazmat.primitives import serialization as _serialization
     from cryptography.hazmat.primitives.asymmetric import padding as _asym_padding
     from cryptography.hazmat.primitives.serialization import pkcs12 as _pkcs12
 
@@ -66,11 +64,11 @@ class ICPSignResult:
     cert_serial: str
     cert_not_before: str
     cert_not_after: str
-    cert_type: str       # 'A1' | 'A3'
-    icp_brasil: bool     # True when issuer matches known ICP-Brasil CAs
+    cert_type: str  # 'A1' | 'A3'
+    icp_brasil: bool  # True when issuer matches known ICP-Brasil CAs
     signature_type: str  # 'CAdES-BES' | 'PAdES-BES'
-    signature_b64: str   # Base64-encoded RSA-SHA256 signature bytes
-    signed_hash: str     # SHA-256 hex of the signed content
+    signature_b64: str  # Base64-encoded RSA-SHA256 signature bytes
+    signed_hash: str  # SHA-256 hex of the signed content
 
 
 # ── Signer ─────────────────────────────────────────────────────────────────────
@@ -146,8 +144,16 @@ class ICPSignerService:
             # cryptography < 42 — naive datetimes in UTC
             from datetime import timezone
 
-            nb = cert.not_valid_before.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
-            na = cert.not_valid_after.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+            nb = (
+                cert.not_valid_before.replace(tzinfo=timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
+            na = (
+                cert.not_valid_after.replace(tzinfo=timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
         return {
             "subject": cert.subject.rfc4514_string(),
             "issuer": cert.issuer.rfc4514_string(),
@@ -276,13 +282,27 @@ class ICPSignatureRepository:
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
-                result.sig_id, entity_type, entity_id, organization_id,
-                result.cert_subject, result.cert_issuer, result.cert_serial,
-                result.cert_not_before, result.cert_not_after,
-                result.cert_type, int(result.icp_brasil),
-                result.signature_type, result.signature_b64, result.signed_hash,
-                now, tsa_token_b64, tsa_provider,
-                pdfa3_path, pdfa3_checksum, signed_by, now,
+                result.sig_id,
+                entity_type,
+                entity_id,
+                organization_id,
+                result.cert_subject,
+                result.cert_issuer,
+                result.cert_serial,
+                result.cert_not_before,
+                result.cert_not_after,
+                result.cert_type,
+                int(result.icp_brasil),
+                result.signature_type,
+                result.signature_b64,
+                result.signed_hash,
+                now,
+                tsa_token_b64,
+                tsa_provider,
+                pdfa3_path,
+                pdfa3_checksum,
+                signed_by,
+                now,
             ),
         )
 
@@ -338,17 +358,25 @@ class ICPSignatureRepository:
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
-                verify_id, hdr_id, organization_id,
-                int(icp_verified), signer_name, signer_cpf_cnpj,
-                cert_issuer, cert_serial, cert_type, signing_time,
-                int(signature_valid), int(cert_chain_valid), details_json,
-                now, verified_by,
+                verify_id,
+                hdr_id,
+                organization_id,
+                int(icp_verified),
+                signer_name,
+                signer_cpf_cnpj,
+                cert_issuer,
+                cert_serial,
+                cert_type,
+                signing_time,
+                int(signature_valid),
+                int(cert_chain_valid),
+                details_json,
+                now,
+                verified_by,
             ),
         )
 
-    def get_verification_for_hdr(
-        self, conn: Any, hdr_id: str
-    ) -> dict[str, Any] | None:
+    def get_verification_for_hdr(self, conn: Any, hdr_id: str) -> dict[str, Any] | None:
         """Return the most recent verification record for an HDR."""
         row = conn.execute(
             """SELECT * FROM icp_verifications
@@ -384,10 +412,17 @@ class ICPSignatureRepository:
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
-                pdfa3_id, package_id, organization_id,
-                pdf_path, pdf_checksum, "A-3",
-                attachments_json, int(is_signed), sig_id,
-                now, created_by,
+                pdfa3_id,
+                package_id,
+                organization_id,
+                pdf_path,
+                pdf_checksum,
+                "A-3",
+                attachments_json,
+                int(is_signed),
+                sig_id,
+                now,
+                created_by,
             ),
         )
 
@@ -397,9 +432,7 @@ class ICPSignatureRepository:
         ).fetchone()
         return dict(row) if row else None
 
-    def list_by_package(
-        self, conn: Any, package_id: str
-    ) -> list[dict[str, Any]]:
+    def list_by_package(self, conn: Any, package_id: str) -> list[dict[str, Any]]:
         rows = conn.execute(
             """SELECT * FROM pdfa3_packages WHERE package_id=?
                ORDER BY created_at DESC""",

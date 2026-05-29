@@ -32,8 +32,11 @@ _mission_repository_singleton = MissionRepository()
 def tenant_organization_scope(actor: MissionActor) -> str | None:
     """Honor multi-tenancy gates only when mission authentication is mandated."""
 
-    return actor.organization_id if runtime_config.get_settings().MISSION_ROUTES_REQUIRE_AUTH else None
-
+    return (
+        actor.organization_id
+        if runtime_config.get_settings().MISSION_ROUTES_REQUIRE_AUTH
+        else None
+    )
 
 
 def mission_repository_dependency() -> MissionRepository:
@@ -79,7 +82,9 @@ def diary_stats_endpoint(
 ) -> MissionStats:
     """Aggregate judiciary dashboard metrics."""
 
-    raw = mission_repo.aggregate_stats(conn, organization_id=tenant_organization_scope(actor))
+    raw = mission_repo.aggregate_stats(
+        conn, organization_id=tenant_organization_scope(actor)
+    )
 
     freq = [
         AgentFrequency(agent_id=item["agent_id"], count=item["count"])
@@ -112,7 +117,9 @@ def diary_endpoint(
     """Diário de bordo — filtros plus pagination."""
 
     if skip < 0 or limit <= 0 or limit > 200:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid pagination window.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid pagination window."
+        )
 
     stat_value = status.value if status else None
     total, missions = mission_repo.diary_query(
@@ -137,15 +144,24 @@ def approve_mission_endpoint(
 ) -> MissionPlan:
     """Promote dossier awaiting human EASY approval gates."""
 
-    plan = mission_repo.fetch_plan(conn, mission_id, organization_id=tenant_organization_scope(actor))
+    plan = mission_repo.fetch_plan(
+        conn, mission_id, organization_id=tenant_organization_scope(actor)
+    )
     if plan is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mission not archived.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Mission not archived."
+        )
 
     if not plan.normative_result or not plan.normative_result.allowed:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Corpus Normativo blockage.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Corpus Normativo blockage."
+        )
 
     if plan.status != MissionStatus.PENDING:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Mission not awaiting approval.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Mission not awaiting approval.",
+        )
 
     plan.status = MissionStatus.APPROVED
     plan.approved_at = datetime.now(timezone.utc)
@@ -162,12 +178,19 @@ def reject_mission_endpoint(
 ) -> MissionPlan:
     """Mark dossiers as judiciary-rejected prior to EASY execution."""
 
-    plan = mission_repo.fetch_plan(conn, mission_id, organization_id=tenant_organization_scope(actor))
+    plan = mission_repo.fetch_plan(
+        conn, mission_id, organization_id=tenant_organization_scope(actor)
+    )
     if plan is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mission not archived.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Mission not archived."
+        )
 
     if plan.status != MissionStatus.PENDING:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Mission not awaiting approval.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Mission not awaiting approval.",
+        )
 
     plan.status = MissionStatus.REJECTED
     mission_repo.persist_plan(conn, plan)
@@ -184,23 +207,35 @@ async def execute_mission_endpoint(
 ) -> MissionExecutionResult:
     """Execute approved EASY DAG minting cryptographic HDR artefacts."""
 
-    plan = mission_repo.fetch_plan(conn, mission_id, organization_id=tenant_organization_scope(actor))
+    plan = mission_repo.fetch_plan(
+        conn, mission_id, organization_id=tenant_organization_scope(actor)
+    )
     if plan is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mission not archived.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Mission not archived."
+        )
 
     if plan.status != MissionStatus.APPROVED:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Mission not approved.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Mission not approved."
+        )
 
     if not plan.normative_result or not plan.normative_result.allowed:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Mission normatively barred.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Mission normatively barred."
+        )
 
     try:
         hdrs = await orchestrator.execute_mission(plan, mission_id=mission_id)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
 
     for hdr in hdrs:
-        _hdr_repository_singleton.insert(conn, hdr, organization_id=plan.organization_id)
+        _hdr_repository_singleton.insert(
+            conn, hdr, organization_id=plan.organization_id
+        )
 
     plan.status = MissionStatus.COMPLETED
     now = datetime.now(timezone.utc)
@@ -232,7 +267,9 @@ def list_missions_endpoint(
     """Enumerate missions with cursored pagination safeguards."""
 
     if skip < 0 or limit <= 0 or limit > 200:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid pagination window.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid pagination window."
+        )
     return mission_repo.list_plans(
         conn,
         skip=skip,
@@ -250,7 +287,11 @@ def get_mission_endpoint(
 ) -> MissionPlan:
     """Return immutable archival snapshot for judiciary review."""
 
-    plan = mission_repo.fetch_plan(conn, mission_id, organization_id=tenant_organization_scope(actor))
+    plan = mission_repo.fetch_plan(
+        conn, mission_id, organization_id=tenant_organization_scope(actor)
+    )
     if plan is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mission not archived.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Mission not archived."
+        )
     return plan

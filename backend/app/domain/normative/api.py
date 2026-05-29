@@ -33,7 +33,9 @@ def list_normative_rules(
 
 @router.get("/search", response_model=list[NormativeRule])
 def search_normative_rules(
-    q: str = Query(default="", description="Full-text search query (FTS5 match syntax)."),
+    q: str = Query(
+        default="", description="Full-text search query (FTS5 match syntax)."
+    ),
     limit: int = Query(default=20, ge=1, le=100),
     conn=Depends(database_dependency),
 ) -> list[NormativeRule]:

@@ -238,15 +238,28 @@ def test_create_and_download_ripd(privacy_client: TestClient):
         "processing_type": "ingestion",
         "legal_basis": "contract",
         "purpose": "Tratamento de evidências jurídicas submetidas pelo utilizador para custódia criptográfica.",
-        "data_categories": ["dados de identificação", "documentos jurídicos", "metadados de ficheiro"],
+        "data_categories": [
+            "dados de identificação",
+            "documentos jurídicos",
+            "metadados de ficheiro",
+        ],
         "data_lifecycle": "Mínimo 5 anos para valor probatório; eliminação após prazo legal.",
         "recipients": ["Tribunal de Justiça (mediante ordem judicial)"],
-        "risks_identified": ["Acesso não autorizado a documentos sensíveis", "Perda de integridade dos hashes"],
-        "safeguards": ["Cifra AES-256-GCM em repouso", "SHA-256 com timestamp RFC3161", "Controle de acesso JWT"],
+        "risks_identified": [
+            "Acesso não autorizado a documentos sensíveis",
+            "Perda de integridade dos hashes",
+        ],
+        "safeguards": [
+            "Cifra AES-256-GCM em repouso",
+            "SHA-256 com timestamp RFC3161",
+            "Controle de acesso JWT",
+        ],
     }
 
     # Create
-    create = privacy_client.post("/api/v1/privacy/ripd", json=ripd_payload, headers=headers)
+    create = privacy_client.post(
+        "/api/v1/privacy/ripd", json=ripd_payload, headers=headers
+    )
     assert create.status_code == 201, create.text
     report = create.json()
     assert report["status"] == "draft"
@@ -265,9 +278,14 @@ def test_create_and_download_ripd(privacy_client: TestClient):
     assert any(r["ripd_id"] == ripd_id for r in lst.json())
 
     # Download PDF
-    pdf = privacy_client.get(f"/api/v1/privacy/ripd/{ripd_id}/download", headers=headers)
+    pdf = privacy_client.get(
+        f"/api/v1/privacy/ripd/{ripd_id}/download", headers=headers
+    )
     assert pdf.status_code == 200
-    assert pdf.headers["content-type"] in ("application/pdf", "application/pdf; charset=utf-8")
+    assert pdf.headers["content-type"] in (
+        "application/pdf",
+        "application/pdf; charset=utf-8",
+    )
     assert len(pdf.content) > 100  # at minimum a PDF or text payload
 
 
@@ -319,6 +337,7 @@ def test_incident_lifecycle(privacy_client: TestClient):
 
     # Mark ANPD notified
     import datetime
+
     notif_ts = datetime.datetime.now(datetime.timezone.utc).isoformat()
     anpd_upd = privacy_client.put(
         f"/api/v1/security/incidents/{incident_id}",
@@ -376,6 +395,7 @@ def test_portability_export_zip(privacy_client: TestClient):
 
     import io
     import zipfile
+
     buf = io.BytesIO(resp.content)
     with zipfile.ZipFile(buf) as zf:
         names = zf.namelist()

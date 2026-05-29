@@ -30,7 +30,10 @@ def extract_text(filename: str, raw_bytes: bytes) -> str:
         return _extract_pdf(raw_bytes)
     if name_lower.endswith(".docx"):
         return _extract_docx(raw_bytes)
-    if any(name_lower.endswith(ext) for ext in (".txt", ".md", ".csv", ".log", ".json", ".xml")):
+    if any(
+        name_lower.endswith(ext)
+        for ext in (".txt", ".md", ".csv", ".log", ".json", ".xml")
+    ):
         return _extract_plain(raw_bytes)
 
     return ""

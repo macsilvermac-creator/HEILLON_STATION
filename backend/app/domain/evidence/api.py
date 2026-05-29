@@ -7,10 +7,13 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 
-from app.dependencies import database_dependency, get_current_user_record, hdr_service_dependency
+from app.dependencies import (
+    database_dependency,
+    get_current_user_record,
+    hdr_service_dependency,
+)
 from app.core import config as runtime_config
 from app.core.security import generate_hash
-from app.domain.hdr.models import HDR
 from app.domain.hdr.repository import HDRRepository
 from app.domain.hdr.services import HDRService
 from app.domain.tier.dependencies import enforce_hdr_quota
@@ -89,12 +92,17 @@ async def ingest_evidence_file(
         )
 
     checksum = generate_hash(file_bytes)
-    extracted_text = await run_in_threadpool(extract_text, file.filename or "", file_bytes)
+    extracted_text = await run_in_threadpool(
+        extract_text, file.filename or "", file_bytes
+    )
 
     if previous_hdr:
         predecessor = _hdr_repository.fetch_hdr(conn, previous_hdr)
         if predecessor is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="previous_hdr not found.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="previous_hdr not found.",
+            )
 
         prev_org = _hdr_repository.fetch_hdr_organization_id(conn, previous_hdr)
         if prev_org is None or prev_org != current_user.organization_id:
@@ -126,4 +134,6 @@ async def ingest_evidence_file(
 
     _hdr_repository.insert(conn, hdr, organization_id=current_user.organization_id)
 
-    return IngestionResponse(hdr=hdr, evidence_storage_path=str(canonical_path.resolve()))
+    return IngestionResponse(
+        hdr=hdr, evidence_storage_path=str(canonical_path.resolve())
+    )

@@ -11,10 +11,8 @@ from __future__ import annotations
 
 import base64
 import logging
-from hashlib import sha256
 
 import httpx
-from asn1crypto import tsp
 
 from app.core import config as runtime_config
 from app.core.config import Settings
@@ -102,7 +100,7 @@ def verify_timestamp(data: bytes, timestamp_token: str) -> bool:
         return False
 
     if der.startswith(STUB_PREFIX):
-        remainder = der[len(STUB_PREFIX):]
+        remainder = der[len(STUB_PREFIX) :]
         try:
             remote_digest_ascii = remainder.decode("ascii")
         except UnicodeDecodeError:

@@ -15,7 +15,9 @@ def test_block_privileged_access(normative_service):
         {"authorized_tools": ["analysis-agent"], "estimated_cost_gas": 5.0},
     )
     assert result.allowed is False
-    assert any("privileged" in violation.reason.casefold() for violation in result.violations)
+    assert any(
+        "privileged" in violation.reason.casefold() for violation in result.violations
+    )
 
 
 def test_allow_normal_analysis(normative_service):

@@ -39,10 +39,10 @@ class CCPAConsentType(str, Enum):
 
 
 class NISTProfileTier(str, Enum):
-    TIER_1 = "tier-1"   # Partial — ad hoc risk practices
-    TIER_2 = "tier-2"   # Risk-informed — approved but not org-wide
-    TIER_3 = "tier-3"   # Repeatable — org-wide consistent practices
-    TIER_4 = "tier-4"   # Adaptive — continuous improvement, real-time
+    TIER_1 = "tier-1"  # Partial — ad hoc risk practices
+    TIER_2 = "tier-2"  # Risk-informed — approved but not org-wide
+    TIER_3 = "tier-3"  # Repeatable — org-wide consistent practices
+    TIER_4 = "tier-4"  # Adaptive — continuous improvement, real-time
 
 
 class ESIGNEventType(str, Enum):

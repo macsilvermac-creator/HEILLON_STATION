@@ -25,8 +25,11 @@ from pydantic import BaseModel, Field
 
 from app.dependencies import database_dependency, get_current_user_record
 from app.domain.iso42001.models import (
-    CertificationStatus, ControlStatus, FRIAStatus,
-    ImpactLikelihood, ImpactSeverity, ResidualRiskLevel,
+    CertificationStatus,
+    ControlStatus,
+    ImpactLikelihood,
+    ImpactSeverity,
+    ResidualRiskLevel,
 )
 from app.domain.iso42001.services import FRIAService, ISO42001Service
 from app.domain.user.models import UserRecord
@@ -37,8 +40,11 @@ _aims_svc = ISO42001Service()
 _fria_svc = FRIAService()
 
 
-def _require_admin(current_user: UserRecord = Depends(get_current_user_record)) -> UserRecord:
+def _require_admin(
+    current_user: UserRecord = Depends(get_current_user_record),
+) -> UserRecord:
     from app.domain.user.models import UserRole
+
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin only.")
     return current_user
@@ -206,10 +212,14 @@ def create_aims(
         c9_internal_audit_done=body.c9_internal_audit_done,
         c9_mgmt_review_done=body.c9_mgmt_review_done,
         c10_continual_improvement_plan=body.c10_continual_improvement_plan,
-        annex_a2=body.annex_a2, annex_a3=body.annex_a3,
-        annex_a4=body.annex_a4, annex_a5=body.annex_a5,
-        annex_a6=body.annex_a6, annex_a7=body.annex_a7,
-        annex_a8=body.annex_a8, annex_a9=body.annex_a9,
+        annex_a2=body.annex_a2,
+        annex_a3=body.annex_a3,
+        annex_a4=body.annex_a4,
+        annex_a5=body.annex_a5,
+        annex_a6=body.annex_a6,
+        annex_a7=body.annex_a7,
+        annex_a8=body.annex_a8,
+        annex_a9=body.annex_a9,
         certification_body=body.certification_body,
         certification_status=body.certification_status.value,
         created_by=current_user.user_id,
@@ -218,13 +228,16 @@ def create_aims(
 
 @router.get("/aims")
 def list_aims(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _aims_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -253,7 +266,8 @@ def update_aims_certification(
     if rec is None:
         raise HTTPException(status_code=404, detail="AIMS record not found.")
     return _aims_svc.update_certification(
-        conn, aims_id,
+        conn,
+        aims_id,
         certification_status=body.certification_status.value,
         conformity_score=body.conformity_score,
         certification_body=body.certification_body,
@@ -275,7 +289,8 @@ def add_control_evidence(
     if rec.get("organization_id") != (current_user.organization_id or "org_default"):
         raise HTTPException(status_code=403, detail="Forbidden.")
     return _aims_svc.add_control_evidence(
-        conn, aims_id,
+        conn,
+        aims_id,
         control_ref=body.control_ref,
         evidence=body.evidence,
         status=body.status.value,
@@ -315,11 +330,15 @@ def create_fria(
         foreseeable_misuse=body.foreseeable_misuse,
         geographic_scope=body.geographic_scope,
         population_affected=body.population_affected,
-        right_dignity=body.right_dignity, right_privacy=body.right_privacy,
+        right_dignity=body.right_dignity,
+        right_privacy=body.right_privacy,
         right_nondiscrimination=body.right_nondiscrimination,
-        right_fair_trial=body.right_fair_trial, right_presumption=body.right_presumption,
-        right_labour=body.right_labour, right_education=body.right_education,
-        right_property=body.right_property, other_rights=body.other_rights,
+        right_fair_trial=body.right_fair_trial,
+        right_presumption=body.right_presumption,
+        right_labour=body.right_labour,
+        right_education=body.right_education,
+        right_property=body.right_property,
+        other_rights=body.other_rights,
         impact_severity=body.impact_severity.value,
         impact_likelihood=body.impact_likelihood.value,
         impact_description=body.impact_description,
@@ -343,13 +362,16 @@ def create_fria(
 
 @router.get("/fria")
 def list_fria(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _fria_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -378,7 +400,8 @@ def approve_fria(
     if rec is None:
         raise HTTPException(status_code=404, detail="FRIA assessment not found.")
     return _fria_svc.approve(
-        conn, fria_id,
+        conn,
+        fria_id,
         approved_by=current_user.user_id,
         deployment_conditions=body.decision_notes,
     )
@@ -395,7 +418,8 @@ def reject_fria(
     if rec is None:
         raise HTTPException(status_code=404, detail="FRIA assessment not found.")
     return _fria_svc.reject(
-        conn, fria_id,
+        conn,
+        fria_id,
         rejected_by=current_user.user_id,
         rejection_reason=body.decision_notes,
     )

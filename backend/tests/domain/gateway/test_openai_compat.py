@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -179,7 +178,9 @@ def test_gateway_streaming_happy_path(MockClient):
     client, settings = _fresh_app()
     key = _bootstrap_user_and_key(settings)
 
-    fake_stream = _FakeStreamResponse(status_code=200, lines=_mock_streaming_sse_lines())
+    fake_stream = _FakeStreamResponse(
+        status_code=200, lines=_mock_streaming_sse_lines()
+    )
     instance = MockClient.return_value.__aenter__.return_value
     instance.stream = lambda *a, **kw: fake_stream
 
@@ -270,8 +271,14 @@ def test_gateway_streaming_respects_quota_402(MockClient):
                                       organization_id, created_at)
                    VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)""",
                 (
-                    f"qpad_{i:03d}", "mq", "analysis", now_iso,
-                    "h" * 64, "{}", "org_default", now_iso,
+                    f"qpad_{i:03d}",
+                    "mq",
+                    "analysis",
+                    now_iso,
+                    "h" * 64,
+                    "{}",
+                    "org_default",
+                    now_iso,
                 ),
             )
 
@@ -405,8 +412,14 @@ def test_gateway_quota_exceeded_returns_402(MockClient):
                                       organization_id, created_at)
                    VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)""",
                 (
-                    f"pad_{i:03d}", "mp", "analysis", now_iso,
-                    "h" * 64, "{}", "org_default", now_iso,
+                    f"pad_{i:03d}",
+                    "mp",
+                    "analysis",
+                    now_iso,
+                    "h" * 64,
+                    "{}",
+                    "org_default",
+                    now_iso,
                 ),
             )
 

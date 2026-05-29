@@ -131,7 +131,10 @@ def test_init_database_writes_core_tables(monkeypatch, tmp_path):
     sqlite_path = (tmp_path / "ddl_smoke.db").resolve().as_posix()
     conn = sqlite3.connect(sqlite_path)
     try:
-        names = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        names = {
+            row[0]
+            for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        }
     finally:
         conn.close()
 

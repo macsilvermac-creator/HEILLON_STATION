@@ -29,7 +29,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.dependencies import database_dependency, get_current_user_record
-from app.domain.governance.models import AIRiskLevel, GateStatus
+from app.domain.governance.models import GateStatus
 from app.domain.governance.services import (
     AIDecisionService,
     AIDisclosureService,
@@ -49,8 +49,11 @@ _disclosure_svc = AIDisclosureService()
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 
-def _require_admin(current_user: UserRecord = Depends(get_current_user_record)) -> UserRecord:
+def _require_admin(
+    current_user: UserRecord = Depends(get_current_user_record),
+) -> UserRecord:
     from app.domain.user.models import UserRole
+
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin only.")
     return current_user
@@ -67,8 +70,11 @@ class ClassifyRequest(BaseModel):
     system_name: str = Field(..., min_length=1, max_length=200)
     system_version: str = Field(default="1.0", max_length=50)
     system_description: str = Field(default="", max_length=2000)
-    risk_level: str = Field(..., description="low | medium | high | prohibited",
-                            pattern="^(low|medium|high|prohibited)$")
+    risk_level: str = Field(
+        ...,
+        description="low | medium | high | prohibited",
+        pattern="^(low|medium|high|prohibited)$",
+    )
     risk_justification: str = Field(default="", max_length=4000)
     impact_areas: list[str] = Field(default_factory=list)
     regulatory_refs: list[str] = Field(default_factory=list)
@@ -84,8 +90,11 @@ class LogDecisionRequest(BaseModel):
     hdr_id: str | None = None
     mission_id: str | None = None
     classification_id: str | None = None
-    risk_level: str = Field(default="low", description="low | medium | high | prohibited",
-                            pattern="^(low|medium|high|prohibited)$")
+    risk_level: str = Field(
+        default="low",
+        description="low | medium | high | prohibited",
+        pattern="^(low|medium|high|prohibited)$",
+    )
 
 
 class ReviewDecisionRequest(BaseModel):
@@ -338,7 +347,10 @@ def list_disclosures(
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _disclosure_svc.list_by_org(
-        conn, current_user.organization_id or "org_default", skip=skip, limit=min(limit, 100)
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 

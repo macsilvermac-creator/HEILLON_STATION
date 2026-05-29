@@ -28,12 +28,18 @@ def persist_mission_plan(conn: Any, plan, *, json_module) -> None:
     """Persist mission dossier (upsert) for either dialect."""
 
     snapshot = plan.model_dump(mode="json")
-    mission_plan_snapshot = json_module.dumps(snapshot, separators=(",", ":"), sort_keys=False)
-    dag_json = json_module.dumps(plan.dag.model_dump(mode="json"), separators=(",", ":"))
+    mission_plan_snapshot = json_module.dumps(
+        snapshot, separators=(",", ":"), sort_keys=False
+    )
+    dag_json = json_module.dumps(
+        plan.dag.model_dump(mode="json"), separators=(",", ":")
+    )
     authorized_json = json_module.dumps(plan.authorized_agent_ids)
     hdrs_generated_json = json_module.dumps(plan.hdrs_generated)
     normative_json = (
-        json_module.dumps(plan.normative_result.model_dump(mode="json"), separators=(",", ":"))
+        json_module.dumps(
+            plan.normative_result.model_dump(mode="json"), separators=(",", ":")
+        )
         if plan.normative_result
         else None
     )
@@ -94,7 +100,9 @@ def persist_mission_plan(conn: Any, plan, *, json_module) -> None:
     )
 
 
-def aggregate_mission_stats(conn: CompatConnection, organization_id: str | None = None) -> dict[str, Any]:
+def aggregate_mission_stats(
+    conn: CompatConnection, organization_id: str | None = None
+) -> dict[str, Any]:
     """Dashboard aggregates with dialect-specific JSON/time helpers."""
 
     import json
@@ -151,9 +159,13 @@ def aggregate_mission_stats(conn: CompatConnection, organization_id: str | None 
         """
 
     if organization_id is None:
-        total_missions = int(conn.execute("SELECT COUNT(*) AS c FROM missions").fetchone()["c"])
+        total_missions = int(
+            conn.execute("SELECT COUNT(*) AS c FROM missions").fetchone()["c"]
+        )
         completed = int(
-            conn.execute("SELECT COUNT(*) AS c FROM missions WHERE status = 'completed'").fetchone()["c"]
+            conn.execute(
+                "SELECT COUNT(*) AS c FROM missions WHERE status = 'completed'"
+            ).fetchone()["c"]
         )
         failed = int(
             conn.execute(
@@ -161,7 +173,9 @@ def aggregate_mission_stats(conn: CompatConnection, organization_id: str | None 
             ).fetchone()["c"],
         )
         blocked_by_normative = int(
-            conn.execute(f"SELECT COUNT(*) AS c FROM missions WHERE {norm_blocked_sql}").fetchone()["c"],
+            conn.execute(
+                f"SELECT COUNT(*) AS c FROM missions WHERE {norm_blocked_sql}"
+            ).fetchone()["c"],
         )
         hdr_row = conn.execute(f"SELECT {hdrs_sum_sql} AS s FROM missions").fetchone()
         total_hdrs = int(hdr_row["s"] or 0)
@@ -170,7 +184,10 @@ def aggregate_mission_stats(conn: CompatConnection, organization_id: str | None 
     else:
         oid_bind = organization_id
         total_missions = int(
-            conn.execute("SELECT COUNT(*) AS c FROM missions WHERE organization_id = ?", (oid_bind,)).fetchone()["c"],
+            conn.execute(
+                "SELECT COUNT(*) AS c FROM missions WHERE organization_id = ?",
+                (oid_bind,),
+            ).fetchone()["c"],
         )
         completed = int(
             conn.execute(
@@ -205,14 +222,18 @@ def aggregate_mission_stats(conn: CompatConnection, organization_id: str | None 
             (oid_bind,),
         ).fetchall()
 
-    avg_execution_time_ms = float(ms_row["ms"]) if ms_row and ms_row["ms"] is not None else 0.0
+    avg_execution_time_ms = (
+        float(ms_row["ms"]) if ms_row and ms_row["ms"] is not None else 0.0
+    )
 
     agent_histogram: dict[str, int] = {}
     for row in dag_rows:
         raw = row["dag_json"]
         if dialect == "postgresql" and not isinstance(raw, str):
             try:
-                dag_payload = raw if isinstance(raw, dict) else json.loads(json.dumps(raw))
+                dag_payload = (
+                    raw if isinstance(raw, dict) else json.loads(json.dumps(raw))
+                )
             except (TypeError, ValueError):
                 continue
         else:
@@ -225,7 +246,9 @@ def aggregate_mission_stats(conn: CompatConnection, organization_id: str | None 
             if isinstance(aid, str) and aid:
                 agent_histogram[aid] = agent_histogram.get(aid, 0) + 1
 
-    sorted_agents = sorted(agent_histogram.items(), key=lambda item: (-item[1], item[0]))
+    sorted_agents = sorted(
+        agent_histogram.items(), key=lambda item: (-item[1], item[0])
+    )
     formatted_agents = [{"agent_id": k, "count": v} for k, v in sorted_agents[:10]]
 
     return {

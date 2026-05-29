@@ -141,7 +141,9 @@ class UAEAIGovernanceService:
     ) -> dict[str, Any]:
         valid_jurisdictions = {j.value for j in UAEJurisdiction}
         if jurisdiction_ae not in valid_jurisdictions:
-            raise ValueError(f"jurisdiction_ae must be one of {sorted(valid_jurisdictions)}")
+            raise ValueError(
+                f"jurisdiction_ae must be one of {sorted(valid_jurisdictions)}"
+            )
 
         gov_id = str(uuid.uuid4())
         self._repo.create(
@@ -171,9 +173,13 @@ class UAEAIGovernanceService:
 
         # Ethics score
         ethics_flags = [
-            ethics_human_centered, ethics_fairness, ethics_transparency,
-            ethics_safety_reliability, ethics_privacy_security,
-            ethics_accountability, ethics_sustainability,
+            ethics_human_centered,
+            ethics_fairness,
+            ethics_transparency,
+            ethics_safety_reliability,
+            ethics_privacy_security,
+            ethics_accountability,
+            ethics_sustainability,
         ]
         ethics_score = round(sum(1 for f in ethics_flags if f) / 7 * 100)
 
@@ -181,7 +187,8 @@ class UAEAIGovernanceService:
             "gov_id": gov_id,
             "jurisdiction_ae": jurisdiction_ae,
             "ethics_score": ethics_score,
-            "seal_eligible": ethics_score >= 86,  # 6/7 principles → eligible for UAE AI Seal
+            "seal_eligible": ethics_score
+            >= 86,  # 6/7 principles → eligible for UAE AI Seal
         }
 
     def get(self, conn: Any, gov_id: str) -> dict[str, Any] | None:
@@ -202,7 +209,8 @@ class UAEAIGovernanceService:
         seal_expires_at: str | None = None,
     ) -> None:
         self._repo.apply_seal(
-            conn, gov_id,
+            conn,
+            gov_id,
             seal_reference=seal_reference,
             seal_category=seal_category,
             seal_expires_at=seal_expires_at,

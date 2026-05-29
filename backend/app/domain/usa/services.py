@@ -83,11 +83,17 @@ class ColoradoAIService:
         warnings: list[str] = []
         if risk_tier == "high":
             if not impact_assessment_done:
-                warnings.append("Impact assessment required for high-risk AI (SB 205 §6-1-1703)")
+                warnings.append(
+                    "Impact assessment required for high-risk AI (SB 205 §6-1-1703)"
+                )
             if not bias_audit_done:
-                warnings.append("Bias audit required for high-risk AI (SB 205 §6-1-1703)")
+                warnings.append(
+                    "Bias audit required for high-risk AI (SB 205 §6-1-1703)"
+                )
             if not consumer_notification_text:
-                warnings.append("Consumer notification text required (SB 205 §6-1-1702)")
+                warnings.append(
+                    "Consumer notification text required (SB 205 §6-1-1702)"
+                )
             if not opt_out_mechanism:
                 warnings.append("Opt-out mechanism required (SB 205 §6-1-1702)")
 
@@ -228,9 +234,12 @@ class ABAComplianceService:
 
         # Compliance score
         flags = [
-            rule_11_competence, rule_16_confidentiality,
-            rule_34_fairness, rule_53_supervision,
-            client_disclosure_made, output_reviewed,
+            rule_11_competence,
+            rule_16_confidentiality,
+            rule_34_fairness,
+            rule_53_supervision,
+            client_disclosure_made,
+            output_reviewed,
         ]
         score = sum(1 for f in flags if f)
         compliance_pct = round(score / len(flags) * 100)
@@ -336,21 +345,35 @@ class NISTRMFService:
         )
 
         # Maturity score across 4 functions
-        govern_score = sum([
-            govern_policies_defined, govern_roles_assigned,
-            govern_risk_tolerance_set, govern_training_completed,
-        ])
-        map_score = sum([
-            map_context_established, bool(map_risks_identified),
-            map_stakeholders_consulted,
-        ])
-        measure_score = sum([
-            measure_metrics_defined, measure_testing_completed, measure_bias_evaluated,
-        ])
-        manage_score = sum([
-            bool(manage_risk_responses), bool(manage_monitoring_plan),
-            bool(manage_incident_plan),
-        ])
+        govern_score = sum(
+            [
+                govern_policies_defined,
+                govern_roles_assigned,
+                govern_risk_tolerance_set,
+                govern_training_completed,
+            ]
+        )
+        map_score = sum(
+            [
+                map_context_established,
+                bool(map_risks_identified),
+                map_stakeholders_consulted,
+            ]
+        )
+        measure_score = sum(
+            [
+                measure_metrics_defined,
+                measure_testing_completed,
+                measure_bias_evaluated,
+            ]
+        )
+        manage_score = sum(
+            [
+                bool(manage_risk_responses),
+                bool(manage_monitoring_plan),
+                bool(manage_incident_plan),
+            ]
+        )
         total = govern_score + map_score + measure_score + manage_score
         max_total = 4 + 3 + 3 + 3
 

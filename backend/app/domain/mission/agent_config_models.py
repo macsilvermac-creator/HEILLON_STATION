@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class AgentModelSource(str, Enum):
@@ -59,7 +59,12 @@ def _validate_ssrf_safe_url(url: str | None) -> str | None:
     # 1) Check literal hostname (covers raw IPs like 127.0.0.1, 169.254.169.254)
     try:
         addr = ipaddress.ip_address(host)
-        if addr.is_loopback or addr.is_link_local or addr.is_private or addr.is_reserved:
+        if (
+            addr.is_loopback
+            or addr.is_link_local
+            or addr.is_private
+            or addr.is_reserved
+        ):
             msg = f"api_base_url resolves to a restricted IP range: {host}"
             raise ValueError(msg)
     except ValueError as exc:

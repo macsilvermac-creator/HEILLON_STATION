@@ -55,9 +55,15 @@ def test_anchor_hdr_to_lgpd(tmp_path, monkeypatch: pytest.MonkeyPatch):
         mission_id="m1",
         agent=HDRAgent(id="ingest", model="stub", version="test"),
         user=HDRUser(id="operator"),
-        intent=HDRIntent(description="ingestion artefact", tools_required=[], estimated_cost_gas=0.0),
-        execution=HDRExecution(status="completed", input_hash="c" * 64, output_hash="d" * 64),
-        cognitive_snapshot=HDRCognitiveSnapshot(hypothesis="", action="ingest", result="stored"),
+        intent=HDRIntent(
+            description="ingestion artefact", tools_required=[], estimated_cost_gas=0.0
+        ),
+        execution=HDRExecution(
+            status="completed", input_hash="c" * 64, output_hash="d" * 64
+        ),
+        cognitive_snapshot=HDRCognitiveSnapshot(
+            hypothesis="", action="ingest", result="stored"
+        ),
         normative=HDRNormative(checked=True, violations=[], corpus_version="v1"),
     )
 
@@ -82,7 +88,9 @@ def test_framework_list_contains_lgpd(api_client):
     assert "LGPD-BR" in ids
 
 
-def test_lgpd_rule_blocks_sensitive_without_consent(normative_service: NormativeService):
+def test_lgpd_rule_blocks_sensitive_without_consent(
+    normative_service: NormativeService,
+):
     verdict = normative_service.check_intent(
         "Processar dados sensíveis para triagem médica urgente.",
         {},

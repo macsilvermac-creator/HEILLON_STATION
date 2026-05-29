@@ -80,7 +80,9 @@ def test_pdfa_has_pdf_header(
         allow_stub_fallback=True,
         **sample_agent_stack,
     )
-    pdf_bytes = pdfa_service.generate_executive_report("test-mission", [hdr_primary], sample_manifest)
+    pdf_bytes = pdfa_service.generate_executive_report(
+        "test-mission", [hdr_primary], sample_manifest
+    )
     assert pdf_bytes[:5] == b"%PDF-"
 
 
@@ -97,7 +99,9 @@ def test_pdfa_has_required_sections(
         allow_stub_fallback=True,
         **sample_agent_stack,
     )
-    pdf_bytes = pdfa_service.generate_executive_report("test-mission", [hdr_primary], sample_manifest)
+    pdf_bytes = pdfa_service.generate_executive_report(
+        "test-mission", [hdr_primary], sample_manifest
+    )
     pdf_text = _pdf_extract_text(pdf_bytes)
     assert "EXECUTIVE SUMMARY" in pdf_text
     assert "CHAIN OF CUSTODY" in pdf_text

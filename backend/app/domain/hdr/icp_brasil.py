@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import base64
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from hashlib import sha256
 
 import httpx
@@ -20,6 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # ── ICP-Brasil policy OID ──────────────────────────────────────────────────────
 _ICP_BRASIL_TIMESTAMP_POLICY = "2.16.76.1.6.1"
+
 
 # ── Public TSA endpoint registry ──────────────────────────────────────────────
 @dataclass(frozen=True)
@@ -65,7 +66,9 @@ def provider_chain(preferred_name: str | None) -> list[TsaProvider]:
 
     head = _PROVIDER_BY_NAME.get(preferred_name.lower())
     if head is None:
-        _LOGGER.warning("Unknown TSA provider '%s'; using default chain.", preferred_name)
+        _LOGGER.warning(
+            "Unknown TSA provider '%s'; using default chain.", preferred_name
+        )
         return list(_PROVIDERS)
 
     rest = [p for p in _PROVIDERS if p.name != head.name]
@@ -73,6 +76,7 @@ def provider_chain(preferred_name: str | None) -> list[TsaProvider]:
 
 
 # ── Request construction ───────────────────────────────────────────────────────
+
 
 def _build_req(data: bytes) -> bytes:
     """Build DER-encoded ``TimeStampReq`` hashing ``SHA256(data)``."""
@@ -88,6 +92,7 @@ def _build_req(data: bytes) -> bytes:
 
 
 # ── Response validation ────────────────────────────────────────────────────────
+
 
 class TsaResponseError(Exception):
     """Raised when a TSA response fails structural validation."""
@@ -115,7 +120,9 @@ def _validate_response(der: bytes, provider: TsaProvider) -> None:
         raise TsaResponseError(f"TSA returned non-granted status: {status!r}")
 
     try:
-        tst_info = native["time_stamp_token"]["content"]["encap_content_info"]["content"]
+        tst_info = native["time_stamp_token"]["content"]["encap_content_info"][
+            "content"
+        ]
         algo = tst_info["message_imprint"]["hash_algorithm"]["algorithm"]
         if algo != "sha256":
             raise TsaResponseError(f"Unexpected hash algorithm in TST: {algo!r}")
@@ -137,6 +144,7 @@ def _validate_response(der: bytes, provider: TsaProvider) -> None:
 
 
 # ── Main stamping function ─────────────────────────────────────────────────────
+
 
 @dataclass
 class StampResult:
@@ -184,7 +192,9 @@ def stamp_with_fallback(
                 resp.raise_for_status()
                 _validate_response(resp.content, provider)
                 token_b64 = base64.b64encode(resp.content).decode("ascii")
-                _LOGGER.info("RFC3161 stamp obtained from provider '%s'.", provider.name)
+                _LOGGER.info(
+                    "RFC3161 stamp obtained from provider '%s'.", provider.name
+                )
                 return StampResult(
                     token_b64=token_b64,
                     provider_name=provider.name,
@@ -199,7 +209,8 @@ def stamp_with_fallback(
             http.close()
 
     raise RuntimeError(
-        "All TSA providers exhausted without a valid stamp. Errors: " + "; ".join(errors)
+        "All TSA providers exhausted without a valid stamp. Errors: "
+        + "; ".join(errors)
     )
 
 
@@ -220,7 +231,9 @@ def verify_icp_timestamp(data: bytes, token_b64: str) -> bool:
         der = base64.b64decode(token_b64.encode("ascii"), validate=True)
         tsr = tsp.TimeStampResp.load(der)
         native = tsr.native
-        tst_info = native["time_stamp_token"]["content"]["encap_content_info"]["content"]
+        tst_info = native["time_stamp_token"]["content"]["encap_content_info"][
+            "content"
+        ]
         remote_digest = tst_info["message_imprint"]["hashed_message"]
     except Exception:
         return False

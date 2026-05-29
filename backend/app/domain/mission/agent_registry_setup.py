@@ -19,7 +19,9 @@ def build_agent_registry(settings: Settings | None = None) -> AgentRegistry:
 
     for definition in DEFAULT_AGENTS:
         executor: DeterministicStubMissionExecutor | OpenAICompatibleMissionExecutor
-        use_llm_for_analysis = definition.agent_id == "analysis-agent" and bool(settings.OPENAI_API_KEY)
+        use_llm_for_analysis = definition.agent_id == "analysis-agent" and bool(
+            settings.OPENAI_API_KEY
+        )
 
         if use_llm_for_analysis:
             executor = OpenAICompatibleMissionExecutor(

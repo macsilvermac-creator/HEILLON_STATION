@@ -103,7 +103,6 @@ class OpenAICompatibleMissionExecutor:
                 summary = bundled[:12000]
 
         except Exception as exc:  # noqa: BLE001 - boundary for executor surface
-
             return MissionAgentExecutionOutcome(
                 cognitive_hypothesis="LLM invocation failed.",
                 cognitive_action=f"node `{node.node_id}` `{node.agent_id}:{node.action}`",

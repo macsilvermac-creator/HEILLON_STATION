@@ -36,5 +36,4 @@ class MissionAgentExecutor(Protocol):
         chunk_cost: float,
         authorized_tools: list[str],
         context: dict[str, Any] | None = None,
-    ) -> MissionAgentExecutionOutcome:
-        ...
+    ) -> MissionAgentExecutionOutcome: ...

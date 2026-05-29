@@ -50,8 +50,13 @@ class EUAITechDocRepository:
                 status, created_by, created_at, updated_at
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                doc_id, organization_id, system_name, system_version,
-                system_description, risk_category, annex_iii_category,
+                doc_id,
+                organization_id,
+                system_name,
+                system_version,
+                system_description,
+                risk_category,
+                annex_iii_category,
                 intended_purpose,
                 json.dumps(general_description or {}),
                 json.dumps(training_data or {}),
@@ -59,7 +64,10 @@ class EUAITechDocRepository:
                 json.dumps(performance_metrics or {}),
                 json.dumps(human_oversight or {}),
                 json.dumps(cybersecurity or {}),
-                "draft", created_by, now, now,
+                "draft",
+                created_by,
+                now,
+                now,
             ),
         )
 
@@ -138,7 +146,9 @@ class DPIARepository:
     ) -> None:
         now = _now()
         # Annual review
-        review_due = (datetime.now(UTC) + timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        review_due = (datetime.now(UTC) + timedelta(days=365)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
         conn.execute(
             """INSERT INTO dpia_records (
                 dpia_id, organization_id, processing_name, processing_purpose,
@@ -148,14 +158,22 @@ class DPIARepository:
                 status, review_due_at, created_by, created_at, updated_at
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                dpia_id, organization_id, processing_name, processing_purpose,
+                dpia_id,
+                organization_id,
+                processing_name,
+                processing_purpose,
                 legal_basis,
                 json.dumps(data_categories or []),
                 json.dumps(data_subjects or []),
-                necessity_assessment, proportionality_check,
+                necessity_assessment,
+                proportionality_check,
                 json.dumps(risks_identified or []),
                 json.dumps(mitigations or []),
-                "draft", review_due, created_by, now, now,
+                "draft",
+                review_due,
+                created_by,
+                now,
+                now,
             ),
         )
 
@@ -222,12 +240,23 @@ class EIDASQESRepository:
                 signature_timestamp, tsa_provider, status, created_at
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                qes_id, organization_id, document_type, document_ref, document_hash,
-                signatory_name, signatory_email, qtsp_provider, qtsp_country,
-                signature_format, signature_level,
-                int(eudi_wallet_used), int(eudi_pid_verified),
-                signature_timestamp or now, tsa_provider,
-                "valid", now,
+                qes_id,
+                organization_id,
+                document_type,
+                document_ref,
+                document_hash,
+                signatory_name,
+                signatory_email,
+                qtsp_provider,
+                qtsp_country,
+                signature_format,
+                signature_level,
+                int(eudi_wallet_used),
+                int(eudi_pid_verified),
+                signature_timestamp or now,
+                tsa_provider,
+                "valid",
+                now,
             ),
         )
 
@@ -275,7 +304,9 @@ class ISMSRiskRepository:
         now = _now()
         score = likelihood * impact
         level = isms_risk_level(score).value
-        review_due = (datetime.now(UTC) + timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        review_due = (datetime.now(UTC) + timedelta(days=365)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
         conn.execute(
             """INSERT INTO isms_risks (
                 risk_id, organization_id, asset, threat, vulnerability,
@@ -285,11 +316,24 @@ class ISMSRiskRepository:
                 identified_at, updated_at, created_at
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                risk_id, organization_id, asset, threat, vulnerability,
-                likelihood, impact, level,
-                control_ref, control_description, treatment_option, residual_risk,
-                risk_owner, review_due, "open",
-                now, now, now,
+                risk_id,
+                organization_id,
+                asset,
+                threat,
+                vulnerability,
+                likelihood,
+                impact,
+                level,
+                control_ref,
+                control_description,
+                treatment_option,
+                residual_risk,
+                risk_owner,
+                review_due,
+                "open",
+                now,
+                now,
+                now,
             ),
         )
 

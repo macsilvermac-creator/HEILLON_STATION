@@ -26,7 +26,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.dependencies import database_dependency, get_current_user_record
-from app.domain.apac.models import CanadaProvincialLaw, EUTransferMechanism, UKLawfulBasis
+from app.domain.apac.models import (
+    CanadaProvincialLaw,
+    EUTransferMechanism,
+    UKLawfulBasis,
+)
 from app.domain.apac.services import (
     AustraliaPrivacyService,
     CanadaPrivacyService,
@@ -178,36 +182,45 @@ def create_uk_gdpr(
     return _uk_svc.register(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        ai_system_ref=body.ai_system_ref, ai_system_name=body.ai_system_name,
-        ico_reference=body.ico_reference, ico_registered=body.ico_registered,
+        ai_system_ref=body.ai_system_ref,
+        ai_system_name=body.ai_system_name,
+        ico_reference=body.ico_reference,
+        ico_registered=body.ico_registered,
         data_protection_fee_paid=body.data_protection_fee_paid,
         lawful_basis=body.lawful_basis.value,
         legitimate_interests_assessment=body.legitimate_interests_assessment,
         ai_code_applicable=body.ai_code_applicable,
         transparency_notice_published=body.transparency_notice_published,
         human_review_available=body.human_review_available,
-        profiling_used=body.profiling_used, profiling_basis=body.profiling_basis,
+        profiling_used=body.profiling_used,
+        profiling_basis=body.profiling_basis,
         right_access_process=body.right_access_process,
         right_erasure_process=body.right_erasure_process,
         right_portability_process=body.right_portability_process,
         right_object_ai=body.right_object_ai,
-        dpo_required=body.dpo_required, dpo_name=body.dpo_name,
-        uk_rep_appointed=body.uk_rep_appointed, uk_rep_name=body.uk_rep_name,
+        dpo_required=body.dpo_required,
+        dpo_name=body.dpo_name,
+        uk_rep_appointed=body.uk_rep_appointed,
+        uk_rep_name=body.uk_rep_name,
         eu_transfer_mechanism=body.eu_transfer_mechanism.value,
-        dpia_conducted=body.dpia_conducted, dpia_ref=body.dpia_ref,
+        dpia_conducted=body.dpia_conducted,
+        dpia_ref=body.dpia_ref,
         created_by=current_user.user_id,
     )
 
 
 @router.get("/uk")
 def list_uk_gdpr(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _uk_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -237,17 +250,22 @@ def create_canada_privacy(
     return _ca_svc.register(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        ai_system_ref=body.ai_system_ref, ai_system_name=body.ai_system_name,
-        provincial_law=body.provincial_law.value, law_25_quebec=body.law_25_quebec,
-        consent_obtained=body.consent_obtained, consent_form=body.consent_form,
-        aida_applicable=body.aida_applicable, high_impact_system=body.high_impact_system,
+        ai_system_ref=body.ai_system_ref,
+        ai_system_name=body.ai_system_name,
+        provincial_law=body.provincial_law.value,
+        law_25_quebec=body.law_25_quebec,
+        consent_obtained=body.consent_obtained,
+        consent_form=body.consent_form,
+        aida_applicable=body.aida_applicable,
+        high_impact_system=body.high_impact_system,
         high_impact_categories=body.high_impact_categories,
         impact_assessment_done=body.impact_assessment_done,
         mitigation_measures=body.mitigation_measures,
         incident_reporting_process=body.incident_reporting_process,
         q25_privacy_officer=body.q25_privacy_officer,
         q25_privacy_policy_published=body.q25_privacy_policy_published,
-        q25_pia_required=body.q25_pia_required, q25_pia_done=body.q25_pia_done,
+        q25_pia_required=body.q25_pia_required,
+        q25_pia_done=body.q25_pia_done,
         q25_72h_breach_report=body.q25_72h_breach_report,
         q25_portability_enabled=body.q25_portability_enabled,
         created_by=current_user.user_id,
@@ -256,13 +274,16 @@ def create_canada_privacy(
 
 @router.get("/canada")
 def list_canada_privacy(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _ca_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -292,8 +313,10 @@ def create_singapore_pdpa(
     return _sg_svc.register(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        ai_system_ref=body.ai_system_ref, ai_system_name=body.ai_system_name,
-        pdpa_dpo_designated=body.pdpa_dpo_designated, pdpa_dpo_name=body.pdpa_dpo_name,
+        ai_system_ref=body.ai_system_ref,
+        ai_system_name=body.ai_system_name,
+        pdpa_dpo_designated=body.pdpa_dpo_designated,
+        pdpa_dpo_name=body.pdpa_dpo_name,
         pdpa_dpo_registered=body.pdpa_dpo_registered,
         data_protection_policy_published=body.data_protection_policy_published,
         do_not_call_compliant=body.do_not_call_compliant,
@@ -320,13 +343,16 @@ def create_singapore_pdpa(
 
 @router.get("/singapore")
 def list_singapore_pdpa(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _sg_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -356,7 +382,8 @@ def create_australia_privacy(
     return _au_svc.register(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        ai_system_ref=body.ai_system_ref, ai_system_name=body.ai_system_name,
+        ai_system_ref=body.ai_system_ref,
+        ai_system_name=body.ai_system_name,
         annual_turnover_aud=body.annual_turnover_aud,
         health_service_provider=body.health_service_provider,
         acts_covered=body.acts_covered,
@@ -366,7 +393,8 @@ def create_australia_privacy(
         app11_security_measures=body.app11_security_measures,
         app12_access_process=body.app12_access_process,
         app13_correction_process=body.app13_correction_process,
-        adm_used=body.adm_used, adm_description=body.adm_description,
+        adm_used=body.adm_used,
+        adm_description=body.adm_description,
         adm_explanation_available=body.adm_explanation_available,
         adm_human_review_available=body.adm_human_review_available,
         adm_opt_out_available=body.adm_opt_out_available,
@@ -382,13 +410,16 @@ def create_australia_privacy(
 
 @router.get("/australia")
 def list_australia_privacy(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _au_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -400,7 +431,9 @@ def get_australia_privacy(
 ) -> dict[str, Any]:
     rec = _au_svc.get(conn, record_id)
     if rec is None:
-        raise HTTPException(status_code=404, detail="Australia privacy record not found.")
+        raise HTTPException(
+            status_code=404, detail="Australia privacy record not found."
+        )
     if rec.get("organization_id") != (current_user.organization_id or "org_default"):
         raise HTTPException(status_code=403, detail="Forbidden.")
     return rec

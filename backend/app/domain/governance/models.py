@@ -13,9 +13,9 @@ from enum import Enum
 class AIRiskLevel(str, Enum):
     """CNJ 615/2025 Art. 4 AI system risk tiers."""
 
-    LOW = "low"           # Minimal impact; no human gate required
-    MEDIUM = "medium"     # Advisory human review recommended
-    HIGH = "high"         # Mandatory human approval gate before use
+    LOW = "low"  # Minimal impact; no human gate required
+    MEDIUM = "medium"  # Advisory human review recommended
+    HIGH = "high"  # Mandatory human approval gate before use
     PROHIBITED = "prohibited"  # Cannot be used in judicial / legal context
 
 
@@ -39,8 +39,8 @@ class HumanDecision(str, Enum):
 
 
 class GateType(str, Enum):
-    MANDATORY = "mandatory"   # High-risk: must have human sign-off
-    ADVISORY = "advisory"     # Medium-risk: human review logged but not blocking
+    MANDATORY = "mandatory"  # High-risk: must have human sign-off
+    ADVISORY = "advisory"  # Medium-risk: human review logged but not blocking
 
 
 class GateStatus(str, Enum):

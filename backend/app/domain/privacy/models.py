@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ─── Enums ────────────────────────────────────────────────────────────────────
@@ -81,8 +80,8 @@ class ConsentPurpose(str, Enum):
 
 
 class LogType(str, Enum):
-    APPLICATION = "application"   # Marco Civil: 6 months minimum, 12 months max
-    CONNECTION = "connection"     # Marco Civil: 1 year minimum
+    APPLICATION = "application"  # Marco Civil: 6 months minimum, 12 months max
+    CONNECTION = "connection"  # Marco Civil: 1 year minimum
 
 
 # ─── RIPD ─────────────────────────────────────────────────────────────────────
@@ -141,7 +140,9 @@ class DPORequestCreate(BaseModel):
 
     requester_name: str = Field(..., min_length=2, max_length=200)
     requester_email: str = Field(..., description="Contact email")
-    requester_cpf: str | None = Field(None, description="CPF para verificação de identidade")
+    requester_cpf: str | None = Field(
+        None, description="CPF para verificação de identidade"
+    )
     request_type: DPORequestType
     description: str = Field(..., min_length=10, max_length=2000)
 
@@ -258,7 +259,9 @@ class SecurityIncident(BaseModel):
     closed_at: datetime | None
     closed_by: str | None
     retain_until: datetime
-    is_overdue_anpd: bool = False   # computed: anpd_notification_due_at < now and not notified
+    is_overdue_anpd: bool = (
+        False  # computed: anpd_notification_due_at < now and not notified
+    )
 
 
 # ─── Consent ──────────────────────────────────────────────────────────────────

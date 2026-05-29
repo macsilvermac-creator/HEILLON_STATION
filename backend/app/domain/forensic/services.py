@@ -10,7 +10,11 @@ from app.core.canonical_json import canonical_json_dumps
 from app.core import config as runtime_config
 from app.core.config import Settings
 from app.core.security import generate_hash
-from app.domain.forensic.models import AuditManifest, ForensicPackage, ForensicPackageStatus
+from app.domain.forensic.models import (
+    AuditManifest,
+    ForensicPackage,
+    ForensicPackageStatus,
+)
 from app.domain.forensic.pdf_service import render_hdr_lineage_pdf
 from app.domain.forensic.repository import ForensicRepository
 from app.domain.forensic.signature_service import ForensicManifestSigner
@@ -54,21 +58,25 @@ class ForensicPackageService:
         """
         ordered = sorted(hdrs, key=lambda item: item.hdr_id)
         # Use last HDR timestamp (deterministic — same chain → same report)
-        emitted_at = ordered[-1].timestamp if ordered else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        emitted_at = (
+            ordered[-1].timestamp
+            if ordered
+            else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        )
 
         divider = "═" * 72
-        thin    = "─" * 72
+        thin = "─" * 72
 
         lines: list[str] = [
             divider,
             "  HEILLON LEGAL — RELATÓRIO EXECUTIVO FORENSE (MODO STUB)",
-            f"  Plataforma: Heillon Legal v20 · Legitimidade Computacional",
+            "  Plataforma: Heillon Legal v20 · Legitimidade Computacional",
             divider,
             "",
             f"  Missão ID  : {mission_id}",
             f"  HDRs       : {len(hdrs)}",
             f"  Emitido em : {emitted_at}",
-            f"  Modo       : STUB (FORENSICS_USE_STUB_PDF=true) — NÃO JURIDICAMENTE VINCULANTE",
+            "  Modo       : STUB (FORENSICS_USE_STUB_PDF=true) — NÃO JURIDICAMENTE VINCULANTE",
             "",
             "  ⚠  AVISO LEGAL: Este documento foi gerado em modo stub de desenvolvimento.",
             "     Para relatório com valor probatório, configure FORENSICS_USE_STUB_PDF=false",
@@ -121,10 +129,14 @@ class ForensicPackageService:
         return canonical_json_dumps(lineage)
 
     @staticmethod
-    def compute_package_integrity_hash(*, pdf_checksum: str, json_chain_checksum: str) -> str:
+    def compute_package_integrity_hash(
+        *, pdf_checksum: str, json_chain_checksum: str
+    ) -> str:
         """Compose SHA-256 integrity token from canonical artefacts (deterministic MVP)."""
 
-        bundle = canonical_json_dumps({"pdf_checksum": pdf_checksum, "json_chain_checksum": json_chain_checksum})
+        bundle = canonical_json_dumps(
+            {"pdf_checksum": pdf_checksum, "json_chain_checksum": json_chain_checksum}
+        )
         return generate_hash(bundle.encode("utf-8"))
 
     def generate_manifest(
@@ -148,7 +160,9 @@ class ForensicPackageService:
         settings = self._settings()
         tail = hdrs[-1].hdr_id
         base = settings.VERIFICATION_PUBLIC_BASE.rstrip("/") or ""
-        verification_url = f"{base}/api/v1/verify/{tail}" if base else f"/api/v1/verify/{tail}"
+        verification_url = (
+            f"{base}/api/v1/verify/{tail}" if base else f"/api/v1/verify/{tail}"
+        )
         return AuditManifest(
             package_id=package_id,
             mission_id=mission_id,

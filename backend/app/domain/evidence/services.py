@@ -52,7 +52,9 @@ def build_ingestion_hdr(
         user=HDRUser(id="anonymous_uploader"),
         intent=HDRIntent(
             description=f"Immutable custody ingestion for artefact `{sanitized_name}`.",
-            tools_required=["local_sha256_manifest", "text_extractor"] if has_text else ["local_sha256_manifest"],
+            tools_required=["local_sha256_manifest", "text_extractor"]
+            if has_text
+            else ["local_sha256_manifest"],
             estimated_cost_gas=0.05,
         ),
         execution=HDRExecution(

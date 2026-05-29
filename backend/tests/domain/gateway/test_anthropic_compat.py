@@ -5,10 +5,9 @@ from __future__ import annotations
 import os
 import tempfile
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -76,9 +75,7 @@ def _valid_anthropic_payload() -> dict:
         "model": "claude-3-5-sonnet-20241022",
         "max_tokens": 256,
         "system": "Você é um advogado especialista em LGPD.",
-        "messages": [
-            {"role": "user", "content": "Resuma o art. 7º da LGPD."}
-        ],
+        "messages": [{"role": "user", "content": "Resuma o art. 7º da LGPD."}],
     }
 
 
@@ -207,7 +204,10 @@ def test_anthropic_proxies_upstream_errors(MockClient):
     client, settings = _fresh_app()
     key = _bootstrap_user_and_key(settings)
 
-    err_body = {"type": "error", "error": {"type": "invalid_request_error", "message": "model not found"}}
+    err_body = {
+        "type": "error",
+        "error": {"type": "invalid_request_error", "message": "model not found"},
+    }
     mock_resp = httpx.Response(400, json=err_body)
     instance = MockClient.return_value.__aenter__.return_value
     instance.post = AsyncMock(return_value=mock_resp)
@@ -240,8 +240,14 @@ def test_anthropic_quota_402(MockClient):
                                       organization_id, created_at)
                    VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)""",
                 (
-                    f"apad_{i:03d}", "ma", "analysis", now_iso,
-                    "h" * 64, "{}", "org_default", now_iso,
+                    f"apad_{i:03d}",
+                    "ma",
+                    "analysis",
+                    now_iso,
+                    "h" * 64,
+                    "{}",
+                    "org_default",
+                    now_iso,
                 ),
             )
 
@@ -302,30 +308,30 @@ def test_anthropic_system_captured_in_hdr(MockClient):
 def _mock_anthropic_stream_lines():
     """Anthropic SSE format with named events."""
     return [
-        'event: message_start',
+        "event: message_start",
         'data: {"type":"message_start","message":{"id":"msg_01","type":"message","role":"assistant","model":"claude-3-5-sonnet-20241022","content":[],"stop_reason":null}}',
-        '',
-        'event: content_block_start',
+        "",
+        "event: content_block_start",
         'data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}',
-        '',
-        'event: content_block_delta',
+        "",
+        "event: content_block_delta",
         'data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"O art. "}}',
-        '',
-        'event: content_block_delta',
+        "",
+        "event: content_block_delta",
         'data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"7º "}}',
-        '',
-        'event: content_block_delta',
+        "",
+        "event: content_block_delta",
         'data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"LGPD."}}',
-        '',
-        'event: content_block_stop',
+        "",
+        "event: content_block_stop",
         'data: {"type":"content_block_stop","index":0}',
-        '',
-        'event: message_delta',
+        "",
+        "event: message_delta",
         'data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":15}}',
-        '',
-        'event: message_stop',
+        "",
+        "event: message_stop",
         'data: {"type":"message_stop"}',
-        '',
+        "",
     ]
 
 

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import sqlite3
 from typing import Any
 
@@ -49,7 +48,9 @@ class MissionRepository:
 
         from app.db.database import list_mission_plans
 
-        return list_mission_plans(conn, skip=skip, limit=limit, organization_id=organization_id)
+        return list_mission_plans(
+            conn, skip=skip, limit=limit, organization_id=organization_id
+        )
 
     def diary_query(
         self,
@@ -92,7 +93,9 @@ class MissionRepository:
         if predicates:
             where_sql = "WHERE " + " AND ".join(predicates)
 
-        count_row = conn.execute(f"SELECT COUNT(*) AS c FROM missions {where_sql}", params).fetchone()
+        count_row = conn.execute(
+            f"SELECT COUNT(*) AS c FROM missions {where_sql}", params
+        ).fetchone()
         total = int(count_row["c"]) if count_row else 0
 
         pagination_params = [*params, limit, skip]
@@ -107,10 +110,15 @@ class MissionRepository:
             pagination_params,
         ).fetchall()
 
-        hydrated = [MissionPlan.model_validate_json(r["mission_plan_snapshot"]) for r in snapshot_rows]
+        hydrated = [
+            MissionPlan.model_validate_json(r["mission_plan_snapshot"])
+            for r in snapshot_rows
+        ]
         return total, hydrated
 
-    def aggregate_stats(self, conn: sqlite3.Connection, organization_id: str | None = None) -> dict[str, Any]:
+    def aggregate_stats(
+        self, conn: sqlite3.Connection, organization_id: str | None = None
+    ) -> dict[str, Any]:
         """Return aggregate metrics for EASY diary dashboards."""
 
         from app.db.dialect_sql import aggregate_mission_stats

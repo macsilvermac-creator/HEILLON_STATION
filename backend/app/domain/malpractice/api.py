@@ -50,7 +50,9 @@ class ColoradoSB26189CreateRequest(BaseModel):
     ai_system_ref: str = Field(..., min_length=1, max_length=200)
     ai_system_name: str = Field(default="", max_length=200)
     ai_system_version: str = Field(default="1.0", max_length=50)
-    consequential_decision_type: ConsequentialDecisionType = ConsequentialDecisionType.OTHER
+    consequential_decision_type: ConsequentialDecisionType = (
+        ConsequentialDecisionType.OTHER
+    )
     consumers_affected_count: int = Field(default=0, ge=0)
     disclosure_provided: bool = False
     disclosure_timing: str = Field(default="", max_length=200)
@@ -173,12 +175,14 @@ def create_colorado(
     return _co_svc.register(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        ai_system_ref=body.ai_system_ref, ai_system_name=body.ai_system_name,
+        ai_system_ref=body.ai_system_ref,
+        ai_system_name=body.ai_system_name,
         ai_system_version=body.ai_system_version,
         consequential_decision_type=body.consequential_decision_type.value,
         consumers_affected_count=body.consumers_affected_count,
         disclosure_provided=body.disclosure_provided,
-        disclosure_timing=body.disclosure_timing, disclosure_method=body.disclosure_method,
+        disclosure_timing=body.disclosure_timing,
+        disclosure_method=body.disclosure_method,
         explanation_available=body.explanation_available,
         explanation_process=body.explanation_process,
         explanation_response_days=body.explanation_response_days,
@@ -198,13 +202,16 @@ def create_colorado(
 
 @router.get("/colorado")
 def list_colorado(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _co_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -234,7 +241,8 @@ def create_ccpa_admt(
     return _admt_svc.register(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        ai_system_ref=body.ai_system_ref, ai_system_name=body.ai_system_name,
+        ai_system_ref=body.ai_system_ref,
+        ai_system_name=body.ai_system_name,
         admt_purpose=body.admt_purpose.value,
         significant_decisions=body.significant_decisions,
         personal_data_used=body.personal_data_used,
@@ -262,13 +270,16 @@ def create_ccpa_admt(
 
 @router.get("/ccpa-admt")
 def list_ccpa_admt(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _admt_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -298,12 +309,16 @@ def create_insurance(
     return _ins_svc.register(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        law_firm_name=body.law_firm_name, bar_jurisdiction=body.bar_jurisdiction,
-        insurer_name=body.insurer_name, policy_number=body.policy_number,
-        policy_start=body.policy_start, policy_end=body.policy_end,
+        law_firm_name=body.law_firm_name,
+        bar_jurisdiction=body.bar_jurisdiction,
+        insurer_name=body.insurer_name,
+        policy_number=body.policy_number,
+        policy_start=body.policy_start,
+        policy_end=body.policy_end,
         coverage_limit_usd=body.coverage_limit_usd,
         current_premium_usd=body.current_premium_usd,
-        ai_tools_used=body.ai_tools_used, ai_tools_list=body.ai_tools_list,
+        ai_tools_used=body.ai_tools_used,
+        ai_tools_list=body.ai_tools_list,
         ai_outputs_filed_in_court=body.ai_outputs_filed_in_court,
         citation_verification_process=body.citation_verification_process,
         hallucination_incidents_12mo=body.hallucination_incidents_12mo,
@@ -318,13 +333,16 @@ def create_insurance(
 
 @router.get("/insurance")
 def list_insurance(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _ins_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -373,7 +391,8 @@ def compute_compliance_score(
     return _score_svc.compute(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        ai_system_ref=body.ai_system_ref, ai_system_name=body.ai_system_name,
+        ai_system_ref=body.ai_system_ref,
+        ai_system_name=body.ai_system_name,
         component_scores=component_scores,
         evidence_bundle=body.evidence_bundle,
         computed_by=current_user.user_id,
@@ -382,13 +401,16 @@ def compute_compliance_score(
 
 @router.get("/score")
 def list_compliance_scores(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _score_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -402,5 +424,7 @@ def get_latest_score(
         conn, current_user.organization_id or "org_default", ai_system_ref
     )
     if rec is None:
-        raise HTTPException(status_code=404, detail="No compliance score found for this system.")
+        raise HTTPException(
+            status_code=404, detail="No compliance score found for this system."
+        )
     return rec

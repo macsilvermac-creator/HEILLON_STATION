@@ -25,6 +25,7 @@ from app.domain.hdr.models import (
     HDRUser,
 )
 
+
 class HDRService:
     """Coordinate immutable HDR generation and audits."""
 
@@ -270,7 +271,9 @@ class HDRService:
                 continue
 
             if hdr.previous_hdr != ordered[idx - 1].hdr_id:
-                details_steps.append(f"Linkage break between indices {idx - 1} and {idx}.")
+                details_steps.append(
+                    f"Linkage break between indices {idx - 1} and {idx}."
+                )
                 return ChainVerificationResult(
                     valid=False,
                     broken_at=idx,
@@ -278,4 +281,6 @@ class HDRService:
                 )
 
         details_steps.append("Append-only lineage verification succeeded.")
-        return ChainVerificationResult(valid=True, details=ChainVerificationDetails(steps=details_steps))
+        return ChainVerificationResult(
+            valid=True, details=ChainVerificationDetails(steps=details_steps)
+        )

@@ -101,7 +101,11 @@ class TestRiskClassification:
         # Create one
         gov_client.post(
             "/api/v1/governance/risk",
-            json={"system_name": "System A", "risk_level": "low", "risk_justification": "x"},
+            json={
+                "system_name": "System A",
+                "risk_level": "low",
+                "risk_justification": "x",
+            },
             headers=_auth_headers(token),
         )
         r = gov_client.get("/api/v1/governance/risk", headers=_auth_headers(token))
@@ -114,17 +118,25 @@ class TestRiskClassification:
         token, _ = _register_and_token(gov_client, role="advogado", suffix="3")
         create_r = gov_client.post(
             "/api/v1/governance/risk",
-            json={"system_name": "System B", "risk_level": "high", "risk_justification": "High risk explanation"},
+            json={
+                "system_name": "System B",
+                "risk_level": "high",
+                "risk_justification": "High risk explanation",
+            },
             headers=_auth_headers(token),
         )
         cid = create_r.json()["classification_id"]
-        r = gov_client.get(f"/api/v1/governance/risk/{cid}", headers=_auth_headers(token))
+        r = gov_client.get(
+            f"/api/v1/governance/risk/{cid}", headers=_auth_headers(token)
+        )
         assert r.status_code == 200
         assert r.json()["classification_id"] == cid
 
     def test_get_unknown_classification_returns_404(self, gov_client):
         token, _ = _register_and_token(gov_client, role="perito", suffix="4")
-        r = gov_client.get("/api/v1/governance/risk/nonexistent-id", headers=_auth_headers(token))
+        r = gov_client.get(
+            "/api/v1/governance/risk/nonexistent-id", headers=_auth_headers(token)
+        )
         assert r.status_code == 404
 
     def test_retire_requires_admin(self, gov_client):
@@ -133,15 +145,23 @@ class TestRiskClassification:
         # Create classification as advogado
         create_r = gov_client.post(
             "/api/v1/governance/risk",
-            json={"system_name": "System C", "risk_level": "low", "risk_justification": "x"},
+            json={
+                "system_name": "System C",
+                "risk_level": "low",
+                "risk_justification": "x",
+            },
             headers=_auth_headers(token_adv),
         )
         cid = create_r.json()["classification_id"]
         # Advogado cannot retire
-        r1 = gov_client.delete(f"/api/v1/governance/risk/{cid}", headers=_auth_headers(token_adv))
+        r1 = gov_client.delete(
+            f"/api/v1/governance/risk/{cid}", headers=_auth_headers(token_adv)
+        )
         assert r1.status_code == 403
         # Admin can retire
-        r2 = gov_client.delete(f"/api/v1/governance/risk/{cid}", headers=_auth_headers(token_adm))
+        r2 = gov_client.delete(
+            f"/api/v1/governance/risk/{cid}", headers=_auth_headers(token_adm)
+        )
         assert r2.status_code == 200
         assert r2.json()["status"] == "retired"
 
@@ -149,7 +169,11 @@ class TestRiskClassification:
         token, _ = _register_and_token(gov_client, role="perito", suffix="7")
         r = gov_client.post(
             "/api/v1/governance/risk",
-            json={"system_name": "X", "risk_level": "extreme", "risk_justification": "x"},
+            json={
+                "system_name": "X",
+                "risk_level": "extreme",
+                "risk_justification": "x",
+            },
             headers=_auth_headers(token),
         )
         # Service raises ValueError → translated to 500 or 422
@@ -250,7 +274,9 @@ class TestHumanGates:
         gate_id = create_r.json()["gate_id"]
         assert gate_id is not None
 
-        r = gov_client.get(f"/api/v1/governance/gates/{gate_id}", headers=_auth_headers(token))
+        r = gov_client.get(
+            f"/api/v1/governance/gates/{gate_id}", headers=_auth_headers(token)
+        )
         assert r.status_code == 200
         gate = r.json()
         assert gate["status"] == "pending"
@@ -340,7 +366,9 @@ class TestAIDisclosures:
             json={"client_identifier": "client-002"},
             headers=_auth_headers(token),
         )
-        r = gov_client.get("/api/v1/governance/disclosures", headers=_auth_headers(token))
+        r = gov_client.get(
+            "/api/v1/governance/disclosures", headers=_auth_headers(token)
+        )
         assert r.status_code == 200
         assert len(r.json()) >= 1
 
@@ -352,7 +380,9 @@ class TestAIDisclosures:
             headers=_auth_headers(token),
         )
         did = create_r.json()["disclosure_id"]
-        r = gov_client.get(f"/api/v1/governance/disclosures/{did}", headers=_auth_headers(token))
+        r = gov_client.get(
+            f"/api/v1/governance/disclosures/{did}", headers=_auth_headers(token)
+        )
         assert r.status_code == 200
         assert r.json()["disclosure_id"] == did
         assert r.json()["client_acknowledged"] == 0
@@ -374,7 +404,9 @@ class TestAIDisclosures:
         assert r.json()["status"] == "acknowledged"
 
         # Verify acknowledged flag
-        r2 = gov_client.get(f"/api/v1/governance/disclosures/{did}", headers=_auth_headers(token))
+        r2 = gov_client.get(
+            f"/api/v1/governance/disclosures/{did}", headers=_auth_headers(token)
+        )
         assert r2.json()["client_acknowledged"] == 1
 
     def test_disclosure_requires_auth(self, gov_client):
@@ -389,11 +421,15 @@ class TestAIDisclosures:
             headers=_auth_headers(token),
         )
         did = create_r.json()["disclosure_id"]
-        r = gov_client.get(f"/api/v1/governance/disclosures/{did}", headers=_auth_headers(token))
+        r = gov_client.get(
+            f"/api/v1/governance/disclosures/{did}", headers=_auth_headers(token)
+        )
         text = r.json()["disclosure_text"]
         assert "artificial intelligence" in text.lower()
 
     def test_unknown_disclosure_returns_404(self, gov_client):
         token, _ = _register_and_token(gov_client, role="advogado", suffix="disc6")
-        r = gov_client.get("/api/v1/governance/disclosures/nonexistent", headers=_auth_headers(token))
+        r = gov_client.get(
+            "/api/v1/governance/disclosures/nonexistent", headers=_auth_headers(token)
+        )
         assert r.status_code == 404

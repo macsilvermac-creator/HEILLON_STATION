@@ -12,7 +12,9 @@ class PushTokenRegisterRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    subscription_json: str = Field(min_length=8, description="JSON describing PushSubscription")
+    subscription_json: str = Field(
+        min_length=8, description="JSON describing PushSubscription"
+    )
 
 
 class PushTokenRegisterResponse(BaseModel):

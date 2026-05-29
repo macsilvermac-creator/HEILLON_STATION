@@ -13,12 +13,16 @@ if TYPE_CHECKING:
 class AgentRegistry:
     """Maps mission agent identifiers to catalog rows plus concrete executors."""
 
-    def __init__(self, *, fallback_executor: MissionAgentExecutor | None = None) -> None:
+    def __init__(
+        self, *, fallback_executor: MissionAgentExecutor | None = None
+    ) -> None:
         self._definitions: dict[str, AgentDefinition] = {}
         self._executors: dict[str, MissionAgentExecutor] = {}
         self._fallback_executor = fallback_executor
 
-    def register(self, definition: AgentDefinition, executor: MissionAgentExecutor) -> None:
+    def register(
+        self, definition: AgentDefinition, executor: MissionAgentExecutor
+    ) -> None:
         """Associate a catalogue entry with the executor wired for runtime."""
 
         self._definitions[definition.agent_id] = definition

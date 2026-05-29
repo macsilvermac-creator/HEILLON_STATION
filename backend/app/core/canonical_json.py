@@ -65,4 +65,6 @@ def canonical_json_dumps(obj: Mapping[str, Any]) -> str:
     normalized = _sort_mapping(dict(obj))
     # RFC 8785 / JCS: UTF-8, no insignificant whitespace.
     # ensure_ascii=False preserves Unicode outside Basic Multilingual Plane.
-    return json.dumps(normalized, separators=(",", ":"), ensure_ascii=False, sort_keys=False)
+    return json.dumps(
+        normalized, separators=(",", ":"), ensure_ascii=False, sort_keys=False
+    )

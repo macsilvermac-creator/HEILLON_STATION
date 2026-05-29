@@ -16,9 +16,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from app.dependencies import database_dependency, hdr_service_dependency
-from app.domain.hdr.icp_signer import ICPSignatureRepository, ICPSignerService
+from app.domain.hdr.icp_signer import ICPSignatureRepository
 from app.domain.hdr.repository import HDRRepository
-from app.domain.hdr.schemas import ChainVerificationResponse, VerificationDetailReport, VerificationResponse
+from app.domain.hdr.schemas import (
+    ChainVerificationResponse,
+    VerificationDetailReport,
+    VerificationResponse,
+)
 from app.domain.hdr.services import HDRService
 
 router = APIRouter(prefix="/verify", tags=["verification"])
@@ -57,7 +61,9 @@ def verify_chain(
 
     chain = _hdr_repository.fetch_mission_chain(conn, mission_id)
     if not chain:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mission not archived.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Mission not archived."
+        )
 
     report = svc.verify_chain(chain)
     integrity = "validated" if report.valid else "compromised"
@@ -86,7 +92,9 @@ def verify_hdr(
 
     record = _hdr_repository.fetch_hdr(conn, hdr_id)
     if record is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="HDR unknown.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="HDR unknown."
+        )
 
     valid = svc.verify_single_hdr(record)
     steps = [
@@ -124,14 +132,18 @@ def verify_icp(
     # Ensure HDR exists
     record = _hdr_repository.fetch_hdr(conn, hdr_id)
     if record is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="HDR unknown.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="HDR unknown."
+        )
 
     # Check for an existing verification record (cached result)
     existing = _icp_sig_repo.get_verification_for_hdr(conn, hdr_id)
     if existing:
         details_raw = existing.get("details_json", "{}")
         try:
-            details = json.loads(details_raw) if isinstance(details_raw, str) else details_raw
+            details = (
+                json.loads(details_raw) if isinstance(details_raw, str) else details_raw
+            )
         except Exception:
             details = {}
         return ICPVerificationResponse(
@@ -166,7 +178,6 @@ def verify_icp(
     from app.core.canonical_json import canonical_json_dumps
     from app.domain.hdr.services import HDRService
 
-    hdr_svc = HDRService()
     canonical_bytes = canonical_json_dumps(
         HDRService.payload_for_digest(record)
     ).encode("utf-8")

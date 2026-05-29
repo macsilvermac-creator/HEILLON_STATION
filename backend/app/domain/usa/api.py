@@ -51,8 +51,11 @@ _nist_svc = NISTRMFService()
 _esign_svc = ESIGNAuditService()
 
 
-def _require_admin(current_user: UserRecord = Depends(get_current_user_record)) -> UserRecord:
+def _require_admin(
+    current_user: UserRecord = Depends(get_current_user_record),
+) -> UserRecord:
     from app.domain.user.models import UserRole
+
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin only.")
     return current_user

@@ -9,7 +9,11 @@ from typing import Optional
 def _utc_iso_z(dt: datetime) -> str:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return (
+        dt.astimezone(timezone.utc)
+        .replace(microsecond=0)
+        .strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
 
 
 class PDFAMetadata:
@@ -39,7 +43,9 @@ class PDFAMetadata:
 
         subject_block = ""
         if self.subject.strip():
-            subject_block = f"<dc:subject>{self._escape_xml(self.subject)}</dc:subject>\n      "
+            subject_block = (
+                f"<dc:subject>{self._escape_xml(self.subject)}</dc:subject>\n      "
+            )
 
         return f"""<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Heillon PDF/A Generator">

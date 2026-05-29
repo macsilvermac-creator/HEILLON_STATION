@@ -26,8 +26,11 @@ router = APIRouter(prefix="/signatures", tags=["signatures"])
 _svc = DocumentSignatureService()
 
 
-def _require_admin(current_user: UserRecord = Depends(get_current_user_record)) -> UserRecord:
+def _require_admin(
+    current_user: UserRecord = Depends(get_current_user_record),
+) -> UserRecord:
     from app.domain.user.models import UserRole
+
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin only.")
     return current_user
@@ -44,9 +47,7 @@ class RecordSignatureRequest(BaseModel):
     signatory_name: str = Field(..., min_length=1, max_length=200)
     signatory_email: str = Field(..., max_length=200)
     signatory_role: str = Field(default="", max_length=100)
-    jurisdiction: str = Field(
-        default="BR", pattern="^(BR|EU|US|UAE|GLOBAL)$"
-    )
+    jurisdiction: str = Field(default="BR", pattern="^(BR|EU|US|UAE|GLOBAL)$")
     signature_standard: str = Field(
         default="ICP-Brasil",
         pattern="^(ICP-Brasil|eIDAS-QES|eIDAS-AES|ESIGN|UAE-PASS|Self-Signed)$",
@@ -159,7 +160,9 @@ def list_by_document(
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     if len(document_hash) != 64:
-        raise HTTPException(status_code=422, detail="document_hash must be 64 hex chars.")
+        raise HTTPException(
+            status_code=422, detail="document_hash must be 64 hex chars."
+        )
     return _svc.list_by_document(conn, document_hash)
 
 

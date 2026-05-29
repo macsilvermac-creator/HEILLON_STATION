@@ -69,7 +69,9 @@ class _DevFormatter(logging.Formatter):
         level = record.levelname[:4]
         msg = record.getMessage()
         location = f"{record.module}:{record.lineno}"
-        formatted = f"{ts} {colour}{level}{_COLOUR_RESET} [{record.name}] {msg}  ({location})"
+        formatted = (
+            f"{ts} {colour}{level}{_COLOUR_RESET} [{record.name}] {msg}  ({location})"
+        )
         if record.exc_info:
             formatted += "\n" + self.formatException(record.exc_info)
         return formatted

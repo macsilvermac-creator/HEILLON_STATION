@@ -8,7 +8,6 @@ from pydantic import ValidationError
 from app.core.config import Settings, _derive_fernet_key_from_auth
 
 
-
 def test_stub_timestamp_forbidden_in_production_via_constructor():
     """Stub RFC3161 artefacts must not activate when ENVIRONMENT=production."""
 
@@ -45,4 +44,6 @@ def test_production_requires_explicit_fernet(monkeypatch: pytest.MonkeyPatch):
     ):
         monkeypatch.delenv(var, raising=False)
     with pytest.raises(ValidationError, match="FERNET_ENCRYPTION_KEY is mandatory"):
-        Settings(ENVIRONMENT="production", FERNET_ENCRYPTION_KEY="", AUTH_SECRET_KEY="x" * 40)
+        Settings(
+            ENVIRONMENT="production", FERNET_ENCRYPTION_KEY="", AUTH_SECRET_KEY="x" * 40
+        )

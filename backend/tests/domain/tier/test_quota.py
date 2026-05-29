@@ -26,7 +26,9 @@ def _fresh_db():
     return settings
 
 
-def _insert_hdrs(conn, *, organization_id: str, count: int, when: datetime | None = None) -> None:
+def _insert_hdrs(
+    conn, *, organization_id: str, count: int, when: datetime | None = None
+) -> None:
     """Insert N stub HDRs for quota testing."""
     iso = (when or datetime.now(timezone.utc)).isoformat()
     for i in range(count):

@@ -40,4 +40,3 @@ def test_forensic_package_get_roundtrip(api_client, completed_mission):
     detail_resp = api_client.get(f"/api/v1/forensic/package/{package_id}")
     assert detail_resp.status_code == 200
     assert detail_resp.json()["package_id"] == package_id
-

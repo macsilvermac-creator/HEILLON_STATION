@@ -49,15 +49,23 @@ def get_my_quota(
     try:
         return QuotaService.snapshot(conn, organization_id=user.organization_id)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
 
 
-def _verify_webhook_signature(secret: str, raw_body: bytes, signature_header: str | None) -> bool:
+def _verify_webhook_signature(
+    secret: str, raw_body: bytes, signature_header: str | None
+) -> bool:
     """Constant-time HMAC verification of webhook payload."""
     if not signature_header:
         return False
     # Strip optional "sha256=" prefix (Stripe-style)
-    candidate = signature_header.split("=", 1)[-1] if "=" in signature_header else signature_header
+    candidate = (
+        signature_header.split("=", 1)[-1]
+        if "=" in signature_header
+        else signature_header
+    )
     expected = hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(candidate, expected)
 
@@ -65,7 +73,9 @@ def _verify_webhook_signature(secret: str, raw_body: bytes, signature_header: st
 @router_billing.post("/webhook", status_code=status.HTTP_200_OK)
 async def billing_webhook(
     request: Request,
-    x_heillon_signature: Annotated[str | None, Header(alias="X-Heillon-Signature")] = None,
+    x_heillon_signature: Annotated[
+        str | None, Header(alias="X-Heillon-Signature")
+    ] = None,
     conn=Depends(database_dependency),
 ) -> JSONResponse:
     """Receive tier_changed / cancelled events from the external billing site.

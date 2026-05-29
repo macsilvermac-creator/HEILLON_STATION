@@ -67,7 +67,9 @@ async def forward_chat_completion(
             response = await client.post(url, headers=headers, json=body)
         except httpx.HTTPError as exc:
             logger.warning("Upstream HTTP error to %s: %s", url, exc)
-            raise UpstreamError(502, {"error": {"message": f"Upstream unreachable: {exc}"}})
+            raise UpstreamError(
+                502, {"error": {"message": f"Upstream unreachable: {exc}"}}
+            )
 
     if response.status_code >= 400:
         # Parse JSON body if possible; fall back to raw text
@@ -144,7 +146,7 @@ def _parse_sse_data_line(line: str) -> dict[str, Any] | None:
     """Parse 'data: {...}' → dict. Returns None for [DONE], comments, or invalid JSON."""
     if not line.startswith("data:"):
         return None
-    payload = line[len("data:"):].strip()
+    payload = line[len("data:") :].strip()
     if not payload or payload == "[DONE]":
         return None
     try:
@@ -245,7 +247,9 @@ async def forward_chat_completion_stream(
 DEFAULT_ANTHROPIC_VERSION = "2023-06-01"
 
 
-def _anthropic_headers(*, upstream_api_key: str, anthropic_version: str) -> dict[str, str]:
+def _anthropic_headers(
+    *, upstream_api_key: str, anthropic_version: str
+) -> dict[str, str]:
     """Build the exact header set that api.anthropic.com expects."""
     return {
         "x-api-key": upstream_api_key,
@@ -422,7 +426,7 @@ async def forward_anthropic_messages_stream(
 
                     # Parse content_block_delta to accumulate text
                     if line.startswith("data:"):
-                        payload = line[len("data:"):].strip()
+                        payload = line[len("data:") :].strip()
                         if payload:
                             try:
                                 event = json.loads(payload)

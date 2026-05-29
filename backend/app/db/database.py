@@ -50,7 +50,9 @@ def _postgres_bootstrap_path() -> Path:
 
 
 @contextmanager
-def db_connection(database_url: str | None = None) -> Generator[sqlite3.Connection, None, None]:
+def db_connection(
+    database_url: str | None = None,
+) -> Generator[sqlite3.Connection, None, None]:
     """Yield raw SQLite connection (legacy init paths)."""
 
     cfg = runtime_config.get_settings()
@@ -96,7 +98,12 @@ def apply_migrations(conn: Any, migrations_dir: Path) -> None:
             )"""
         )
 
-    completed = {row["filename"] for row in conn.execute("SELECT filename FROM migration_history ORDER BY filename")}
+    completed = {
+        row["filename"]
+        for row in conn.execute(
+            "SELECT filename FROM migration_history ORDER BY filename"
+        )
+    }
 
     for sql_path in sorted(migrations_dir.glob("*.sql")):
         if sql_path.name in completed:
@@ -104,7 +111,9 @@ def apply_migrations(conn: Any, migrations_dir: Path) -> None:
 
         ddl = sql_path.read_text(encoding="utf-8")
         conn.executescript(ddl)
-        conn.execute("INSERT INTO migration_history (filename) VALUES (?)", (sql_path.name,))
+        conn.execute(
+            "INSERT INTO migration_history (filename) VALUES (?)", (sql_path.name,)
+        )
 
 
 def apply_postgres_bootstrap(conn: CompatConnection) -> None:
@@ -159,7 +168,10 @@ def _seed_corpus_if_needed(conn: Any) -> None:
     so existing rules are updated in-place without duplicates.
     """
     try:
-        from app.domain.normative.corpus_seed import CORPUS_VERSION, seed_normative_corpus
+        from app.domain.normative.corpus_seed import (
+            CORPUS_VERSION,
+            seed_normative_corpus,
+        )
 
         # Check if corpus_meta table exists and version matches
         try:
@@ -192,11 +204,13 @@ def _seed_corpus_if_needed(conn: Any) -> None:
             pass  # Non-fatal if corpus_meta table can't be created
 
         import logging
+
         logging.getLogger("heillon.legal").info(
             "Normative corpus seeded: %d rules (v%s)", count, CORPUS_VERSION
         )
     except Exception as exc:
         import logging
+
         logging.getLogger("heillon.legal").warning(
             "Corpus seed skipped (non-fatal): %s", exc
         )
@@ -253,7 +267,9 @@ def fetch_hdr(conn: Any, hdr_id: str) -> HDR | None:
 def fetch_hdr_organization_id(conn: Any, hdr_id: str) -> str | None:
     """Resolve tenant column for multi-tenant custody validation."""
 
-    cursor = conn.execute("SELECT organization_id FROM hdrs WHERE hdr_id = ?", (hdr_id,))
+    cursor = conn.execute(
+        "SELECT organization_id FROM hdrs WHERE hdr_id = ?", (hdr_id,)
+    )
     row = cursor.fetchone()
     if row is None:
         return None

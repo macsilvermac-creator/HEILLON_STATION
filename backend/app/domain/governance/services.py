@@ -53,7 +53,9 @@ class AIRiskService:
         """Create a new risk classification record. Returns ``classification_id``."""
         _valid = {r.value for r in AIRiskLevel}
         if risk_level not in _valid:
-            raise ValueError(f"risk_level must be one of {sorted(_valid)}, got {risk_level!r}")
+            raise ValueError(
+                f"risk_level must be one of {sorted(_valid)}, got {risk_level!r}"
+            )
 
         cid = str(uuid.uuid4())
         self._repo.create(
@@ -235,8 +237,12 @@ class HumanGateService:
         """Resolve a gate: ``approved`` or ``rejected``."""
         valid = {GateStatus.APPROVED.value, GateStatus.REJECTED.value}
         if status not in valid:
-            raise ValueError(f"Gate resolution must be one of {sorted(valid)}, got {status!r}")
-        self._repo.resolve(conn, gate_id, status=status, resolved_by=resolved_by, notes=notes)
+            raise ValueError(
+                f"Gate resolution must be one of {sorted(valid)}, got {status!r}"
+            )
+        self._repo.resolve(
+            conn, gate_id, status=status, resolved_by=resolved_by, notes=notes
+        )
 
 
 # ── Disclosure Service ─────────────────────────────────────────────────────────

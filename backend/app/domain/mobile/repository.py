@@ -11,7 +11,9 @@ class MobileBridgeRepository:
     """Persists handset push artefacts until dedicated notification plane ships."""
 
     @staticmethod
-    def upsert_push_token(conn: sqlite3.Connection, *, user_id: str, subscription_json: str) -> None:
+    def upsert_push_token(
+        conn: sqlite3.Connection, *, user_id: str, subscription_json: str
+    ) -> None:
         """Replace single subscription envelope per judiciary operator."""
 
         payload = subscription_json.strip()

@@ -69,7 +69,9 @@ class UserRepository:
         return UserRepository._row_to_record(row) if row else None
 
     @staticmethod
-    def ensure_organization(conn: sqlite3.Connection, *, organization_id: str, name: str) -> None:
+    def ensure_organization(
+        conn: sqlite3.Connection, *, organization_id: str, name: str
+    ) -> None:
         snapshot = conn.execute(
             "SELECT organization_id FROM organizations WHERE organization_id = ?",
             (organization_id,),

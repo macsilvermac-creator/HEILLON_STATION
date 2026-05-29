@@ -84,9 +84,13 @@ def register_push_subscription(
     """Accept Web Push subscriptions until dedicated notification dispatcher exists."""
 
     try:
-        _bridge.upsert_push_token(conn, user_id=actor.user_id, subscription_json=body.subscription_json)
+        _bridge.upsert_push_token(
+            conn, user_id=actor.user_id, subscription_json=body.subscription_json
+        )
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="JSON inválido.") from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="JSON inválido."
+        ) from exc
     except Exception as exc:  # noqa: BLE001 — defensive guardrail for SQLite oddities.
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

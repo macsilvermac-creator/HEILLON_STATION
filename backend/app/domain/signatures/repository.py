@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from datetime import UTC, datetime
 from typing import Any
 
@@ -67,16 +66,38 @@ class DocumentSignatureRepository:
                 created_at, updated_at
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                sig_id, organization_id, document_ref, document_hash,
-                document_title, document_type,
-                signatory_id, signatory_name, signatory_email, signatory_role,
-                jurisdiction, signature_standard, signature_level,
-                certificate_issuer, certificate_serial, certificate_subject,
-                certificate_valid_from, certificate_valid_until,
-                signature_b64, signature_format,
-                signed_at or now, tsa_timestamp, tsa_provider, tsa_serial,
-                action, status, hdr_id, ip_address, user_agent, notes,
-                now, now,
+                sig_id,
+                organization_id,
+                document_ref,
+                document_hash,
+                document_title,
+                document_type,
+                signatory_id,
+                signatory_name,
+                signatory_email,
+                signatory_role,
+                jurisdiction,
+                signature_standard,
+                signature_level,
+                certificate_issuer,
+                certificate_serial,
+                certificate_subject,
+                certificate_valid_from,
+                certificate_valid_until,
+                signature_b64,
+                signature_format,
+                signed_at or now,
+                tsa_timestamp,
+                tsa_provider,
+                tsa_serial,
+                action,
+                status,
+                hdr_id,
+                ip_address,
+                user_agent,
+                notes,
+                now,
+                now,
             ),
         )
 
@@ -161,9 +182,17 @@ class DocumentSignatureRepository:
                 tsa_timestamp, ip_address, notes, created_at
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                ack_id, sig_id, acknowledged_by, acknowledged_name,
-                acknowledged_email, action, ack_hash,
-                tsa_timestamp, ip_address, notes, now,
+                ack_id,
+                sig_id,
+                acknowledged_by,
+                acknowledged_name,
+                acknowledged_email,
+                action,
+                ack_hash,
+                tsa_timestamp,
+                ip_address,
+                notes,
+                now,
             ),
         )
         return ack_hash

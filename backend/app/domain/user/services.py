@@ -64,7 +64,9 @@ class AuthService:
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return pwd_context.verify(plain_password[:72], hashed_password)
 
-    def create_access_token(self, *, subject: str, claims: dict[str, Any] | None = None) -> str:
+    def create_access_token(
+        self, *, subject: str, claims: dict[str, Any] | None = None
+    ) -> str:
         """Mint signed JWT with ``jti`` claim for revocation tracking."""
         to_encode: dict[str, Any] = {
             "sub": subject,
@@ -99,7 +101,9 @@ class AuthService:
                     if client.exists(f"{_REVOKED_KEY_PREFIX}{jti}"):
                         return None
                 except Exception as exc:  # noqa: BLE001
-                    logger.warning("JWT blacklist check failed (allowing token): %s", exc)
+                    logger.warning(
+                        "JWT blacklist check failed (allowing token): %s", exc
+                    )
         return payload
 
     def revoke_token(self, token: str | None) -> bool:

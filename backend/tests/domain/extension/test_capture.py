@@ -6,7 +6,6 @@ import os
 import tempfile
 from datetime import datetime, timezone
 
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -159,7 +158,11 @@ def test_capture_same_session_chains_to_same_mission():
     client, settings = _fresh_app()
     _, key = _bootstrap_user_and_key(settings)
     h = {"X-Heillon-Api-Key": key}
-    r1 = client.post("/api/v1/extension/capture", headers=h, json=_valid_payload(ai_session_id="sess_xyz"))
+    r1 = client.post(
+        "/api/v1/extension/capture",
+        headers=h,
+        json=_valid_payload(ai_session_id="sess_xyz"),
+    )
     r2 = client.post(
         "/api/v1/extension/capture",
         headers=h,
@@ -182,8 +185,16 @@ def test_capture_different_session_creates_separate_missions():
     client, settings = _fresh_app()
     _, key = _bootstrap_user_and_key(settings)
     h = {"X-Heillon-Api-Key": key}
-    r1 = client.post("/api/v1/extension/capture", headers=h, json=_valid_payload(ai_session_id="sess_a"))
-    r2 = client.post("/api/v1/extension/capture", headers=h, json=_valid_payload(ai_session_id="sess_b"))
+    r1 = client.post(
+        "/api/v1/extension/capture",
+        headers=h,
+        json=_valid_payload(ai_session_id="sess_a"),
+    )
+    r2 = client.post(
+        "/api/v1/extension/capture",
+        headers=h,
+        json=_valid_payload(ai_session_id="sess_b"),
+    )
     assert r1.json()["mission_id"] != r2.json()["mission_id"]
 
 

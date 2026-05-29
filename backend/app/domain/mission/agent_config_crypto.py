@@ -38,9 +38,9 @@ def build_config_fernet(*, secret_material: str | None = None) -> Fernet | Multi
         return Fernet(key_source.encode("utf-8"))
 
     settings = cfg.get_settings()
-    active = (settings.FERNET_ENCRYPTION_KEY or "").strip() or _derive_fernet_key_from_auth(
-        settings.AUTH_SECRET_KEY
-    )
+    active = (
+        settings.FERNET_ENCRYPTION_KEY or ""
+    ).strip() or _derive_fernet_key_from_auth(settings.AUTH_SECRET_KEY)
     if not active:
         msg = "FERNET_ENCRYPTION_KEY is not configured"
         raise ValueError(msg)

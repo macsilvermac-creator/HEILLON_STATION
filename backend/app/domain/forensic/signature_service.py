@@ -21,7 +21,9 @@ class ForensicManifestSigner:
                     "via `FORENSICS_SIGNATURE_PRIVATE_KEY_HEX`."
                 )
                 raise ValueError(msg)
-            self._private_key = ed25519.Ed25519PrivateKey.from_private_bytes(private_key_seed)
+            self._private_key = ed25519.Ed25519PrivateKey.from_private_bytes(
+                private_key_seed
+            )
 
     @classmethod
     def from_hex_optional(cls, maybe_hex: str | None) -> ForensicManifestSigner:
@@ -42,5 +44,7 @@ class ForensicManifestSigner:
     def sign(self, canonical_manifest_bytes: bytes) -> bytes:
         return self._private_key.sign(canonical_manifest_bytes)
 
-    def write_signature_file(self, target: Path, canonical_manifest_bytes: bytes) -> None:
+    def write_signature_file(
+        self, target: Path, canonical_manifest_bytes: bytes
+    ) -> None:
         target.write_bytes(self.sign(canonical_manifest_bytes))

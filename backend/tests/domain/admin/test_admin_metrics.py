@@ -6,7 +6,6 @@ import os
 import tempfile
 from datetime import datetime, timezone
 
-import pytest
 from fastapi.testclient import TestClient
 
 ADMIN_TOKEN = "test-admin-token-with-enough-length-1234"
@@ -71,8 +70,14 @@ def _bootstrap_test_data(settings) -> None:
                                       organization_id, created_at)
                    VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)""",
                 (
-                    f"adm_{i:03d}", "mam", "analysis", now_iso,
-                    "h" * 64, "{}", "org_default", now_iso,
+                    f"adm_{i:03d}",
+                    "mam",
+                    "analysis",
+                    now_iso,
+                    "h" * 64,
+                    "{}",
+                    "org_default",
+                    now_iso,
                 ),
             )
 

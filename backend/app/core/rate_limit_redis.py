@@ -55,7 +55,9 @@ def _get_redis() -> redis.Redis | None:
         _redis_client = client
         return _redis_client
     except Exception as exc:  # noqa: BLE001
-        logger.warning("Redis rate limiter unavailable, using in-memory fallback: %s", exc)
+        logger.warning(
+            "Redis rate limiter unavailable, using in-memory fallback: %s", exc
+        )
         _redis_disabled = True
         return None
 

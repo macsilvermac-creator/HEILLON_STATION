@@ -77,8 +77,14 @@ async def lifespan(application: FastAPI):
             "FORCE_STUB_TIMESTAMP=True — RFC3161 artefacts are deterministic stubs. Use only in development/testing."
         )
 
-    sqlite_path = sqlite_file_path(settings.DATABASE_URL).resolve()
-    application.state.sqlite_path = str(sqlite_path)
+    # sqlite_file_path() only understands sqlite:/// URIs and raises for
+    # postgresql:// — guard it so Postgres-backed deployments boot cleanly.
+    if settings.resolved_database_type == "sqlite":
+        sqlite_path = sqlite_file_path(settings.DATABASE_URL).resolve()
+        application.state.sqlite_path = str(sqlite_path)
+    else:
+        sqlite_path = None
+        application.state.sqlite_path = None
 
     init_database(settings)
 
@@ -94,7 +100,9 @@ async def lifespan(application: FastAPI):
 
     hdr_singleton = HDRService()
 
-    agent_config_binding = AgentConfigService(settings=settings, database_path=sqlite_path)
+    agent_config_binding = AgentConfigService(
+        settings=settings, database_path=sqlite_path
+    )
 
     orchestration_registry = build_agent_registry(settings)
     orchestration_engine = OrchestrationEngine(

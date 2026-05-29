@@ -120,7 +120,9 @@ def beta_metrics(conn=Depends(database_dependency)) -> dict[str, Any]:
     latest_hdr_at = None
     if latest_row is not None:
         latest_hdr_at = (
-            latest_row[0] if not hasattr(latest_row, "keys") else latest_row["created_at"]
+            latest_row[0]
+            if not hasattr(latest_row, "keys")
+            else latest_row["created_at"]
         )
 
     return {

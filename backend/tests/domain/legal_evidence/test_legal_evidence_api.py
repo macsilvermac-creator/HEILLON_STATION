@@ -186,7 +186,7 @@ class TestCitationVerification:
             json={
                 "document_ref": "brief-hallucinated",
                 "citation_text": "Smith v. Jones, 999 F.3d 123 (7th Cir. 2020)",
-                "citation_exists": False,   # Case doesn't exist!
+                "citation_exists": False,  # Case doesn't exist!
                 "is_hallucination": True,
                 "hallucination_type": "fabricated_citation",
                 "hallucination_severity": "critical",
@@ -206,17 +206,26 @@ class TestCitationVerification:
         # Create one hallucination and one valid citation
         client.post(
             "/api/v1/legal-evidence/citations",
-            json={"document_ref": "doc-hal", "is_hallucination": True,
-                  "citation_exists": False, "hallucination_severity": "significant"},
+            json={
+                "document_ref": "doc-hal",
+                "is_hallucination": True,
+                "citation_exists": False,
+                "hallucination_severity": "significant",
+            },
             headers=_auth(token),
         )
         client.post(
             "/api/v1/legal-evidence/citations",
-            json={"document_ref": "doc-valid", "citation_exists": True,
-                  "is_hallucination": False},
+            json={
+                "document_ref": "doc-valid",
+                "citation_exists": True,
+                "is_hallucination": False,
+            },
             headers=_auth(token),
         )
-        r = client.get("/api/v1/legal-evidence/citations/hallucinations", headers=_auth(token))
+        r = client.get(
+            "/api/v1/legal-evidence/citations/hallucinations", headers=_auth(token)
+        )
         assert r.status_code == 200
         hallucinations = r.json()
         assert len(hallucinations) == 1
@@ -231,7 +240,9 @@ class TestCitationVerification:
                 json={"document_ref": doc_ref, "citation_text": f"Citation {i}"},
                 headers=_auth(token),
             )
-        r = client.get(f"/api/v1/legal-evidence/citations/doc/{doc_ref}", headers=_auth(token))
+        r = client.get(
+            f"/api/v1/legal-evidence/citations/doc/{doc_ref}", headers=_auth(token)
+        )
         assert r.status_code == 200
         assert len(r.json()) == 3
 
@@ -311,7 +322,11 @@ class TestAICompetence:
                 "training_course": "AI Ethics in Legal Practice 2026",
                 "cle_credits_earned": 1.0,
                 "training_date": "2026-03-15",
-                "training_topics": ["AI tools", "citation verification", "confidentiality"],
+                "training_topics": [
+                    "AI tools",
+                    "citation verification",
+                    "confidentiality",
+                ],
                 "ai_systems_covered": ["Claude", "GPT-4", "Gemini"],
                 "competence_areas": ["research", "drafting"],
                 "aba_rule_1_1_compliant": True,
@@ -341,7 +356,9 @@ class TestAICompetence:
         assert r_list.status_code == 200
         assert len(r_list.json()) >= 1
 
-        r_get = client.get(f"/api/v1/legal-evidence/competence/{cert_id}", headers=_auth(token))
+        r_get = client.get(
+            f"/api/v1/legal-evidence/competence/{cert_id}", headers=_auth(token)
+        )
         assert r_get.status_code == 200
         assert r_get.json()["cert_id"] == cert_id
 

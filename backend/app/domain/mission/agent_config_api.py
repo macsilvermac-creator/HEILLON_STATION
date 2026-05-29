@@ -7,7 +7,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.dependencies import get_current_user_record
-from app.domain.mission.agent_config_models import AgentConfig, AgentConfigTestResponse, AgentConfigUpdate
+from app.domain.mission.agent_config_models import (
+    AgentConfig,
+    AgentConfigTestResponse,
+    AgentConfigUpdate,
+)
 from app.domain.mission.agent_config_service import AgentConfigService
 from app.domain.user.models import UserRecord
 
@@ -57,7 +61,9 @@ def put_agent_config_route(
     try:
         return config_service.update_config(agent_id, actor.organization_id, body)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
 
 
 @router.post("/{agent_id}/test", response_model=AgentConfigTestResponse)

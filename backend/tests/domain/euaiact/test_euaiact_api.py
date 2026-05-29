@@ -127,7 +127,9 @@ class TestEUAITechDocs:
             headers=_auth(token),
         )
         doc_id = create_r.json()["doc_id"]
-        r = euai_client.post(f"/api/v1/euaiact/tech-docs/{doc_id}/activate", headers=_auth(token))
+        r = euai_client.post(
+            f"/api/v1/euaiact/tech-docs/{doc_id}/activate", headers=_auth(token)
+        )
         assert r.status_code == 200
         assert r.json()["status"] == "active"
 
@@ -149,7 +151,9 @@ class TestEUAITechDocs:
 
     def test_unknown_doc_returns_404(self, euai_client):
         token, _ = _register_and_token(euai_client, role="perito", suffix="td6")
-        r = euai_client.get("/api/v1/euaiact/tech-docs/nonexistent", headers=_auth(token))
+        r = euai_client.get(
+            "/api/v1/euaiact/tech-docs/nonexistent", headers=_auth(token)
+        )
         assert r.status_code == 404
 
     def test_invalid_risk_category_returns_422(self, euai_client):
@@ -178,7 +182,9 @@ class TestDPIA:
                 "data_subjects": ["clients", "opposing_parties"],
                 "necessity_assessment": "Processing is necessary for AI-assisted analysis",
                 "proportionality_check": "Data minimisation applied; only necessary fields processed",
-                "risks_identified": [{"risk": "data leak", "likelihood": "low", "impact": "high"}],
+                "risks_identified": [
+                    {"risk": "data leak", "likelihood": "low", "impact": "high"}
+                ],
                 "mitigations": [{"measure": "encryption", "residual_risk": "very_low"}],
             },
             headers=_auth(token),
@@ -219,10 +225,14 @@ class TestDPIA:
         )
         dpia_id = create_r.json()["dpia_id"]
         # Non-admin cannot approve
-        r1 = euai_client.post(f"/api/v1/euaiact/dpia/{dpia_id}/approve", headers=_auth(token_adv))
+        r1 = euai_client.post(
+            f"/api/v1/euaiact/dpia/{dpia_id}/approve", headers=_auth(token_adv)
+        )
         assert r1.status_code == 403
         # Admin can approve
-        r2 = euai_client.post(f"/api/v1/euaiact/dpia/{dpia_id}/approve", headers=_auth(token_adm))
+        r2 = euai_client.post(
+            f"/api/v1/euaiact/dpia/{dpia_id}/approve", headers=_auth(token_adm)
+        )
         assert r2.status_code == 200
         assert r2.json()["status"] == "approved"
 
@@ -324,7 +334,7 @@ class TestISMSRisks:
             headers=_auth(token),
         )
         assert r.status_code == 201
-        assert r.json()["risk_level"] == "low"   # score 2
+        assert r.json()["risk_level"] == "low"  # score 2
 
     def test_risk_level_critical(self, euai_client):
         token, _ = _register_and_token(euai_client, role="admin", suffix="isms3")
@@ -367,10 +377,14 @@ class TestISMSRisks:
         )
         risk_id = create_r.json()["risk_id"]
         # Non-admin cannot close
-        r1 = euai_client.post(f"/api/v1/euaiact/isms/risks/{risk_id}/close", headers=_auth(token_adv))
+        r1 = euai_client.post(
+            f"/api/v1/euaiact/isms/risks/{risk_id}/close", headers=_auth(token_adv)
+        )
         assert r1.status_code == 403
         # Admin can close
-        r2 = euai_client.post(f"/api/v1/euaiact/isms/risks/{risk_id}/close", headers=_auth(token_adm))
+        r2 = euai_client.post(
+            f"/api/v1/euaiact/isms/risks/{risk_id}/close", headers=_auth(token_adm)
+        )
         assert r2.status_code == 200
         assert r2.json()["status"] == "closed"
 
@@ -389,7 +403,9 @@ class TestISMSRisks:
             headers=_auth(token),
         )
         risk_id = create_r.json()["risk_id"]
-        r = euai_client.get(f"/api/v1/euaiact/isms/risks/{risk_id}", headers=_auth(token))
+        r = euai_client.get(
+            f"/api/v1/euaiact/isms/risks/{risk_id}", headers=_auth(token)
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["risk_id"] == risk_id

@@ -32,9 +32,9 @@ class ADMTPurpose(str, Enum):
 
 class CertificationTier(str, Enum):
     UNRATED = "unrated"
-    BRONZE = "bronze"      # < 50
-    SILVER = "silver"      # 50-74
-    GOLD = "gold"          # 75-89
+    BRONZE = "bronze"  # < 50
+    SILVER = "silver"  # 50-74
+    GOLD = "gold"  # 75-89
     PLATINUM = "platinum"  # 90+
 
 
@@ -70,22 +70,22 @@ CCPA_ADMT_RIGHTS: dict[str, str] = {
 
 # Heillon compliance score weights (must sum to 100)
 SCORE_WEIGHTS: dict[str, int] = {
-    "score_hdr_coverage": 15,        # Core HDR audit trail
-    "score_citation_accuracy": 10,   # AI citation verification
-    "score_hallucination": 10,       # Hallucination incident rate
-    "score_lgpd": 5,                 # Brazil
-    "score_gdpr_eu": 8,              # EU
-    "score_gdpr_uk": 4,              # UK
-    "score_ccpa": 4,                 # California
-    "score_colorado": 3,             # Colorado
-    "score_pdpl_uae": 4,             # UAE
-    "score_pdpa_sg": 3,              # Singapore
-    "score_privacy_au": 3,           # Australia
-    "score_pipeda_ca": 3,            # Canada
-    "score_iso42001": 10,            # AIMS
-    "score_iso27001": 8,             # ISMS
-    "score_nist_rmf": 5,             # NIST
-    "score_euai_act": 8,             # EU AI Act
+    "score_hdr_coverage": 15,  # Core HDR audit trail
+    "score_citation_accuracy": 10,  # AI citation verification
+    "score_hallucination": 10,  # Hallucination incident rate
+    "score_lgpd": 5,  # Brazil
+    "score_gdpr_eu": 8,  # EU
+    "score_gdpr_uk": 4,  # UK
+    "score_ccpa": 4,  # California
+    "score_colorado": 3,  # Colorado
+    "score_pdpl_uae": 4,  # UAE
+    "score_pdpa_sg": 3,  # Singapore
+    "score_privacy_au": 3,  # Australia
+    "score_pipeda_ca": 3,  # Canada
+    "score_iso42001": 10,  # AIMS
+    "score_iso27001": 8,  # ISMS
+    "score_nist_rmf": 5,  # NIST
+    "score_euai_act": 8,  # EU AI Act
     "score_attorney_competence": 7,  # ABA compliance
 }
 # Total: 110 → normalize to 100 in computation

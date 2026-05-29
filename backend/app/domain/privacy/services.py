@@ -6,7 +6,6 @@ import hashlib
 import io
 import logging
 import uuid
-from datetime import datetime, timezone
 from typing import Any
 
 from app.domain.privacy.models import (
@@ -20,7 +19,6 @@ from app.domain.privacy.models import (
     DPORequestUpdate,
     IncidentCreate,
     IncidentUpdate,
-    LogType,
     PurgeStats,
     RIPDCreate,
     RIPDReport,
@@ -41,7 +39,14 @@ try:
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.lib.units import cm
-    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    from reportlab.platypus import (
+        Paragraph,
+        SimpleDocTemplate,
+        Spacer,
+        Table,
+        TableStyle,
+    )
+
     _REPORTLAB = True
 except ImportError:
     _REPORTLAB = False
@@ -77,16 +82,25 @@ class RIPDService:
             dpo_name=dpo_name,
             dpo_email=dpo_email,
         )
-        logger.info("RIPD created: %s org=%s type=%s", ripd_id, organization_id, payload.processing_type)
+        logger.info(
+            "RIPD created: %s org=%s type=%s",
+            ripd_id,
+            organization_id,
+            payload.processing_type,
+        )
         return report
 
-    def get(self, conn: Any, *, ripd_id: str, organization_id: str) -> RIPDReport | None:
+    def get(
+        self, conn: Any, *, ripd_id: str, organization_id: str
+    ) -> RIPDReport | None:
         return self._repo.get(conn, ripd_id=ripd_id, organization_id=organization_id)
 
     def list_by_org(
         self, conn: Any, *, organization_id: str, limit: int = 50, offset: int = 0
     ) -> list[RIPDReport]:
-        return self._repo.list_by_org(conn, organization_id=organization_id, limit=limit, offset=offset)
+        return self._repo.list_by_org(
+            conn, organization_id=organization_id, limit=limit, offset=offset
+        )
 
     def generate_pdf(self, report: RIPDReport) -> bytes:
         """Render RIPD as PDF (reportlab) or plain-text fallback."""
@@ -94,9 +108,12 @@ class RIPDService:
             return self._render_reportlab(report)
         return self._render_plaintext(report)
 
-    def generate_pdf_and_persist(self, conn: Any, *, report: RIPDReport, output_dir: str) -> tuple[str, str]:
+    def generate_pdf_and_persist(
+        self, conn: Any, *, report: RIPDReport, output_dir: str
+    ) -> tuple[str, str]:
         """Generate PDF bytes, write to disk, update DB, return (path, checksum)."""
         import os
+
         os.makedirs(output_dir, exist_ok=True)
         pdf_bytes = self.generate_pdf(report)
         checksum = hashlib.sha256(pdf_bytes).hexdigest()
@@ -116,8 +133,14 @@ class RIPDService:
 
     def _render_reportlab(self, report: RIPDReport) -> bytes:
         buf = io.BytesIO()
-        doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2*cm, rightMargin=2*cm,
-                                 topMargin=2*cm, bottomMargin=2*cm)
+        doc = SimpleDocTemplate(
+            buf,
+            pagesize=A4,
+            leftMargin=2 * cm,
+            rightMargin=2 * cm,
+            topMargin=2 * cm,
+            bottomMargin=2 * cm,
+        )
         styles = getSampleStyleSheet()
         story = []
 
@@ -131,14 +154,18 @@ class RIPDService:
             return Paragraph(text, styles["Normal"])
 
         def _sp() -> Spacer:
-            return Spacer(1, 0.3*cm)
+            return Spacer(1, 0.3 * cm)
 
         # Header
         story.append(_h1("RELATÓRIO DE IMPACTO À PROTEÇÃO DE DADOS PESSOAIS"))
         story.append(_p(f"RIPD — {report.title}"))
         story.append(_p(f"ID: {report.ripd_id}"))
-        story.append(_p(f"Elaborado em: {report.created_at.strftime('%d/%m/%Y %H:%M UTC')}"))
-        story.append(_p(f"Encarregado (DPO): {report.dpo_name} &lt;{report.dpo_email}&gt;"))
+        story.append(
+            _p(f"Elaborado em: {report.created_at.strftime('%d/%m/%Y %H:%M UTC')}")
+        )
+        story.append(
+            _p(f"Encarregado (DPO): {report.dpo_name} &lt;{report.dpo_email}&gt;")
+        )
         story.append(_sp())
 
         # Table
@@ -149,14 +176,18 @@ class RIPDService:
             ["Finalidade", report.purpose],
             ["Ciclo de Vida dos Dados", report.data_lifecycle],
         ]
-        table = Table(data, colWidths=[5*cm, 11*cm])
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1a1a2e")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ]))
+        table = Table(data, colWidths=[5 * cm, 11 * cm])
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1a1a2e")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ]
+            )
+        )
         story.append(table)
         story.append(_sp())
 
@@ -175,16 +206,20 @@ class RIPDService:
         _list_section("Salvaguardas e Controles", report.safeguards)
 
         story.append(_h2("Base Legal — LGPD art. 7"))
-        story.append(_p(
-            "Este tratamento de dados pessoais está amparado pela base legal indicada acima, "
-            "nos termos da Lei 13.709/2018 (LGPD)."
-        ))
+        story.append(
+            _p(
+                "Este tratamento de dados pessoais está amparado pela base legal indicada acima, "
+                "nos termos da Lei 13.709/2018 (LGPD)."
+            )
+        )
         story.append(_sp())
-        story.append(_p(
-            "Documento gerado automaticamente pela plataforma Heillon Legal. "
-            "Este RIPD deve ser revisado e aprovado pelo Encarregado de Dados (DPO) "
-            "antes de ser considerado definitivo."
-        ))
+        story.append(
+            _p(
+                "Documento gerado automaticamente pela plataforma Heillon Legal. "
+                "Este RIPD deve ser revisado e aprovado pelo Encarregado de Dados (DPO) "
+                "antes de ser considerado definitivo."
+            )
+        )
 
         doc.build(story)
         return buf.getvalue()
@@ -274,8 +309,12 @@ class DPOService:
         )
         return req
 
-    def get_request(self, conn: Any, *, request_id: str, organization_id: str) -> DPORequest | None:
-        return self._repo.get(conn, request_id=request_id, organization_id=organization_id)
+    def get_request(
+        self, conn: Any, *, request_id: str, organization_id: str
+    ) -> DPORequest | None:
+        return self._repo.get(
+            conn, request_id=request_id, organization_id=organization_id
+        )
 
     def list_requests(
         self,
@@ -287,7 +326,11 @@ class DPOService:
         offset: int = 0,
     ) -> list[DPORequest]:
         return self._repo.list_by_org(
-            conn, organization_id=organization_id, status=status, limit=limit, offset=offset
+            conn,
+            organization_id=organization_id,
+            status=status,
+            limit=limit,
+            offset=offset,
         )
 
     def update_request(
@@ -302,7 +345,9 @@ class DPOService:
             conn, request_id=request_id, organization_id=organization_id, update=update
         )
         if req:
-            logger.info("DPO request updated: %s status=%s", request_id, req.status.value)
+            logger.info(
+                "DPO request updated: %s status=%s", request_id, req.status.value
+            )
         return req
 
 
@@ -340,13 +385,19 @@ class IncidentService:
         )
         return incident
 
-    def get(self, conn: Any, *, incident_id: str, organization_id: str) -> SecurityIncident | None:
-        return self._repo.get(conn, incident_id=incident_id, organization_id=organization_id)
+    def get(
+        self, conn: Any, *, incident_id: str, organization_id: str
+    ) -> SecurityIncident | None:
+        return self._repo.get(
+            conn, incident_id=incident_id, organization_id=organization_id
+        )
 
     def list_by_org(
         self, conn: Any, *, organization_id: str, limit: int = 50, offset: int = 0
     ) -> list[SecurityIncident]:
-        return self._repo.list_by_org(conn, organization_id=organization_id, limit=limit, offset=offset)
+        return self._repo.list_by_org(
+            conn, organization_id=organization_id, limit=limit, offset=offset
+        )
 
     def update(
         self,
@@ -365,7 +416,9 @@ class IncidentService:
             closed_by=closed_by,
         )
         if incident:
-            logger.info("Incident updated: %s status=%s", incident_id, incident.status.value)
+            logger.info(
+                "Incident updated: %s status=%s", incident_id, incident.status.value
+            )
         return incident
 
     def generate_anpd_notification_text(self, incident: SecurityIncident) -> str:
@@ -407,8 +460,12 @@ class ConsentService:
     def __init__(self, repository: ConsentRepository | None = None) -> None:
         self._repo = repository or ConsentRepository()
 
-    def get_bundle(self, conn: Any, *, user_id: str, organization_id: str) -> ConsentBundle:
-        return self._repo.get_bundle(conn, user_id=user_id, organization_id=organization_id)
+    def get_bundle(
+        self, conn: Any, *, user_id: str, organization_id: str
+    ) -> ConsentBundle:
+        return self._repo.get_bundle(
+            conn, user_id=user_id, organization_id=organization_id
+        )
 
     def set_consent(
         self,
@@ -431,14 +488,16 @@ class ConsentService:
             user_agent=user_agent,
         )
         action = "granted" if update.granted else "revoked"
-        logger.info("Consent %s: user=%s purpose=%s", action, user_id, update.purpose.value)
+        logger.info(
+            "Consent %s: user=%s purpose=%s", action, user_id, update.purpose.value
+        )
         return record
 
     def revoke_all(
         self, conn: Any, *, user_id: str, organization_id: str
     ) -> list[ConsentRecord]:
         """Revoke all consent-based purposes for the user (LGPD art. 8 §5)."""
-        from app.domain.privacy.models import ConsentPurpose, LegalBasis
+        from app.domain.privacy.models import LegalBasis
 
         bundle = self.get_bundle(conn, user_id=user_id, organization_id=organization_id)
         revoked = []

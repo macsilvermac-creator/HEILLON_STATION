@@ -8,7 +8,6 @@ from typing import Any
 from app.domain.signatures.models import (
     STANDARD_DEFAULT_FORMAT,
     SIGNATURE_LEGAL_VALUE,
-    SignatureStandard,
 )
 from app.domain.signatures.repository import DocumentSignatureRepository
 
@@ -147,14 +146,16 @@ class DocumentSignatureService:
         limit: int = 50,
     ) -> list[dict[str, Any]]:
         return self._repo.list_by_org(
-            conn, organization_id,
-            jurisdiction=jurisdiction, action=action, status=status,
-            skip=skip, limit=limit,
+            conn,
+            organization_id,
+            jurisdiction=jurisdiction,
+            action=action,
+            status=status,
+            skip=skip,
+            limit=limit,
         )
 
-    def list_by_document(
-        self, conn: Any, document_hash: str
-    ) -> list[dict[str, Any]]:
+    def list_by_document(self, conn: Any, document_hash: str) -> list[dict[str, Any]]:
         return self._repo.list_by_document_hash(conn, document_hash)
 
     def list_acks(self, conn: Any, sig_id: str) -> list[dict[str, Any]]:

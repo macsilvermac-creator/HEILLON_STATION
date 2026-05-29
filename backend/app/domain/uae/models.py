@@ -30,9 +30,9 @@ class UAEJurisdiction(str, Enum):
     DUBAI = "dubai"
     ABU_DHABI = "abu_dhabi"
     SHARJAH = "sharjah"
-    DIFC = "difc"          # Dubai International Financial Centre (separate legal system)
-    ADGM = "adgm"          # Abu Dhabi Global Market (separate legal system)
-    DMCC = "dmcc"          # Dubai Multi Commodities Centre
+    DIFC = "difc"  # Dubai International Financial Centre (separate legal system)
+    ADGM = "adgm"  # Abu Dhabi Global Market (separate legal system)
+    DMCC = "dmcc"  # Dubai Multi Commodities Centre
 
 
 class UAEAISector(str, Enum):

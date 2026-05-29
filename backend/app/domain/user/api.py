@@ -33,7 +33,9 @@ def bearer_credentials(
     return authorization
 
 
-def _attach_session_cookie(response: JSONResponse, *, settings: Settings, token: str) -> None:
+def _attach_session_cookie(
+    response: JSONResponse, *, settings: Settings, token: str
+) -> None:
     response.set_cookie(
         key=AUTH_COOKIE_NAME,
         value=token,
@@ -57,7 +59,9 @@ def register_operator(
     repo = UserRepository()
     conflict = repo.get_by_email(conn, str(body.email))
     if conflict is not None:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já registado.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Email já registado."
+        )
 
     organization_target = body.organization_id or settings.DEFAULT_ORGANIZATION_ID
     org_name = f"Organização {organization_target}"
@@ -107,11 +111,17 @@ def login_operator(
     repo = UserRepository()
     record = repo.get_by_email(conn, str(body.email))
     if record is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas."
+        )
     if not record.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Operador inativo.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Operador inativo."
+        )
     if not auth_service.verify_password(body.password, record.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas."
+        )
 
     token = auth_service.create_access_token(
         subject=record.user_id,
@@ -154,7 +164,9 @@ def logout_operator(
     if token is not None:
         auth_service.revoke_token(token)
 
-    response = JSONResponse(content={"detail": "Sessão terminada."}, status_code=status.HTTP_200_OK)
+    response = JSONResponse(
+        content={"detail": "Sessão terminada."}, status_code=status.HTTP_200_OK
+    )
     response.delete_cookie(key=AUTH_COOKIE_NAME, path="/")
     return response
 
@@ -174,16 +186,22 @@ def current_operator_snapshot(
     if token is None:
         token = request.cookies.get(AUTH_COOKIE_NAME)
     if token is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais em falta.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais em falta."
+        )
 
     payload = auth_service.decode_token(token)
     if payload is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida."
+        )
 
     user_id = str(payload["sub"])
     record = UserRepository().get_by_id(conn, user_id)
     if record is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Operador desconhecido.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Operador desconhecido."
+        )
 
     return UserPublic(
         user_id=record.user_id,

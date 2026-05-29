@@ -74,7 +74,9 @@ async def detailed_health(
     """Component health for administrators."""
 
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas administradores.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Apenas administradores."
+        )
 
     checks = {
         "database": _check_database(settings),

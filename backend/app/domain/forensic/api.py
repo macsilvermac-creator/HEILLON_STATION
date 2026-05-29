@@ -10,7 +10,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse
 
 from app.dependencies import database_dependency
-from app.domain.forensic.models import AuditManifest, ForensicPackage, ForensicPackageStatus
+from app.domain.forensic.models import (
+    AuditManifest,
+    ForensicPackage,
+    ForensicPackageStatus,
+)
 from app.domain.forensic.repository import ForensicRepository
 from app.domain.forensic.services import ForensicPackageService
 
@@ -41,7 +45,9 @@ def generate_forensic_package(
     try:
         dossier = service.generate_package(conn, mission_id, generated_by=generated_by)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
     return dossier
 
 
@@ -54,7 +60,10 @@ def get_package_metadata(
 
     row = _repository_singleton.fetch_row(conn, package_id)
     if row is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Forensic dossier unavailable.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Forensic dossier unavailable.",
+        )
 
     manifest = AuditManifest.model_validate_json(row["manifest_json"])
 
@@ -80,10 +89,17 @@ def download_pdf(
 
     row = _repository_singleton.fetch_row(conn, package_id)
     if row is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Forensic dossier unavailable.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Forensic dossier unavailable.",
+        )
 
     path_pdf = Path(row["pdf_path"])
-    media_type = "application/pdf" if path_pdf.suffix.lower() == ".pdf" else "text/plain; charset=utf-8"
+    media_type = (
+        "application/pdf"
+        if path_pdf.suffix.lower() == ".pdf"
+        else "text/plain; charset=utf-8"
+    )
     download_name = f"{package_id}{path_pdf.suffix}"
 
     return FileResponse(
@@ -102,7 +118,10 @@ def download_json_chain(
 
     row = _repository_singleton.fetch_row(conn, package_id)
     if row is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Forensic dossier unavailable.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Forensic dossier unavailable.",
+        )
 
     return FileResponse(
         row["json_chain_path"],
@@ -120,7 +139,10 @@ def download_manifest(
 
     row = _repository_singleton.fetch_row(conn, package_id)
     if row is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Forensic dossier unavailable.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Forensic dossier unavailable.",
+        )
 
     manifest_payload = json.loads(row["manifest_json"])
     return JSONResponse(content=manifest_payload)

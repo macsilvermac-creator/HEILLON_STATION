@@ -8,7 +8,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from app.domain.normative.models import NormativeCategory, NormativeRule, ViolationAction
+from app.domain.normative.models import (
+    NormativeCategory,
+    NormativeRule,
+    ViolationAction,
+)
 
 
 def seed_corpus(conn, rules: Sequence[NormativeRule]) -> None:
@@ -99,7 +103,9 @@ def _list_all(conn, *, limit: int = 100) -> list[NormativeRule]:
 
 def _rebuild_fts(conn) -> None:
     try:
-        conn.execute("INSERT INTO normative_rules_fts(normative_rules_fts) VALUES('rebuild')")
+        conn.execute(
+            "INSERT INTO normative_rules_fts(normative_rules_fts) VALUES('rebuild')"
+        )
     except Exception:
         pass
 

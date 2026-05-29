@@ -27,8 +27,12 @@ class HDRAgent(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     id: str
-    model: str = Field(description="Underlying model identifier (e.g. tesseract variant).")
-    version: str = Field(description="Version string of agent software / configuration.")
+    model: str = Field(
+        description="Underlying model identifier (e.g. tesseract variant)."
+    )
+    version: str = Field(
+        description="Version string of agent software / configuration."
+    )
 
 
 class HDRUser(BaseModel):

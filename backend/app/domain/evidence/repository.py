@@ -9,7 +9,9 @@ from uuid import uuid4
 class EvidenceRepository:
     """Writes byte-identical evidence envelopes under courthouse vault tiers."""
 
-    def reserve_target(self, vault_root: Path, original_filename: str) -> tuple[str, Path]:
+    def reserve_target(
+        self, vault_root: Path, original_filename: str
+    ) -> tuple[str, Path]:
         """Return ``(evidence_id, canonical_path)`` respecting collision isolation."""
 
         evidence_id = str(uuid4())

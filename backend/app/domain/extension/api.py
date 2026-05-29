@@ -107,7 +107,9 @@ def capture_ai_interaction(
     snap_after = QuotaService.snapshot(conn, organization_id=user.organization_id)
 
     settings = runtime_config.get_settings()
-    verification_url = f"{settings.VERIFICATION_PUBLIC_BASE.rstrip('/')}/verification/{hdr.hdr_id}"
+    verification_url = (
+        f"{settings.VERIFICATION_PUBLIC_BASE.rstrip('/')}/verification/{hdr.hdr_id}"
+    )
 
     return ExtensionCaptureResponse(
         hdr_id=hdr.hdr_id,

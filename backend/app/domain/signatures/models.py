@@ -23,27 +23,27 @@ class SignatureStandard(str, Enum):
 
 
 class SignatureLevel(str, Enum):
-    QES = "QES"       # Qualified Electronic Signature
-    AES = "AES"       # Advanced Electronic Signature
-    SES = "SES"       # Simple Electronic Signature
+    QES = "QES"  # Qualified Electronic Signature
+    AES = "AES"  # Advanced Electronic Signature
+    SES = "SES"  # Simple Electronic Signature
     ADVANCED = "advanced"
     BASIC = "basic"
 
 
 class SignatureFormat(str, Enum):
-    PADES_LTA = "PAdES-LTA"   # PDF — long-term archive
-    CADES_LTA = "CAdES-LTA"   # CMS — long-term archive
-    XADES_LTA = "XAdES-LTA"   # XML — long-term archive
-    JADES = "JAdES"            # JSON
+    PADES_LTA = "PAdES-LTA"  # PDF — long-term archive
+    CADES_LTA = "CAdES-LTA"  # CMS — long-term archive
+    XADES_LTA = "XAdES-LTA"  # XML — long-term archive
+    JADES = "JAdES"  # JSON
     PKCS7 = "PKCS7"
     RAW = "raw"
 
 
 class DocumentAction(str, Enum):
-    SENT = "sent"          # Enviado pela persona responsável
+    SENT = "sent"  # Enviado pela persona responsável
     DELIVERED = "delivered"  # Entregue (confirmação de recebimento automática)
     RECEIVED = "received"  # Recebido (ack explícito do destinatário)
-    SIGNED = "signed"      # Assinado com certificado qualificado
+    SIGNED = "signed"  # Assinado com certificado qualificado
     REJECTED = "rejected"
     REVOKED = "revoked"
 

@@ -41,7 +41,9 @@ class AIRiskRepository:
     ) -> None:
         now = _now()
         # Review due in 1 year per CNJ 615/2025 lifecycle requirements
-        review_due = (datetime.now(UTC) + timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        review_due = (datetime.now(UTC) + timedelta(days=365)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
         conn.execute(
             """INSERT INTO ai_risk_classifications (
                 classification_id, organization_id,
@@ -50,11 +52,20 @@ class AIRiskRepository:
                 classified_by, classified_at, review_due_at, status, created_at
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                classification_id, organization_id,
-                system_name, system_version, system_description,
-                risk_level, risk_justification, impact_areas,
+                classification_id,
+                organization_id,
+                system_name,
+                system_version,
+                system_description,
+                risk_level,
+                risk_justification,
+                impact_areas,
                 json.dumps(regulatory_refs or []),
-                classified_by, now, review_due, "active", now,
+                classified_by,
+                now,
+                review_due,
+                "active",
+                now,
             ),
         )
 
@@ -90,9 +101,7 @@ class AIRiskRepository:
             ).fetchall()
         return [dict(r) for r in rows]
 
-    def update_status(
-        self, conn: Any, classification_id: str, status: str
-    ) -> None:
+    def update_status(self, conn: Any, classification_id: str, status: str) -> None:
         conn.execute(
             "UPDATE ai_risk_classifications SET status=? WHERE classification_id=?",
             (status, classification_id),
@@ -127,9 +136,18 @@ class AIDecisionLogRepository:
                 human_reviewed, decided_at, created_at
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                decision_id, organization_id, hdr_id, mission_id, classification_id,
-                decision_type, decision_summary, ai_model, ai_provider,
-                0, now, now,
+                decision_id,
+                organization_id,
+                hdr_id,
+                mission_id,
+                classification_id,
+                decision_type,
+                decision_summary,
+                ai_model,
+                ai_provider,
+                0,
+                now,
+                now,
             ),
         )
 
@@ -227,8 +245,15 @@ class HumanApprovalGateRepository:
                 risk_level, required_role, expires_at, status, created_at
             ) VALUES (?,?,?,?,?,?,?,?,?)""",
             (
-                gate_id, organization_id, decision_id, gate_type,
-                risk_level, required_role, expires_at, GateStatus.PENDING, now,
+                gate_id,
+                organization_id,
+                decision_id,
+                gate_type,
+                risk_level,
+                required_role,
+                expires_at,
+                GateStatus.PENDING,
+                now,
             ),
         )
 
@@ -239,9 +264,7 @@ class HumanApprovalGateRepository:
         ).fetchone()
         return dict(row) if row else None
 
-    def get_for_decision(
-        self, conn: Any, decision_id: str
-    ) -> dict[str, Any] | None:
+    def get_for_decision(self, conn: Any, decision_id: str) -> dict[str, Any] | None:
         row = conn.execute(
             """SELECT * FROM human_approval_gates
                WHERE decision_id=? ORDER BY created_at DESC LIMIT 1""",
@@ -317,10 +340,18 @@ class AIDisclosureRepository:
                 method, channel, client_acknowledged, disclosed_at, created_at
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                disclosure_id, organization_id, lawyer_id, client_identifier,
+                disclosure_id,
+                organization_id,
+                lawyer_id,
+                client_identifier,
                 json.dumps(ai_systems_used or []),
                 json.dumps(mission_ids or []),
-                disclosure_text, method, channel, 0, now, now,
+                disclosure_text,
+                method,
+                channel,
+                0,
+                now,
+                now,
             ),
         )
 

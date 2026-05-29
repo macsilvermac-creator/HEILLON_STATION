@@ -82,7 +82,9 @@ class ExtensionCaptureResponse(BaseModel):
 
     status: Literal["captured"] = "captured"
     hdr_id: str = Field(description="Cryptographic ID of the generated HDR (64 hex).")
-    mission_id: str = Field(description="Mission grouping this capture (auto-created if needed).")
+    mission_id: str = Field(
+        description="Mission grouping this capture (auto-created if needed)."
+    )
     verification_url: str = Field(
         description="Public URL to verify this HDR (no auth required).",
     )

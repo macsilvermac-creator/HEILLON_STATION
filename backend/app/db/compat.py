@@ -93,7 +93,9 @@ class CompatConnection:
 
 
 @contextmanager
-def open_connection(settings: Settings | None = None) -> Generator[CompatConnection, None, None]:
+def open_connection(
+    settings: Settings | None = None,
+) -> Generator[CompatConnection, None, None]:
     settings = settings or get_settings()
     dialect = resolve_dialect(settings)
 

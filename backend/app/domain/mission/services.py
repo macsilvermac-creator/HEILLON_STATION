@@ -20,7 +20,13 @@ from app.domain.hdr.services import HDRService
 from app.domain.mission.agent_config_service import AgentConfigService
 from app.domain.mission.agent_registry import AgentRegistry, synthetic_definition
 from app.domain.mission.lexicon import KEYWORD_AGENT_MAP
-from app.domain.mission.models import AgentDefinition, DAG, DAGNode, MissionPlan, MissionStatus
+from app.domain.mission.models import (
+    AgentDefinition,
+    DAG,
+    DAGNode,
+    MissionPlan,
+    MissionStatus,
+)
 from app.domain.normative.services import NormativeService
 
 
@@ -112,7 +118,9 @@ class OrchestrationEngine:
         sanitized_description = description.strip()
         sanitized_agents = list(dict.fromkeys(available_agent_ids))
 
-        inferred_agents = self._ordered_agent_selection(sanitized_description, sanitized_agents)
+        inferred_agents = self._ordered_agent_selection(
+            sanitized_description, sanitized_agents
+        )
         tentative_dag = self._build_linear_dag(inferred_agents, sanitized_description)
         estimated_cost_gas = float(max(len(tentative_dag.nodes), 1) * 35)
 
@@ -122,7 +130,9 @@ class OrchestrationEngine:
             "human_approved": False,
             "anonymization": False,
         }
-        normative_result = self._normative.check_intent(sanitized_description, intent_context)
+        normative_result = self._normative.check_intent(
+            sanitized_description, intent_context
+        )
 
         if not normative_result.allowed:
             dag = DAG(nodes=[], edges=[])
@@ -186,7 +196,9 @@ class OrchestrationEngine:
         roots = [n for n in dag.nodes if not n.depends_on]
         return len(roots) == 1
 
-    async def execute_mission(self, plan: MissionPlan, mission_id: str | None = None) -> list[HDR]:
+    async def execute_mission(
+        self, plan: MissionPlan, mission_id: str | None = None
+    ) -> list[HDR]:
         """Walk an approved DAG emitting cryptographic HDR artefacts per node."""
 
         if plan.status != MissionStatus.APPROVED:
@@ -255,7 +267,9 @@ class OrchestrationEngine:
             },
         )
 
-        definition = self._agent_registry.get_definition(node.agent_id) or synthetic_definition(
+        definition = self._agent_registry.get_definition(
+            node.agent_id
+        ) or synthetic_definition(
             node.agent_id,
         )
 
@@ -277,7 +291,9 @@ class OrchestrationEngine:
             raise ValueError(msg)
 
         if cfg_service is not None:
-            model_label, version_label = cfg_service.effective_hdr_agent(definition, node.agent_id, tenant)
+            model_label, version_label = cfg_service.effective_hdr_agent(
+                definition, node.agent_id, tenant
+            )
         else:
             model_label, version_label = definition.model, definition.version
 
@@ -309,7 +325,8 @@ class OrchestrationEngine:
 
         execution = HDRExecution(
             status=exec_status,
-            input_hash=outcome.input_hash_hex or generate_hash(node.node_id.encode("utf-8")),
+            input_hash=outcome.input_hash_hex
+            or generate_hash(node.node_id.encode("utf-8")),
             output_hash=outcome.output_hash_hex,
             duration_ms=outcome.duration_ms,
         )
@@ -340,7 +357,9 @@ class OrchestrationEngine:
             previous_hdr=previous_hdr_id,
         )
 
-    def _ordered_agent_selection(self, description: str, available_agent_ids: list[str]) -> list[str]:
+    def _ordered_agent_selection(
+        self, description: str, available_agent_ids: list[str]
+    ) -> list[str]:
         """Return sanctioned agents respecting first occurrence ordering within briefing prose."""
 
         if not available_agent_ids:
@@ -388,9 +407,7 @@ class OrchestrationEngine:
         for index, agent_id in enumerate(agent_ids, start=1):
             node_id = f"n{index}-{agent_id}"
             depends_on: list[str] = [prev_id] if prev_id else []
-            descriptor = (
-                f"Auto-generated EASY step leveraging `{agent_id}` for briefing anchored on `{snippet}`."
-            )
+            descriptor = f"Auto-generated EASY step leveraging `{agent_id}` for briefing anchored on `{snippet}`."
 
             nodes.append(
                 DAGNode(

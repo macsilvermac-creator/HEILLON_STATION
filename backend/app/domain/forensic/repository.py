@@ -55,7 +55,9 @@ class ForensicRepository:
             ),
         )
 
-    def fetch_row(self, conn: sqlite3.Connection, package_id: str) -> dict[str, str] | None:
+    def fetch_row(
+        self, conn: sqlite3.Connection, package_id: str
+    ) -> dict[str, str] | None:
         """Return raw bookkeeping row keyed by forensic package identifier."""
 
         row = conn.execute(

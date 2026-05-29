@@ -58,7 +58,9 @@ class Settings(BaseSettings):
             "Default permits Chrome (32-char IDs) and Firefox (UUID-like) extension origins."
         ),
     )
-    FORENSICS_PACKAGE_DIR: Path = Field(default_factory=lambda: Path("data/forensic_packages"))
+    FORENSICS_PACKAGE_DIR: Path = Field(
+        default_factory=lambda: Path("data/forensic_packages")
+    )
     VERIFICATION_PUBLIC_BASE: str = "http://127.0.0.1:8000"
 
     DEFAULT_ORGANIZATION_ID: str = "org_default"
@@ -96,12 +98,19 @@ class Settings(BaseSettings):
         default=False,
         description="Bypass rate limiting (never enable in production).",
     )
-    OPENAI_API_KEY: str | None = Field(default=None, description="When set, analysis-agent binds to Chat Completions API.")
+    OPENAI_API_KEY: str | None = Field(
+        default=None,
+        description="When set, analysis-agent binds to Chat Completions API.",
+    )
     OPENAI_API_BASE_URL: str = "https://api.openai.com/v1"
     OPENAI_MODEL: str = "gpt-4o-mini"
     # LGPD Fase 14 — DPO settings
-    DPO_NAME: str = Field(default="Encarregado de Dados", description="Nome do DPO (LGPD art. 41)")
-    DPO_EMAIL: str = Field(default="dpo@heillon.com", description="E-mail público do DPO (LGPD art. 41)")
+    DPO_NAME: str = Field(
+        default="Encarregado de Dados", description="Nome do DPO (LGPD art. 41)"
+    )
+    DPO_EMAIL: str = Field(
+        default="dpo@heillon.com", description="E-mail público do DPO (LGPD art. 41)"
+    )
     # ICP-Brasil Fase 15 — A1 soft-certificate signing
     ICP_CERT_PATH: str | None = Field(
         default=None,

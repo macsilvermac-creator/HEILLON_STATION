@@ -114,7 +114,9 @@ def get_upstream_config(
     base_url = (x_heillon_upstream_url or DEFAULT_UPSTREAM_BASE).strip()
     base_url = _validate_upstream_url(base_url)
 
-    provider = (x_heillon_upstream_provider or DEFAULT_UPSTREAM_PROVIDER).strip().lower()
+    provider = (
+        (x_heillon_upstream_provider or DEFAULT_UPSTREAM_PROVIDER).strip().lower()
+    )
     return GatewayUpstreamConfig(
         upstream_base_url=base_url,
         upstream_api_key=x_upstream_api_key.strip(),

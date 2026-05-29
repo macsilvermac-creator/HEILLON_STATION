@@ -147,7 +147,11 @@ class NormativeService:
     def get_active_rules(self) -> list[NormativeRule]:
         """Return enabled rules ordered by descending priority."""
 
-        return sorted((r for r in self._repository.list_all() if r.enabled), key=lambda r: r.priority, reverse=True)
+        return sorted(
+            (r for r in self._repository.list_all() if r.enabled),
+            key=lambda r: r.priority,
+            reverse=True,
+        )
 
     @staticmethod
     def _infer_agents_from_intent(description: str) -> set[str]:
@@ -160,7 +164,9 @@ class NormativeService:
                 inferred.add(agent_id)
         return inferred
 
-    def check_intent(self, intent_description: str, context: dict[str, object]) -> NormativeResult:
+    def check_intent(
+        self, intent_description: str, context: dict[str, object]
+    ) -> NormativeResult:
         """Audit a natural-language intent prior to DAG materialization."""
 
         violations: list[NormativeViolation] = []
@@ -169,12 +175,21 @@ class NormativeService:
         folded = intent_description.casefold()
 
         authorized_raw = context.get("authorized_tools", [])
-        authorized_tools = {str(x) for x in authorized_raw} if isinstance(authorized_raw, list) else set()
+        authorized_tools = (
+            {str(x) for x in authorized_raw}
+            if isinstance(authorized_raw, list)
+            else set()
+        )
         inferred_agents = self._infer_agents_from_intent(intent_description)
 
         for rule in self.get_active_rules():
             if rule.rule_id == "LEGAL-001":
-                markers = ("privileged", "attorney-client", "advogado-cliente", "segredo profissional")
+                markers = (
+                    "privileged",
+                    "attorney-client",
+                    "advogado-cliente",
+                    "segredo profissional",
+                )
                 if any(token in folded for token in markers):
                     entry = NormativeViolation(
                         rule_id=rule.rule_id,
@@ -184,7 +199,13 @@ class NormativeService:
                     self._accumulate(rule, entry, violations, warnings)
 
             elif rule.rule_id == "LEGAL-002":
-                pii_tokens = ("pii", "personal data", "gdpr", "dados pessoais", "dado pessoal")
+                pii_tokens = (
+                    "pii",
+                    "personal data",
+                    "gdpr",
+                    "dados pessoais",
+                    "dado pessoal",
+                )
                 mentions_pii = any(token in folded for token in pii_tokens)
                 anonymized = bool(context.get("anonymization"))
                 if mentions_pii and not anonymized:
@@ -249,7 +270,12 @@ class NormativeService:
             elif rule.rule_id == "LGPD-001":
                 mentions_personal = any(
                     token in folded
-                    for token in ("dados pessoais", "dado pessoal", "pii", "personal data")
+                    for token in (
+                        "dados pessoais",
+                        "dado pessoal",
+                        "pii",
+                        "personal data",
+                    )
                 )
                 if mentions_personal and not context.get("legal_basis"):
                     entry = NormativeViolation(
@@ -280,7 +306,9 @@ class NormativeService:
             elif rule.rule_id == "LGPD-003":
                 necessary = context.get("necessary_fields")
                 icount = context.get("input_field_count")
-                if isinstance(necessary, (int, float)) and isinstance(icount, (int, float)):
+                if isinstance(necessary, (int, float)) and isinstance(
+                    icount, (int, float)
+                ):
                     if float(icount) > 2 * float(necessary):
                         entry = NormativeViolation(
                             rule_id=rule.rule_id,
@@ -292,7 +320,12 @@ class NormativeService:
             elif rule.rule_id == "LGPD-004":
                 mentions_sensitive = any(
                     token in folded
-                    for token in ("dados sensíveis", "dados sensiveis", "sensitive personal", "health data")
+                    for token in (
+                        "dados sensíveis",
+                        "dados sensiveis",
+                        "sensitive personal",
+                        "health data",
+                    )
                 )
                 if mentions_sensitive and not context.get("explicit_consent"):
                     entry = NormativeViolation(
@@ -304,12 +337,25 @@ class NormativeService:
 
             elif rule.rule_id == "LGPD-005":
                 mentions_storage = any(
-                    token in folded for token in ("armazenar", "arquivo", "store", "archive", "retenção", "retention")
+                    token in folded
+                    for token in (
+                        "armazenar",
+                        "arquivo",
+                        "store",
+                        "archive",
+                        "retenção",
+                        "retention",
+                    )
                 )
                 mentions_personal = any(
-                    token in folded for token in ("dados pessoais", "pii", "personal data")
+                    token in folded
+                    for token in ("dados pessoais", "pii", "personal data")
                 )
-                if mentions_storage and mentions_personal and not context.get("retention_period"):
+                if (
+                    mentions_storage
+                    and mentions_personal
+                    and not context.get("retention_period")
+                ):
                     entry = NormativeViolation(
                         rule_id=rule.rule_id,
                         rule_name=rule.name,
@@ -330,7 +376,9 @@ class NormativeService:
             suggested_realignment=suggested_realignment,
         )
 
-    def check_action(self, action: str, hdr_context: dict[str, object]) -> NormativeResult:
+    def check_action(
+        self, action: str, hdr_context: dict[str, object]
+    ) -> NormativeResult:
         """Inspect atomic actions during DAG execution for additional guarantees."""
 
         violations: list[NormativeViolation] = []
@@ -339,20 +387,24 @@ class NormativeService:
         action_key = action.strip().lower()
 
         authorized_raw = hdr_context.get("authorized_tools", [])
-        authorized_tools = {str(x) for x in authorized_raw} if isinstance(authorized_raw, list) else set()
+        authorized_tools = (
+            {str(x) for x in authorized_raw}
+            if isinstance(authorized_raw, list)
+            else set()
+        )
 
         for rule in self.get_active_rules():
             if rule.rule_id == "LEGAL-003":
-                if action_key in EXTERNAL_ACTIONS and not bool(hdr_context.get("human_approved")):
+                if action_key in EXTERNAL_ACTIONS and not bool(
+                    hdr_context.get("human_approved")
+                ):
                     entry = NormativeViolation(
                         rule_id=rule.rule_id,
                         rule_name=rule.name,
                         reason="External-facing action attempted without recorded human approval.",
                     )
                     self._accumulate(rule, entry, violations, warnings)
-                    suggested_realignment = (
-                        "Obtain partner-level approval and persist human_approved=True before retrying."
-                    )
+                    suggested_realignment = "Obtain partner-level approval and persist human_approved=True before retrying."
 
             elif rule.rule_id == "LEGAL-004":
                 tool_candidate = hdr_context.get("requested_tool")
@@ -367,8 +419,14 @@ class NormativeService:
                         )
                         self._accumulate(rule, entry, violations, warnings)
 
-        blocking = [v for v in violations if v.rule_id in {"LEGAL-001", "LEGAL-002", "LEGAL-004"}]
-        allowed = len(blocking) == 0 and not any(v.rule_id == "LEGAL-003" for v in violations)
+        blocking = [
+            v
+            for v in violations
+            if v.rule_id in {"LEGAL-001", "LEGAL-002", "LEGAL-004"}
+        ]
+        allowed = len(blocking) == 0 and not any(
+            v.rule_id == "LEGAL-003" for v in violations
+        )
 
         return NormativeResult(
             allowed=allowed,

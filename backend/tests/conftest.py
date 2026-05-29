@@ -16,7 +16,9 @@ from app.core import config
 
 
 @pytest.fixture(autouse=False)
-def test_settings(monkeypatch: pytest.MonkeyPatch, tmp_path) -> Generator[config.Settings, None, None]:
+def test_settings(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> Generator[config.Settings, None, None]:
     """Provision isolated SQLite + deterministic custody directories."""
 
     def _override() -> config.Settings:
@@ -40,7 +42,9 @@ def test_settings(monkeypatch: pytest.MonkeyPatch, tmp_path) -> Generator[config
 
 
 @pytest.fixture()
-def api_client(monkeypatch: pytest.MonkeyPatch, tmp_path) -> Generator[TestClient, None, None]:
+def api_client(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> Generator[TestClient, None, None]:
     """HTTPX-backed ASGI exercising lifecycles deterministically."""
 
     def _override() -> config.Settings:
@@ -111,9 +115,15 @@ def sample_agent_stack():
     return {
         "agent": HDRAgent(id="fixture_agent", model="stub", version="test"),
         "user": HDRUser(id="fixture_user"),
-        "intent": HDRIntent(description="fixture", tools_required=[], estimated_cost_gas=0.0),
-        "execution": HDRExecution(status="completed", input_hash="a" * 64, output_hash="b" * 64, duration_ms=1),
-        "cognitive_snapshot": HDRCognitiveSnapshot(hypothesis="h", action="a", result="r"),
+        "intent": HDRIntent(
+            description="fixture", tools_required=[], estimated_cost_gas=0.0
+        ),
+        "execution": HDRExecution(
+            status="completed", input_hash="a" * 64, output_hash="b" * 64, duration_ms=1
+        ),
+        "cognitive_snapshot": HDRCognitiveSnapshot(
+            hypothesis="h", action="a", result="r"
+        ),
         "normative": HDRNormative(checked=True, violations=[], corpus_version="test"),
     }
 

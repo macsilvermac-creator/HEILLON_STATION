@@ -14,7 +14,11 @@ from cryptography.fernet import InvalidToken
 from app.core.config import Settings, get_settings
 from app.db.compat import CompatConnection, open_connection, resolve_dialect
 from app.domain.mission.agent_config_crypto import build_config_fernet
-from app.domain.mission.agent_config_models import AgentConfig, AgentConfigUpdate, AgentModelSource
+from app.domain.mission.agent_config_models import (
+    AgentConfig,
+    AgentConfigUpdate,
+    AgentModelSource,
+)
 from app.domain.mission.agent_execution import MissionAgentExecutor
 from app.domain.mission.executors_anthropic import AnthropicMessagesMissionExecutor
 from app.domain.mission.executors_llm import OpenAICompatibleMissionExecutor
@@ -51,14 +55,21 @@ class AgentConfigService:
         secret_material: str | None = None,
     ) -> None:
         self._settings = settings or get_settings()
-        self._legacy_sqlite_path = database_path.expanduser().resolve() if database_path else None
+        self._legacy_sqlite_path = (
+            database_path.expanduser().resolve() if database_path else None
+        )
         self._fernet = build_config_fernet(secret_material=secret_material)
 
     @contextmanager
     def _connect(self) -> Generator[CompatConnection | sqlite3.Connection, None, None]:
-        if self._legacy_sqlite_path is not None and resolve_dialect(self._settings) == "sqlite":
+        if (
+            self._legacy_sqlite_path is not None
+            and resolve_dialect(self._settings) == "sqlite"
+        ):
             self._legacy_sqlite_path.parent.mkdir(parents=True, exist_ok=True)
-            raw = sqlite3.connect(self._legacy_sqlite_path.as_posix(), check_same_thread=False)
+            raw = sqlite3.connect(
+                self._legacy_sqlite_path.as_posix(), check_same_thread=False
+            )
             raw.row_factory = sqlite3.Row
             try:
                 yield raw
@@ -115,7 +126,9 @@ class AgentConfigService:
             return None
         return self._fernet.encrypt(plain.encode("utf-8"))
 
-    def _fetch(self, conn: Any, agent_id: str, organization_id: str) -> _StoredCipher | None:
+    def _fetch(
+        self, conn: Any, agent_id: str, organization_id: str
+    ) -> _StoredCipher | None:
         row = conn.execute(
             """SELECT agent_id, organization_id, source, model_name, api_base_url,
                       api_key_encrypted, updated_at
@@ -168,26 +181,43 @@ class AgentConfigService:
                     seen.append(self._to_public(decoded))
             return seen
 
-    def update_config(self, agent_id: str, organization_id: str, update: AgentConfigUpdate) -> AgentConfig:
+    def update_config(
+        self, agent_id: str, organization_id: str, update: AgentConfigUpdate
+    ) -> AgentConfig:
         now_iso = datetime.now(UTC).isoformat()
 
         with self._connect() as conn:
             prior = self._fetch(conn, agent_id, organization_id)
 
-            merged_base = update.api_base_url if update.api_base_url is not None else (
-                prior.api_base_url if prior else None
+            merged_base = (
+                update.api_base_url
+                if update.api_base_url is not None
+                else (prior.api_base_url if prior else None)
             )
-            merged_model = update.model_name if update.model_name is not None else (prior.model_name if prior else None)
+            merged_model = (
+                update.model_name
+                if update.model_name is not None
+                else (prior.model_name if prior else None)
+            )
 
             if update.source == AgentModelSource.STUB:
                 merged_base = None
 
-            if update.source == AgentModelSource.CUSTOM and not (merged_base or "").strip():
+            if (
+                update.source == AgentModelSource.CUSTOM
+                and not (merged_base or "").strip()
+            ):
                 msg = "CUSTOM cognition exige ``api_base_url`` apontando para endpoint compatível."
                 raise ValueError(msg)
 
-            if update.source in {AgentModelSource.OPENAI, AgentModelSource.ANTHROPIC, AgentModelSource.CUSTOM}:
-                key_available = update.api_key is not None and update.api_key.strip() != ""
+            if update.source in {
+                AgentModelSource.OPENAI,
+                AgentModelSource.ANTHROPIC,
+                AgentModelSource.CUSTOM,
+            }:
+                key_available = (
+                    update.api_key is not None and update.api_key.strip() != ""
+                )
                 key_from_prior = bool(prior and prior.api_key_encrypted)
                 if not key_available and not key_from_prior:
                     msg = f"Fonte `{update.source.value}` requer ``api_key`` na primeira configuração."
@@ -231,7 +261,9 @@ class AgentConfigService:
                 raise RuntimeError(msg)
             return self._to_public(refreshed)
 
-    def resolve_executor(self, agent_id: str, organization_id: str) -> MissionAgentExecutor | None:
+    def resolve_executor(
+        self, agent_id: str, organization_id: str
+    ) -> MissionAgentExecutor | None:
         """Return tenant-specific executor or ``None`` to defer to the static registry."""
 
         with self._connect() as conn:
@@ -293,7 +325,9 @@ class AgentConfigService:
 
         return None
 
-    def effective_hdr_agent(self, definition: AgentDefinition, agent_id: str, organization_id: str) -> tuple[str, str]:
+    def effective_hdr_agent(
+        self, definition: AgentDefinition, agent_id: str, organization_id: str
+    ) -> tuple[str, str]:
         """Return ``(model, version)`` labels minted into HDR artefacts."""
 
         with self._connect() as conn:
@@ -307,12 +341,17 @@ class AgentConfigService:
                 version = f"{row.source.value}:{row.model_name}"
             return model, version
 
-    async def run_smoke_probe(self, agent_id: str, organization_id: str) -> dict[str, str | None]:
+    async def run_smoke_probe(
+        self, agent_id: str, organization_id: str
+    ) -> dict[str, str | None]:
         """Invoke a lightweight synthetic node for connectivity validation."""
 
         executor = self.resolve_executor(agent_id, organization_id)
         if executor is None:
-            return {"status": "error", "detail": "Sem executor configurado — reverte para registo estático."}
+            return {
+                "status": "error",
+                "detail": "Sem executor configurado — reverte para registo estático.",
+            }
 
         dummy = DAGNode(
             node_id="connectivity-probe",

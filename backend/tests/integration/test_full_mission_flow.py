@@ -41,5 +41,7 @@ def test_full_mission_to_forensic_package(api_client):
     json_resp = api_client.get(f"/api/v1/forensic/package/{package_id}/download/json")
     assert json_resp.status_code == 200
 
-    manifest_resp = api_client.get(f"/api/v1/forensic/package/{package_id}/download/manifest")
+    manifest_resp = api_client.get(
+        f"/api/v1/forensic/package/{package_id}/download/manifest"
+    )
     assert manifest_resp.status_code == 200

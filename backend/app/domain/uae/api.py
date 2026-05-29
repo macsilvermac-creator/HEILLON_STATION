@@ -40,8 +40,11 @@ _gov_svc = UAEAIGovernanceService()
 _pass_svc = UAEPassSignatureService()
 
 
-def _require_admin(current_user: UserRecord = Depends(get_current_user_record)) -> UserRecord:
+def _require_admin(
+    current_user: UserRecord = Depends(get_current_user_record),
+) -> UserRecord:
     from app.domain.user.models import UserRole
+
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin only.")
     return current_user
@@ -107,9 +110,7 @@ class UAEGovernanceCreateRequest(BaseModel):
         default="federal",
         pattern="^(federal|dubai|abu_dhabi|sharjah|difc|adgm|dmcc)$",
     )
-    risk_level: str = Field(
-        default="medium", pattern="^(low|medium|high)$"
-    )
+    risk_level: str = Field(default="medium", pattern="^(low|medium|high)$")
     risk_assessment_notes: str = Field(default="", max_length=4000)
 
 
@@ -142,9 +143,7 @@ class UAEPassSignRequest(BaseModel):
     signature_format: str = Field(
         default="PAdES-LTA", pattern="^(PAdES-LTA|CAdES-LTA|XAdES-LTA)$"
     )
-    signature_level: str = Field(
-        default="QES", pattern="^(QES|AES|SES)$"
-    )
+    signature_level: str = Field(default="QES", pattern="^(QES|AES|SES)$")
     tsa_provider: str | None = None
     hdr_id: str | None = None
 
@@ -321,7 +320,11 @@ def apply_uae_seal(
         seal_category=body.seal_category,
         seal_expires_at=body.seal_expires_at,
     )
-    return {"gov_id": gov_id, "ai_seal_applied": "true", "seal_reference": body.seal_reference}
+    return {
+        "gov_id": gov_id,
+        "ai_seal_applied": "true",
+        "seal_reference": body.seal_reference,
+    }
 
 
 # ── UAE PASS Signatures ────────────────────────────────────────────────────────

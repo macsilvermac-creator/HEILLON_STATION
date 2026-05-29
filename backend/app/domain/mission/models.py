@@ -96,7 +96,9 @@ class MissionPlan(BaseModel):
     executed_at: datetime | None = None
     completed_at: datetime | None = None
     hdrs_generated: list[str] = Field(default_factory=list)
-    organization_id: str = Field(default="org_default", description="Tenant scope for dossier lineage.")
+    organization_id: str = Field(
+        default="org_default", description="Tenant scope for dossier lineage."
+    )
 
 
 class PlanMissionRequest(BaseModel):

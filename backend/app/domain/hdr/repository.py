@@ -10,7 +10,9 @@ from app.domain.hdr.models import HDR
 class HDRRepository:
     """Append-only HDR store delegating to the shared SQLite connection."""
 
-    def insert(self, conn: sqlite3.Connection, hdr: HDR, *, organization_id: str | None = None) -> None:
+    def insert(
+        self, conn: sqlite3.Connection, hdr: HDR, *, organization_id: str | None = None
+    ) -> None:
         """Persist a complete HDR artefact."""
 
         from app.db.database import insert_hdr
@@ -24,21 +26,27 @@ class HDRRepository:
 
         return _fetch_hdr(conn, hdr_id)
 
-    def fetch_hdr_organization_id(self, conn: sqlite3.Connection, hdr_id: str) -> str | None:
+    def fetch_hdr_organization_id(
+        self, conn: sqlite3.Connection, hdr_id: str
+    ) -> str | None:
         """Resolve organization row for tenant-scoped chain validation."""
 
         from app.db.database import fetch_hdr_organization_id as _org_for_hdr
 
         return _org_for_hdr(conn, hdr_id)
 
-    def fetch_mission_chain(self, conn: sqlite3.Connection, mission_id: str) -> list[HDR]:
+    def fetch_mission_chain(
+        self, conn: sqlite3.Connection, mission_id: str
+    ) -> list[HDR]:
         """Return chronological custody for ``mission_id``."""
 
         from app.db.database import fetch_mission_chain as _fetch_mission_chain
 
         return _fetch_mission_chain(conn, mission_id)
 
-    def hdr_ids_for_mission(self, conn: sqlite3.Connection, mission_id: str) -> list[str]:
+    def hdr_ids_for_mission(
+        self, conn: sqlite3.Connection, mission_id: str
+    ) -> list[str]:
         """Return HDR ids in insertion order."""
 
         rows = conn.execute(

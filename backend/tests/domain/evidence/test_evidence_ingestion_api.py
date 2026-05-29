@@ -35,7 +35,16 @@ def test_ingestion_synthesizes_mission_id(api_client, auth_headers):
     response = api_client.post(
         "/api/v1/ingestion",
         headers=auth_headers,
-        files=[("file", ("orphan.bin", io.BytesIO(b"no-mission-yet"), "application/octet-stream"))],
+        files=[
+            (
+                "file",
+                (
+                    "orphan.bin",
+                    io.BytesIO(b"no-mission-yet"),
+                    "application/octet-stream",
+                ),
+            )
+        ],
     )
     assert response.status_code == 200
     body = response.json()
@@ -47,7 +56,12 @@ def test_ingestion_chains_optional_previous_hdr(api_client, auth_headers):
     seed = api_client.post(
         "/api/v1/ingestion",
         headers=auth_headers,
-        files=[("file", ("first.bin", io.BytesIO(b"alpha-chain"), "application/octet-stream"))],
+        files=[
+            (
+                "file",
+                ("first.bin", io.BytesIO(b"alpha-chain"), "application/octet-stream"),
+            )
+        ],
         data={"mission_id": "mission-chain-ingest"},
     )
     assert seed.status_code == 200
@@ -56,8 +70,16 @@ def test_ingestion_chains_optional_previous_hdr(api_client, auth_headers):
     follow = api_client.post(
         "/api/v1/ingestion",
         headers=auth_headers,
-        files=[("file", ("second.bin", io.BytesIO(b"beta-chain"), "application/octet-stream"))],
-        data={"mission_id": "mission-chain-ingest", "previous_hdr": first_hdr["hdr_id"]},
+        files=[
+            (
+                "file",
+                ("second.bin", io.BytesIO(b"beta-chain"), "application/octet-stream"),
+            )
+        ],
+        data={
+            "mission_id": "mission-chain-ingest",
+            "previous_hdr": first_hdr["hdr_id"],
+        },
     )
     assert follow.status_code == 200
     chained = follow.json()["hdr"]

@@ -29,8 +29,12 @@ from pydantic import BaseModel, Field
 
 from app.dependencies import database_dependency, get_current_user_record
 from app.domain.legal_evidence.models import (
-    AdmissibilityOpinion, CitationType, HallucinationSeverity,
-    HallucinationType, IncidentSeverity, VerificationMethod,
+    AdmissibilityOpinion,
+    CitationType,
+    HallucinationSeverity,
+    HallucinationType,
+    IncidentSeverity,
+    VerificationMethod,
 )
 from app.domain.legal_evidence.services import (
     AICompetenceService,
@@ -111,9 +115,7 @@ class CitationVerifyRequest(BaseModel):
     filed_with_court: bool = False
     corrective_action_taken: bool = False
     corrective_action_desc: str = Field(default="", max_length=2000)
-    bar_complaint_risk: str = Field(
-        default="none", pattern="^(none|low|medium|high)$"
-    )
+    bar_complaint_risk: str = Field(default="none", pattern="^(none|low|medium|high)$")
 
 
 class HallucinationReportRequest(BaseModel):
@@ -184,36 +186,46 @@ def create_fre707(
     return _fre_svc.register(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        case_ref=body.case_ref, court=body.court, jurisdiction=body.jurisdiction,
-        document_ref=body.document_ref, document_type=body.document_type,
-        ai_system_name=body.ai_system_name, ai_system_version=body.ai_system_version,
-        ai_provider=body.ai_provider, ai_model_id=body.ai_model_id,
+        case_ref=body.case_ref,
+        court=body.court,
+        jurisdiction=body.jurisdiction,
+        document_ref=body.document_ref,
+        document_type=body.document_type,
+        ai_system_name=body.ai_system_name,
+        ai_system_version=body.ai_system_version,
+        ai_provider=body.ai_provider,
+        ai_model_id=body.ai_model_id,
         training_data_description=body.training_data_description,
         methodology_disclosed=body.methodology_disclosed,
         reliable_principles=body.reliable_principles,
         principles_applied=body.principles_applied,
         opinion_not_speculative=body.opinion_not_speculative,
         validation_method=body.validation_method,
-        error_rate_known=body.error_rate_known, error_rate_value=body.error_rate_value,
+        error_rate_known=body.error_rate_known,
+        error_rate_value=body.error_rate_value,
         peer_reviewed=body.peer_reviewed,
         human_attorney_reviewed=body.human_attorney_reviewed,
         daubert_analysis=body.daubert_analysis,
         admissibility_opinion=body.admissibility_opinion.value,
         opposing_counsel_notified=body.opposing_counsel_notified,
-        hdr_id=body.hdr_id, hash_sha256=body.hash_sha256,
+        hdr_id=body.hdr_id,
+        hash_sha256=body.hash_sha256,
         created_by=current_user.user_id,
     )
 
 
 @router.get("/fre707")
 def list_fre707(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _fre_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -244,9 +256,11 @@ def update_admissibility(
     if rec.get("organization_id") != (current_user.organization_id or "org_default"):
         raise HTTPException(status_code=403, detail="Forbidden.")
     return _fre_svc.update_admissibility(
-        conn, evidence_id,
+        conn,
+        evidence_id,
         admissibility_opinion=body.admissibility_opinion.value,
-        court_ruling=body.court_ruling, conditions=body.conditions,
+        court_ruling=body.court_ruling,
+        conditions=body.conditions,
     )
 
 
@@ -262,10 +276,15 @@ def verify_citation(
     return _cit_svc.verify(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        document_ref=body.document_ref, case_ref=body.case_ref,
-        citation_text=body.citation_text, citation_type=body.citation_type.value,
-        cited_court=body.cited_court, cited_year=body.cited_year,
-        reporter=body.reporter, volume=body.volume, page_start=body.page_start,
+        document_ref=body.document_ref,
+        case_ref=body.case_ref,
+        citation_text=body.citation_text,
+        citation_type=body.citation_type.value,
+        cited_court=body.cited_court,
+        cited_year=body.cited_year,
+        reporter=body.reporter,
+        volume=body.volume,
+        page_start=body.page_start,
         url=body.url,
         verified_by=current_user.user_id,
         verification_method=body.verification_method.value,
@@ -275,7 +294,9 @@ def verify_citation(
         quote_accurate=body.quote_accurate,
         case_still_good_law=body.case_still_good_law,
         is_hallucination=body.is_hallucination,
-        hallucination_type=body.hallucination_type.value if body.hallucination_type else None,
+        hallucination_type=body.hallucination_type.value
+        if body.hallucination_type
+        else None,
         hallucination_severity=body.hallucination_severity.value,
         hallucination_notes=body.hallucination_notes,
         filed_with_court=body.filed_with_court,
@@ -290,7 +311,9 @@ def list_hallucinated_citations(
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
-    return _cit_svc.list_hallucinations(conn, current_user.organization_id or "org_default")
+    return _cit_svc.list_hallucinations(
+        conn, current_user.organization_id or "org_default"
+    )
 
 
 @router.get("/citations/doc/{document_ref:path}")
@@ -330,14 +353,22 @@ def report_hallucination(
     return _hal_svc.report(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        citation_id=body.citation_id, document_ref=body.document_ref,
-        case_ref=body.case_ref, incident_type=body.incident_type,
-        ai_system=body.ai_system, ai_model=body.ai_model,
-        original_output=body.original_output, correct_info=body.correct_info,
-        severity=body.severity.value, filed_with_court=body.filed_with_court,
-        court_sanction=body.court_sanction, financial_impact=body.financial_impact,
-        client_notified=body.client_notified, bar_reported=body.bar_reported,
-        root_cause=body.root_cause, prevention_measure=body.prevention_measure,
+        citation_id=body.citation_id,
+        document_ref=body.document_ref,
+        case_ref=body.case_ref,
+        incident_type=body.incident_type,
+        ai_system=body.ai_system,
+        ai_model=body.ai_model,
+        original_output=body.original_output,
+        correct_info=body.correct_info,
+        severity=body.severity.value,
+        filed_with_court=body.filed_with_court,
+        court_sanction=body.court_sanction,
+        financial_impact=body.financial_impact,
+        client_notified=body.client_notified,
+        bar_reported=body.bar_reported,
+        root_cause=body.root_cause,
+        prevention_measure=body.prevention_measure,
         workflow_updated=body.workflow_updated,
         created_by=current_user.user_id,
     )
@@ -345,13 +376,16 @@ def report_hallucination(
 
 @router.get("/hallucinations")
 def list_hallucinations(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _hal_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 
@@ -395,29 +429,37 @@ def issue_competence_cert(
     return _comp_svc.issue_certificate(
         conn,
         organization_id=current_user.organization_id or "org_default",
-        attorney_id=body.attorney_id, attorney_name=body.attorney_name,
-        bar_number=body.bar_number, jurisdiction=body.jurisdiction,
-        training_provider=body.training_provider, training_course=body.training_course,
-        cle_credits_earned=body.cle_credits_earned, training_date=body.training_date,
+        attorney_id=body.attorney_id,
+        attorney_name=body.attorney_name,
+        bar_number=body.bar_number,
+        jurisdiction=body.jurisdiction,
+        training_provider=body.training_provider,
+        training_course=body.training_course,
+        cle_credits_earned=body.cle_credits_earned,
+        training_date=body.training_date,
         training_topics=body.training_topics,
         ai_systems_covered=body.ai_systems_covered,
         competence_areas=body.competence_areas,
         aba_rule_1_1_compliant=body.aba_rule_1_1_compliant,
         state_bar_compliant=body.state_bar_compliant,
         renewal_due_date=body.renewal_due_date,
-        issued_by="Heillon Legal", expires_at=body.expires_at,
+        issued_by="Heillon Legal",
+        expires_at=body.expires_at,
     )
 
 
 @router.get("/competence")
 def list_competence_certs(
-    skip: int = 0, limit: int = 50,
+    skip: int = 0,
+    limit: int = 50,
     conn=Depends(database_dependency),
     current_user: UserRecord = Depends(get_current_user_record),
 ) -> list[dict[str, Any]]:
     return _comp_svc.list_by_org(
-        conn, current_user.organization_id or "org_default",
-        skip=skip, limit=min(limit, 100),
+        conn,
+        current_user.organization_id or "org_default",
+        skip=skip,
+        limit=min(limit, 100),
     )
 
 

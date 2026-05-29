@@ -22,7 +22,9 @@ def _ingest(
     response = api_client.post(
         "/api/v1/ingestion",
         headers=auth_headers,
-        files=[("file", ("chunk.bin", io.BytesIO(payload), "application/octet-stream"))],
+        files=[
+            ("file", ("chunk.bin", io.BytesIO(payload), "application/octet-stream"))
+        ],
         data=data,
     )
 
@@ -63,8 +65,20 @@ def test_verify_chain_negative_branch(api_client, auth_headers):
     mission_id = "mission_branch"
     genesis = _ingest(api_client, auth_headers, mission_id=mission_id, payload=b"one")
 
-    fork_a = _ingest(api_client, auth_headers, mission_id=mission_id, payload=b"fork-a", previous_hdr=genesis["hdr_id"])
-    fork_b = _ingest(api_client, auth_headers, mission_id=mission_id, payload=b"fork-b", previous_hdr=genesis["hdr_id"])
+    fork_a = _ingest(
+        api_client,
+        auth_headers,
+        mission_id=mission_id,
+        payload=b"fork-a",
+        previous_hdr=genesis["hdr_id"],
+    )
+    fork_b = _ingest(
+        api_client,
+        auth_headers,
+        mission_id=mission_id,
+        payload=b"fork-b",
+        previous_hdr=genesis["hdr_id"],
+    )
 
     verdict = api_client.get(f"/api/v1/verify/chain/{mission_id}")
 
@@ -85,11 +99,15 @@ def test_missing_chain_returns_404(api_client):
 
 
 def test_detects_database_tampering(api_client, auth_headers):
-    hdr = _ingest(api_client, auth_headers, mission_id="tampering", payload=b"tampered-payload")
+    hdr = _ingest(
+        api_client, auth_headers, mission_id="tampering", payload=b"tampered-payload"
+    )
 
     db_path = api_client.app.state.sqlite_path
     conn = sqlite3.connect(db_path, check_same_thread=False)
-    row = conn.execute("SELECT payload FROM hdrs WHERE hdr_id = ?", (hdr["hdr_id"],)).fetchone()
+    row = conn.execute(
+        "SELECT payload FROM hdrs WHERE hdr_id = ?", (hdr["hdr_id"],)
+    ).fetchone()
     assert row is not None
 
     corrupted = json.loads(row[0])

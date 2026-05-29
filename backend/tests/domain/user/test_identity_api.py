@@ -54,7 +54,9 @@ def test_register_login_and_me_roundtrip(tmp_path, monkeypatch: pytest.MonkeyPat
         assert payload["organization_id"] == "org_demo_qa"
 
 
-def test_missions_require_bearer_when_flag_enabled(monkeypatch: pytest.MonkeyPatch, tmp_path):
+def test_missions_require_bearer_when_flag_enabled(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+):
     monkeypatch.delenv("DATABASE_URL", raising=False)
 
     auth_db = tmp_path / "auth_dossier.db"
@@ -93,13 +95,19 @@ def test_missions_require_bearer_when_flag_enabled(monkeypatch: pytest.MonkeyPat
 
         guarded = client.post(
             "/api/v1/mission/plan",
-            json={"description": "OCR and analyze dossier attachments", "authorized_agents": ["ocr-agent"]},
+            json={
+                "description": "OCR and analyze dossier attachments",
+                "authorized_agents": ["ocr-agent"],
+            },
         )
         assert guarded.status_code == 401
 
         ok = client.post(
             "/api/v1/mission/plan",
-            json={"description": "OCR and analyze dossier attachments", "authorized_agents": ["ocr-agent"]},
+            json={
+                "description": "OCR and analyze dossier attachments",
+                "authorized_agents": ["ocr-agent"],
+            },
             headers={"Authorization": f"Bearer {token}"},
         )
         assert ok.status_code == 200, ok.text
@@ -150,7 +158,9 @@ def test_login_unknown_email_returns_401(tmp_path, monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(config, "get_settings", _scoped)
     app = create_application()
     with TestClient(app) as client:
-        r = client.post("/api/v1/auth/login", json={"email": "x@test.pt", "password": "nope"})
+        r = client.post(
+            "/api/v1/auth/login", json={"email": "x@test.pt", "password": "nope"}
+        )
         assert r.status_code == 401
 
 

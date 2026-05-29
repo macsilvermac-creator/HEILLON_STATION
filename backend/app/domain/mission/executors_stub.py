@@ -27,7 +27,9 @@ class DeterministicStubMissionExecutor:
     ) -> MissionAgentExecutionOutcome:
         _ = (chunk_cost, authorized_tools, context, plan_description)
 
-        seed_core = f"{mission_id}:{node.node_id}:{node.agent_id}:{node.action}".encode("utf-8")
+        seed_core = f"{mission_id}:{node.node_id}:{node.agent_id}:{node.action}".encode(
+            "utf-8"
+        )
         input_digest = generate_hash(seed_core)
         output_digest = generate_hash(seed_core + b"|stub-output")
 

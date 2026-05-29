@@ -18,7 +18,11 @@ Chamado automaticamente em init_database() via seed_normative_corpus().
 
 from __future__ import annotations
 
-from app.domain.normative.models import NormativeCategory, NormativeRule, ViolationAction
+from app.domain.normative.models import (
+    NormativeCategory,
+    NormativeRule,
+    ViolationAction,
+)
 
 # ---------------------------------------------------------------------------
 # LGPD — Lei 13.709/2018 (Brasil)
@@ -751,14 +755,23 @@ CORPUS_VERSION = "24.0.0"
 CORPUS_JURISDICTIONS = ["BR", "EU", "US-CO", "US-CA", "AE", "GB", "SG", "GLOBAL"]
 CORPUS_FRAMEWORKS = [
     # Brasil
-    "LGPD-BR", "MARCO-CIVIL-BR-2014",
-    "CPC-BR-2015", "CPP-BR-1941", "CLT-BR-1943",
-    "CNJ-615-2025", "OAB-REC001-2024", "NBC-TP01-BR-2016",
+    "LGPD-BR",
+    "MARCO-CIVIL-BR-2014",
+    "CPC-BR-2015",
+    "CPP-BR-1941",
+    "CLT-BR-1943",
+    "CNJ-615-2025",
+    "OAB-REC001-2024",
+    "NBC-TP01-BR-2016",
     # Internacional
-    "EU-AI-ACT-2024", "GDPR-EU-2016",
-    "CO-SB205-2024", "CCPA-CPRA",
-    "UAE-PDPL-2021", "UK-GDPR-2021",
-    "SG-PDPA-2012", "ISO-42001-2023",
+    "EU-AI-ACT-2024",
+    "GDPR-EU-2016",
+    "CO-SB205-2024",
+    "CCPA-CPRA",
+    "UAE-PDPL-2021",
+    "UK-GDPR-2021",
+    "SG-PDPA-2012",
+    "ISO-42001-2023",
 ]
 
 
@@ -768,7 +781,9 @@ def seed_normative_corpus(conn) -> int:
     Safe to call multiple times — uses INSERT OR REPLACE (upsert).
     Returns the number of rules seeded.
     """
-    from app.domain.normative.fts_repository import seed_corpus  # local import to avoid circular
+    from app.domain.normative.fts_repository import (
+        seed_corpus,
+    )  # local import to avoid circular
 
     seed_corpus(conn, ALL_CORPUS_RULES)
     return len(ALL_CORPUS_RULES)

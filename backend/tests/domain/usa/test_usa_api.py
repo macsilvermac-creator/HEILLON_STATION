@@ -309,7 +309,9 @@ class TestNISTAIRMF:
                 "measure_testing_completed": True,
                 "measure_bias_evaluated": True,
                 "measure_trustworthiness": 4,
-                "manage_risk_responses": [{"response": "mitigate", "control": "human review"}],
+                "manage_risk_responses": [
+                    {"response": "mitigate", "control": "human review"}
+                ],
                 "manage_monitoring_plan": "Monthly performance reviews",
                 "manage_incident_plan": "24h response team",
                 "profile_tier": "tier-3",

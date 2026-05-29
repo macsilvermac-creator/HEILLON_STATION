@@ -23,12 +23,17 @@ _missions = MissionRepository()
 def _anchoring(request: Request) -> NormativeAnchoringService:
     svc = getattr(request.app.state, "anchoring_service", None)
     if svc is None:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Anchoring service offline.")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Anchoring service offline.",
+        )
     return svc
 
 
 @router.get("/frameworks", response_model=list[NormativeFramework])
-def list_frameworks(anchoring: NormativeAnchoringService = Depends(_anchoring)) -> list[NormativeFramework]:
+def list_frameworks(
+    anchoring: NormativeAnchoringService = Depends(_anchoring),
+) -> list[NormativeFramework]:
     """List registered normative frameworks (LGPD, future GDPR, ISO, …)."""
 
     return anchoring.list_frameworks()
@@ -43,7 +48,9 @@ def get_framework(
 
     framework = anchoring.get_framework(framework_id)
     if framework is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Framework not registered.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Framework not registered."
+        )
     return framework
 
 
@@ -57,14 +64,20 @@ def generate_compliance_report(
 ) -> ComplianceReportSummary:
     """Build a mission-level compliance report against the requested framework."""
 
-    plan = _missions.fetch_plan(conn, mission_id, organization_id=current_user.organization_id)
+    plan = _missions.fetch_plan(
+        conn, mission_id, organization_id=current_user.organization_id
+    )
     if plan is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mission not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Mission not found."
+        )
 
     try:
         return anchoring.generate_compliance_report(conn, mission_id, framework_id)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
 
 
 @router.get("/report/{mission_id}/download")
@@ -77,14 +90,20 @@ def download_compliance_report(
 ) -> Response:
     """Download a minimal PDF summary (MVP) derived from the structured compliance report."""
 
-    plan = _missions.fetch_plan(conn, mission_id, organization_id=current_user.organization_id)
+    plan = _missions.fetch_plan(
+        conn, mission_id, organization_id=current_user.organization_id
+    )
     if plan is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mission not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Mission not found."
+        )
 
     try:
         summary = anchoring.generate_compliance_report(conn, mission_id, framework_id)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
 
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
@@ -95,7 +114,9 @@ def download_compliance_report(
     pdf.drawString(72, y, "Heillon Legal — Relatório de conformidade")
     y -= 24
     pdf.setFont("Helvetica", 10)
-    pdf.drawString(72, y, f"Framework: {summary.framework_name} ({summary.framework_id})")
+    pdf.drawString(
+        72, y, f"Framework: {summary.framework_name} ({summary.framework_id})"
+    )
     y -= 16
     pdf.drawString(72, y, f"Missão: {mission_id}")
     y -= 16
@@ -103,9 +124,15 @@ def download_compliance_report(
     y -= 16
     pdf.drawString(72, y, f"HDRs analisados: {summary.total_hdrs}")
     y -= 16
-    pdf.drawString(72, y, f"HDRs em conformidade (heurística): {summary.compliant_hdrs}")
+    pdf.drawString(
+        72, y, f"HDRs em conformidade (heurística): {summary.compliant_hdrs}"
+    )
     y -= 24
-    pdf.drawString(72, y, "Este relatório é um sumário técnico MVP — integrar selos PDF/A-3 na Fase 9.1.")
+    pdf.drawString(
+        72,
+        y,
+        "Este relatório é um sumário técnico MVP — integrar selos PDF/A-3 na Fase 9.1.",
+    )
     pdf.showPage()
     pdf.save()
     buffer.seek(0)

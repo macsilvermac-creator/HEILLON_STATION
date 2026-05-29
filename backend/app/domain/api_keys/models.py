@@ -29,7 +29,9 @@ class ApiKeyPublic(BaseModel):
 
     api_key_id: str
     name: str
-    prefix: str = Field(description="First 12 chars of plaintext for visual identification")
+    prefix: str = Field(
+        description="First 12 chars of plaintext for visual identification"
+    )
     last_used_at: datetime | None
     revoked_at: datetime | None
     created_at: datetime
@@ -87,7 +89,9 @@ class ApiKeyRecord(BaseModel):
                 return None
 
         def get(field: str) -> Any:
-            return row[field] if hasattr(row, "keys") else row[_FIELD_ORDER.index(field)]
+            return (
+                row[field] if hasattr(row, "keys") else row[_FIELD_ORDER.index(field)]
+            )
 
         return cls(
             api_key_id=str(get("api_key_id")),

@@ -16,10 +16,12 @@ from enum import Enum
 class EUAIRiskCategory(str, Enum):
     """EU AI Act risk classification tiers."""
 
-    UNACCEPTABLE = "unacceptable"   # Art. 5: prohibited (social scoring, real-time biometrics)
-    HIGH = "high"                   # Art. 6 + Annex III: conformity assessment required
-    LIMITED = "limited"             # Art. 50: transparency obligations (chatbots, deepfakes)
-    MINIMAL = "minimal"             # No specific obligations
+    UNACCEPTABLE = (
+        "unacceptable"  # Art. 5: prohibited (social scoring, real-time biometrics)
+    )
+    HIGH = "high"  # Art. 6 + Annex III: conformity assessment required
+    LIMITED = "limited"  # Art. 50: transparency obligations (chatbots, deepfakes)
+    MINIMAL = "minimal"  # No specific obligations
 
 
 class AnnexIIICategory(str, Enum):
@@ -65,17 +67,17 @@ class DPIALegalBasis(str, Enum):
 class QESLevel(str, Enum):
     """Electronic signature security levels per eIDAS."""
 
-    QES = "QES"   # Qualified Electronic Signature — highest level
-    AES = "AES"   # Advanced Electronic Signature
-    SES = "SES"   # Simple Electronic Signature
+    QES = "QES"  # Qualified Electronic Signature — highest level
+    AES = "AES"  # Advanced Electronic Signature
+    SES = "SES"  # Simple Electronic Signature
 
 
 class QESFormat(str, Enum):
     """Qualified signature formats (ETSI EN 319 series)."""
 
-    PADES_LTA = "PAdES-LTA"   # PDF — long-term archive
-    CADES_LTA = "CAdES-LTA"   # CMS — long-term archive
-    XADES_LTA = "XAdES-LTA"   # XML — long-term archive
+    PADES_LTA = "PAdES-LTA"  # PDF — long-term archive
+    CADES_LTA = "CAdES-LTA"  # CMS — long-term archive
+    XADES_LTA = "XAdES-LTA"  # XML — long-term archive
 
 
 class QESStatus(str, Enum):
@@ -88,9 +90,9 @@ class QESStatus(str, Enum):
 
 
 class ISMSRiskLevel(str, Enum):
-    LOW = "low"        # score 1-4
+    LOW = "low"  # score 1-4
     MEDIUM = "medium"  # score 5-9
-    HIGH = "high"      # score 10-14
+    HIGH = "high"  # score 10-14
     CRITICAL = "critical"  # score 15-25
 
 
