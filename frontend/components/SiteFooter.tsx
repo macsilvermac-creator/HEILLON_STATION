@@ -44,7 +44,7 @@ export function SiteFooter() {
           </div>
           <p className="mt-4 max-w-sm leading-relaxed text-white/52">
             Auditoria criptográfica do uso de IA em direito. Registro forense (HDR), corpus normativo
-            multi-jurisdição e timestamp qualificado ICP-Brasil — desenvolvimento contínuo (MVP).
+            multi-jurisdição e timestamp RFC 3161 (arquitetura pronta para ICP-Brasil) — desenvolvimento contínuo (MVP).
           </p>
         </div>
         {FOOTER_COLUMNS.map((col) => (
