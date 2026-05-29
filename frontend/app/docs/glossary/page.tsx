@@ -23,7 +23,7 @@ const TERMS: Term[] = [
     term: "HDR",
     shortFor: "Heillon Detailed Record",
     definition:
-      "Registro de Auditoria de IA — é o nome técnico do registro forense que documenta, com selo criptográfico, cada vez que uma IA foi usada num caso. Cada HDR contém: quem usou (operador), quando (timestamp ICP-Brasil), qual modelo, qual prompt, qual saída e qual decisão humana foi tomada.",
+      "Registro de Auditoria de IA — é o nome técnico do registro forense que documenta, com selo criptográfico, cada vez que uma IA foi usada num caso. Cada HDR contém: quem usou (operador), quando (timestamp criptográfico RFC 3161), qual modelo, qual prompt, qual saída e qual decisão humana foi tomada.",
     exemplo:
       "Quando o advogado pede à IA para resumir um acórdão, um HDR é criado e assinado. Esse registro é imutável e pode ser apresentado em juízo para provar boa-fé na utilização da IA.",
     aka: ["Registro de Auditoria de IA", "Ata Eletrônica do Uso de IA"],
@@ -48,23 +48,23 @@ const TERMS: Term[] = [
     term: "ICP-Brasil",
     shortFor: "Infraestrutura de Chaves Públicas Brasileira",
     definition:
-      "Sistema de certificação digital regulamentado pela MP 2.200-2/2001. O Heillon usa Autoridades de Carimbo do Tempo (TSA) ICP-Brasil (Serpro/Certisign) para gerar timestamps qualificados com valor jurídico equivalente a documento físico assinado.",
+      "Sistema de certificação digital regulamentado pela MP 2.200-2/2001. A arquitetura do Heillon está preparada para Autoridades de Carimbo do Tempo (TSA) ICP-Brasil (Serpro/Certisign), que conferem ao timestamp valor jurídico equivalente a documento físico assinado. Durante o beta, os HDRs usam timestamp criptográfico RFC 3161; o selo ICP-Brasil qualificado entra na sequência.",
   },
   {
     term: "Conformidade Auditada",
     definition:
-      "Estado em que toda operação de IA tem trilha completa, validada contra o corpus normativo e assinada com timestamp qualificado. Substitui o termo anterior 'Legitimidade Computacional' por uma expressão mais próxima do vernáculo jurídico.",
+      "Estado em que toda operação de IA tem trilha completa, validada contra o corpus normativo e assinada com timestamp criptográfico (RFC 3161). Substitui o termo anterior 'Legitimidade Computacional' por uma expressão mais próxima do vernáculo jurídico.",
     aka: ["Legitimidade Computacional (termo antigo)"],
   },
   {
     term: "Relatório Forense Executivo",
     definition:
-      "Documento PDF/A-3 gerado a partir da cadeia de HDRs de um caso, contendo: linha do tempo, evidências usadas, regras normativas verificadas, decisões humanas tomadas, e selo qualificado. Defensável perante juízo, OAB, CNJ, ANPD, ou auditorias internas.",
+      "Documento PDF/A-3 gerado a partir da cadeia de HDRs de um caso, contendo: linha do tempo, evidências usadas, regras normativas verificadas, decisões humanas tomadas, e selo de tempo criptográfico (RFC 3161). Defensável perante juízo, OAB, CNJ, ANPD, ou auditorias internas.",
   },
   {
     term: "Selo Verificável",
     definition:
-      "URL pública (/verification/{hdr_id}) onde qualquer pessoa pode confirmar, sem autenticação, a integridade de um registro: hash, timestamp ICP-Brasil, assinatura Ed25519 e cadeia.",
+      "URL pública (/verification/{hdr_id}) onde qualquer pessoa pode confirmar, sem autenticação, a integridade de um registro: hash, timestamp RFC 3161, assinatura Ed25519 e cadeia.",
   },
   {
     term: "RIPD / DPIA",

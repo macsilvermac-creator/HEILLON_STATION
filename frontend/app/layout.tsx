@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     template: "%s",
   },
   description:
-    "Plataforma de auditoria criptográfica do uso de IA em advocacia, judiciário e perícia. Cadeia de custódia com timestamp ICP-Brasil, corpus normativo LGPD/GDPR/EU AI Act/CNJ 615.",
+    "Plataforma de auditoria criptográfica do uso de IA em advocacia, judiciário e perícia. Cadeia de custódia com timestamp RFC 3161 (pronta para ICP-Brasil), corpus normativo LGPD/GDPR/EU AI Act/CNJ 615.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

@@ -116,8 +116,9 @@ export default function OnboardingPage() {
           <p className="mt-3 text-sm leading-relaxed text-white/75">
             O Heillon Legal é o <strong>substrato de auditoria de IA jurídica</strong>: cada vez
             que você usa ChatGPT, Claude, Gemini ou outra IA no trabalho, geramos um{" "}
-            <strong>HDR (Registro de Auditoria)</strong> assinado com timestamp ICP-Brasil
-            qualificado — defensável em juízo, auditoria e fiscalização.
+            <strong>HDR (Registro de Auditoria)</strong> assinado com timestamp criptográfico
+            RFC 3161 e cadeia de custódia íntegra — com arquitetura pronta para o selo
+            ICP-Brasil qualificado.
           </p>
           <ul className="mt-6 space-y-2 text-sm text-white/70">
             <li className="flex items-start gap-2">

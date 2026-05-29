@@ -193,7 +193,7 @@ export default function QuotaPage() {
               {snap.forensic_pdf_enabled ? "✓" : "—"}
             </span>
             <span className={snap.forensic_pdf_enabled ? "" : "text-white/40 line-through"}>
-              Relatório forense PDF/A-3 com selo ICP-Brasil
+              Relatório forense PDF/A-3 com selo de tempo (RFC 3161, pronto para ICP-Brasil)
             </span>
           </li>
           <li className="flex items-start gap-2">

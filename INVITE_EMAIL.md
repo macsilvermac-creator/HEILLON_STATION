@@ -21,8 +21,9 @@ Copie o template apropriado, ajuste os campos `{...}` e envie individualmente
 >
 > **A promessa em 1 frase:**
 > *"Você usa ChatGPT/Claude normalmente. Nosso substrato grava silenciosamente
-> cada interação como HDR criptográfico com timestamp ICP-Brasil. Quando a
-> ANPD bater na porta, você abre o relatório e está coberto."*
+> cada interação como HDR criptográfico com timestamp RFC 3161 (e arquitetura
+> pronta para o selo ICP-Brasil qualificado). Quando a ANPD bater na porta,
+> você abre o relatório e está coberto."*
 >
 > **O que peço de você (30 dias):**
 > - Setup em 5 minutos (extensão Chrome + chave de API)

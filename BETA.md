@@ -11,11 +11,11 @@
 Heillon Legal é o **substrato de auditoria forense de IA jurídica**. Sempre
 que você (ou sua equipe) usa ChatGPT, Claude ou Gemini para tarefas legais,
 o Heillon gera silenciosamente um **HDR (Heillon Detailed Record)** — um
-registro criptograficamente selado, assinado com timestamp ICP-Brasil, que
-prova em juízo (ou auditoria) que aquela IA foi usada com:
+registro criptograficamente selado, assinado com timestamp RFC 3161, que
+serve em juízo (ou auditoria) para comprovar que aquela IA foi usada com:
 
 - ✓ Cadeia de custódia íntegra (SHA-256 encadeado)
-- ✓ Selo de tempo qualificado (RFC 3161 + ICP-Brasil)
+- ✓ Selo de tempo criptográfico (RFC 3161) — arquitetura pronta para ICP-Brasil qualificado
 - ✓ Validação contra corpus normativo brasileiro (LGPD, CNJ 615, OAB 001,
   CPC, CPP, CLT, Marco Civil) + internacional (GDPR, EU AI Act, ISO 42001)
 - ✓ Verificação pública sem login (link compartilhável)
