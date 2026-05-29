@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -18,13 +18,39 @@ function toAuthUser(raw: Record<string, unknown>): AuthUser {
   };
 }
 
+/** Aceita apenas caminhos relativos internos (defesa contra open-redirect). */
+function safeRedirect(raw: string | null): string {
+  if (!raw) return "/dashboard";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
+    return "/dashboard";
+  }
+  return raw;
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
+  const [from, setFrom] = useState("/dashboard");
   const router = useRouter();
   const { login } = useAuth();
+
+  // Lê query params no cliente (evita exigir Suspense do useSearchParams).
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      setFrom(safeRedirect(params.get("from")));
+      if (params.get("conta_eliminada") === "1") {
+        setInfo(
+          "A sua conta foi eliminada. Os HDRs já gerados foram preservados por terem valor probatório.",
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +64,7 @@ export default function LoginPage() {
         throw new Error("Resposta de sessão inválida.");
       }
       login(toAuthUser(userRaw as Record<string, unknown>));
-      router.push("/dashboard");
+      router.push(from);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Credenciais inválidas.");
     } finally {
@@ -57,6 +83,10 @@ export default function LoginPage() {
       >
         <h1 className="mb-2 text-2xl font-bold text-white">Bem-vindo</h1>
         <p className="mb-8 text-sm text-white/50">Entre na sua conta Heillon Legal</p>
+
+        {info ? (
+          <div className="mb-6 rounded-xl border border-gold-400/30 bg-gold-400/10 p-4 text-sm text-gold-100">{info}</div>
+        ) : null}
 
         {error ? (
           <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>

@@ -7,7 +7,20 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 import { useAuth } from "@/lib/auth-context";
-import { getDiaryStats, listMissions } from "@/lib/api";
+import {
+  getDiaryStats,
+  listMissions,
+  fetchMyQuota,
+  quotaUsagePct,
+  type QuotaSnapshot,
+} from "@/lib/api";
+
+const TIER_LABELS: Record<QuotaSnapshot["tier"], string> = {
+  free: "Grátis",
+  pro: "Pro",
+  team: "Team",
+  enterprise: "Enterprise",
+};
 
 const DashboardCharts = dynamic(() => import("./DashboardCharts"), {
   ssr: false,
@@ -42,8 +55,10 @@ export default function DashboardPage() {
   const { isAuthenticated, user, logout, isReady } = useAuth();
   const [missions, setMissions] = useState<MissionRow[]>([]);
   const [stats, setStats] = useState<DiaryStats | null>(null);
+  const [quota, setQuota] = useState<QuotaSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (!isReady) return;
@@ -60,13 +75,15 @@ export default function DashboardPage() {
       setLoading(true);
       setError("");
       try {
-        const [mRaw, sRaw] = await Promise.all([
+        const [mRaw, sRaw, qRaw] = await Promise.all([
           listMissions(0, 8) as Promise<unknown>,
           getDiaryStats() as Promise<unknown>,
+          fetchMyQuota().catch(() => null),
         ]);
         if (cancelled) return;
         setMissions(Array.isArray(mRaw) ? (mRaw as MissionRow[]) : []);
         setStats(typeof sRaw === "object" && sRaw !== null ? (sRaw as DiaryStats) : null);
+        setQuota(qRaw);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Falha ao carregar dados.");
       } finally {
@@ -79,7 +96,19 @@ export default function DashboardPage() {
     };
   }, [isAuthenticated, isReady]);
 
+  // Nudge de onboarding: mostra quando o operador ainda não concluiu os 3 passos.
+  useEffect(() => {
+    if (!isReady || !isAuthenticated) return;
+    try {
+      setShowOnboarding(!localStorage.getItem("heillon_onboarding_complete"));
+    } catch {
+      /* ignore */
+    }
+  }, [isReady, isAuthenticated]);
+
   const total = stats?.total_missions ?? missions.length;
+
+  const quotaPct = quota ? quotaUsagePct(quota) : null;
 
   const lifecycleData = useMemo(() => {
     if (!stats) return [];
@@ -142,6 +171,80 @@ export default function DashboardPage() {
           <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
             {error}{" "}
             <span className="text-white/60">(confirme que está autenticado e que a API expõe /mission/.)</span>
+          </div>
+        ) : null}
+
+        {showOnboarding ? (
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-gold-400/30 bg-gold-400/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-gold-100">Configure seu Heillon em 3 passos</p>
+              <p className="mt-0.5 text-xs text-white/55">
+                Gere sua chave de API e conecte um coletor para registrar seu primeiro HDR.
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Link href="/conta/onboarding" className="btn-gold text-sm">
+                Começar
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    localStorage.setItem("heillon_onboarding_complete", new Date().toISOString());
+                  } catch {
+                    /* ignore */
+                  }
+                  setShowOnboarding(false);
+                }}
+                className="btn-glass text-sm"
+              >
+                Dispensar
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {quota ? (
+          <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] uppercase tracking-wider text-white/40">Quota mensal</span>
+                <span className="rounded-full border border-gold-400/40 bg-gold-400/10 px-2 py-0.5 text-[10px] font-semibold text-gold-200">
+                  {TIER_LABELS[quota.tier]}
+                </span>
+              </div>
+              <span className="text-xs text-white/60">
+                {quota.monthly_hdr_limit === null
+                  ? `${quota.used_in_period} HDRs · ilimitado`
+                  : `${quota.used_in_period} / ${quota.monthly_hdr_limit} HDRs`}
+              </span>
+            </div>
+            {quotaPct !== null ? (
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/10">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    quota.is_exceeded || quotaPct >= 1
+                      ? "bg-rose-400"
+                      : quotaPct >= 0.8
+                        ? "bg-amber-400"
+                        : "bg-gold-400"
+                  }`}
+                  style={{ width: `${Math.min(quotaPct * 100, 100)}%` }}
+                />
+              </div>
+            ) : null}
+            {quota.is_exceeded ? (
+              <p className="mt-2 text-xs text-rose-300">
+                Limite atingido. Novos HDRs podem ser bloqueados até o próximo período.{" "}
+                <Link href="/conta/quota" className="underline hover:text-rose-200">
+                  Ver detalhes
+                </Link>
+              </p>
+            ) : quotaPct !== null && quotaPct >= 0.8 ? (
+              <p className="mt-2 text-xs text-amber-200/90">
+                Você já usou {Math.round(quotaPct * 100)}% da sua quota mensal.
+              </p>
+            ) : null}
           </div>
         ) : null}
 
