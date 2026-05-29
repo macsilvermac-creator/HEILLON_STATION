@@ -80,8 +80,10 @@
 - [x] Manual do beta (`BETA.md`)
 - [x] E-mail de convite (`INVITE_EMAIL.md`)
 - [x] Guia de deploy (`DEPLOY.md`)
-- [ ] Tag `v0.1.0-beta`
-- [ ] Smoke E2E contra ambiente live (rodar antes de soltar convites)
+- [x] Tag `v0.1.0-beta`
+- [ ] **Gate final pré-convite:** rodar smoke E2E contra ambiente live —
+      `python scripts/beta_test.py --server https://<api-live> --api-key <chave>`
+      (harness validado offline; precisa de URL/chave de produção)
 - [ ] ⏸️ pós-CNPJ — precificação e selos de certificação
 
 ---
