@@ -25,3 +25,8 @@ data/
 # Supabase CLI temp
 supabase/.temp/
 .vercel
+
+# Artefactos efémeros de build/auditoria
+backend/pipaudit.json
+frontend/dev-server.log
+beta_test_report_*.json
