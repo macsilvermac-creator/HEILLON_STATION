@@ -5,7 +5,7 @@
 > `⏸️ pós-CNPJ` são deliberadamente adiados até a liberação do CNPJ — não
 > bloqueiam o beta.
 
-Última revisão: Fase 30B4
+Última revisão: Fase 30B5
 
 ---
 
@@ -27,6 +27,9 @@
 - [x] HDR imutável: SHA-256 encadeado + Ed25519 + canonical_hash
 - [x] Timestamp RFC 3161
 - [x] `FORCE_STUB_TIMESTAMP=True` proibido em produção (RuntimeError no boot)
+- [x] Copy voltada ao usuário alinhada: RFC 3161 é o selo **ativo** no beta;
+      ICP-Brasil qualificado posicionado como roadmap ("arquitetura pronta")
+      em onboarding, glossário, rodapé, SEO, card de quota, BETA/INVITE
 - [ ] ⏸️ pós-CNPJ — TSA ICP-Brasil real (Serpro/Certisign) com certificado A1
 - [x] Verificação pública de HDR
 
