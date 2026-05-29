@@ -127,6 +127,32 @@ class Settings(BaseSettings):
             "recommended. When empty, admin endpoints return 503 (disabled)."
         ),
     )
+    # Observability Fase 30B3 — Sentry (opcional; vazio = desativado)
+    SENTRY_DSN: str = Field(
+        default="",
+        description=(
+            "Sentry DSN para captura de erros. Vazio = SDK não inicializado "
+            "(zero overhead). Recomendado em produção."
+        ),
+    )
+    SENTRY_TRACES_SAMPLE_RATE: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Taxa de amostragem de performance tracing (0.0–1.0).",
+    )
+    # E-mail transacional Fase 30B3 — Postmark (opcional; vazio = modo log/stub)
+    POSTMARK_SERVER_TOKEN: str = Field(
+        default="",
+        description=(
+            "Token do servidor Postmark para e-mail transacional. Vazio = "
+            "EmailService opera em modo stub (apenas loga, não envia)."
+        ),
+    )
+    EMAIL_FROM: str = Field(
+        default="nao-responda@heillon.local",
+        description="Remetente padrão dos e-mails transacionais.",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

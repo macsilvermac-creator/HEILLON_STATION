@@ -12,6 +12,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.core import config as runtime_config
 from app.api.health import router as health_router
 from app.core.logging_config import configure_logging
+from app.core.observability import init_sentry
 from app.core.rate_limit import rate_limit_middleware
 from app.core.security_headers import SecurityHeadersMiddleware
 from app.db.compat import open_connection
@@ -128,6 +129,9 @@ def create_application() -> FastAPI:
     """Application factory simplifying hypervisor tests."""
 
     settings = runtime_config.get_settings()
+
+    # Observability — inicializa Sentry o mais cedo possível (no-op se DSN vazio).
+    init_sentry(settings)
 
     is_production = settings.ENVIRONMENT == "production"
     application = FastAPI(

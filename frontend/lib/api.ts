@@ -678,3 +678,55 @@ export async function purgeLogs(): Promise<unknown> {
   if (!response.ok) throw new Error(formatProblemDetail(payload));
   return payload;
 }
+
+/* ─── Admin beta-metrics (Fase 30B3) ─────────────────────────────────────
+ * Autenticação por token compartilhado (X-Heillon-Admin-Token), separado do
+ * JWT de usuário. O operador também precisa estar logado (cookie de sessão)
+ * para o middleware do Next deixar a requisição passar — defesa em profundidade.
+ */
+
+/** Tipos da resposta de /admin/beta-metrics. */
+export interface BetaMetrics {
+  snapshot_at: string;
+  organizations: { total: number; by_tier: Record<string, number> };
+  users: { total: number; active_last_7d: number };
+  api_keys: { active: number; revoked: number; total: number };
+  hdrs: {
+    total: number;
+    last_24h: number;
+    last_7d: number;
+    by_type: Record<string, number>;
+    latest_at: string | null;
+  };
+}
+
+export interface BetaFeedEvent {
+  hdr_id: string;
+  created_at: string;
+  mission_id: string;
+  hdr_type: string;
+  organization_id: string;
+}
+
+/** GET /admin/beta-metrics */
+export async function fetchBetaMetrics(adminToken: string): Promise<BetaMetrics> {
+  const response = await apiFetch(`${PREFIX}/admin/beta-metrics`, {
+    headers: authorizedHeaders({ "X-Heillon-Admin-Token": adminToken }),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload as unknown as BetaMetrics;
+}
+
+/** GET /admin/beta-feed */
+export async function fetchBetaFeed(
+  adminToken: string,
+  limit = 20,
+): Promise<{ events: BetaFeedEvent[]; count: number }> {
+  const response = await apiFetch(`${PREFIX}/admin/beta-feed?limit=${limit}`, {
+    headers: authorizedHeaders({ "X-Heillon-Admin-Token": adminToken }),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload as unknown as { events: BetaFeedEvent[]; count: number };
+}
