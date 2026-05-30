@@ -27,7 +27,7 @@ import { useAuth } from "@/lib/auth-context";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-export const TOPBAR_H = 67; // px — total height, used by ConditionalAppShell
+export const TOPBAR_H = 74; // px — total height, used by ConditionalAppShell
 
 // ── Colour tokens (all gold, single palette) ───────────────────────────────────
 
@@ -59,6 +59,7 @@ const NAV: NavItem[] = [
   { href: "/docs",         label: "Docs"           },
   { href: "/agent-config", label: "Modelos de IA"  },
   { href: "/diary",        label: "Diário"         },
+  { href: "/opiniao",      label: "Opinião"        },
   { href: "/conta/quota",  label: "Conta"          },
   { href: "/m",            label: "Mobile"         },
   { href: "/health",       label: "Health",        adminOnly: true },
@@ -137,6 +138,12 @@ interface FolderTabProps {
 function FolderTab({ item, active, onClick }: FolderTabProps) {
   const [hovered, setHovered] = useState(false);
 
+  const earBorder = active
+    ? "rgba(212,175,55,0.78)"
+    : hovered
+    ? "rgba(212,175,55,0.40)"
+    : "rgba(212,175,55,0.16)";
+
   return (
     <Link
       href={item.href}
@@ -146,51 +153,67 @@ function FolderTab({ item, active, onClick }: FolderTabProps) {
       onMouseLeave={() => setHovered(false)}
       className="relative shrink-0 select-none whitespace-nowrap text-[11px] outline-none focus-visible:ring-1 focus-visible:ring-gold-400/60"
       style={{
-        // Folder-tab ear shape: one rounded corner (top-left), one sharp (top-right)
-        // — mimics a real physical folder label/ear in a filing drawer
-        height: "28px",
-        padding: "0 12px",
+        height: "34px",
         display: "inline-flex",
-        alignItems: "center",
-        borderRadius: "6px 0 0 0",
-        // Active: 2 px gold border on top + sides only — no bottom.
-        // The strip's continuous gold rim closes the shape, making the line
-        // visually "contour" the ear: it runs the full width, rises up the
-        // tab's left side, crosses the top, and descends the right side.
-        border: active
-          ? "2px solid rgba(212,175,55,0.75)"
-          : hovered
-          ? "1px solid rgba(212,175,55,0.35)"
-          : "1px solid rgba(212,175,55,0.14)",
-        borderBottom: active
-          ? "none"
-          : hovered
-          ? "1px solid rgba(212,175,55,0.35)"
-          : "1px solid rgba(212,175,55,0.14)",
-        // Background stays dark — no gold fill
-        background: active
-          ? G.strip_bg
-          : hovered
-          ? "rgba(212,175,55,0.06)"
-          : "transparent",
-        backgroundImage: "none",
-        color: active
-          ? "rgba(212,175,55,0.96)"
-          : hovered
-          ? "rgba(212,175,55,0.75)"
-          : "rgba(212,175,55,0.46)",
-        transition: "background 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
-        boxShadow: active
-          ? "0 -4px 18px rgba(212,175,55,0.14), inset 0 1px 0 rgba(255,255,255,0.05)"
-          : "none",
-        // Overlap the strip's 2 px bottom border so the contour is seamless
+        alignItems: "flex-end",
+        // Overlap the strip's 2 px bottom rim so the contour stays seamless
         marginBottom: active ? "-2px" : "0",
-        fontWeight: active ? "700" : "400",
-        letterSpacing: "0.06em",
-        zIndex: active ? 3 : 1,
+        zIndex: active ? 4 : 1,
       }}
     >
-      {item.label}
+      {/* Ghost back-ear — segunda fileira de orelhas (decorativa, atrás) que dá
+          a profundidade de "pasta empilhada" no arquivo. Deslocada p/ cima-direita. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute"
+        style={{
+          left: "10px",
+          right: "-10px",
+          top: "-7px",
+          bottom: "7px",
+          borderRadius: "8px 0 0 0",
+          border: `1px solid rgba(212,175,55,${active ? 0.3 : 0.12})`,
+          borderBottom: "none",
+          background:
+            "linear-gradient(180deg, rgba(212,175,55,0.05) 0%, rgba(4,7,18,0) 100%)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+          zIndex: 0,
+        }}
+      />
+      {/* Front ear — orelha funcional, liquid-glass 3D (gradiente + blur +
+          realce especular no topo + sombra de profundidade). */}
+      <span
+        className="relative flex h-[34px] items-center"
+        style={{
+          padding: "0 15px",
+          borderRadius: "8px 0 0 0",
+          border: `1px solid ${earBorder}`,
+          borderWidth: active ? "1.5px 1.5px 0 1.5px" : "1px 1px 1px 1px",
+          borderBottom: active ? "none" : `1px solid ${earBorder}`,
+          background: active
+            ? "linear-gradient(180deg, rgba(30,44,78,0.92) 0%, rgba(8,13,28,0.97) 100%)"
+            : hovered
+            ? "linear-gradient(180deg, rgba(212,175,55,0.13) 0%, rgba(212,175,55,0.03) 100%)"
+            : "linear-gradient(180deg, rgba(255,255,255,0.055) 0%, rgba(212,175,55,0.018) 58%, rgba(0,0,0,0.10) 100%)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          color: active
+            ? "rgba(236,206,122,0.98)"
+            : hovered
+            ? "rgba(212,175,55,0.84)"
+            : "rgba(212,175,55,0.52)",
+          fontWeight: active ? 700 : 400,
+          letterSpacing: "0.06em",
+          boxShadow: active
+            ? "0 -5px 22px rgba(212,175,55,0.18), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.32)"
+            : "inset 0 1px 0 rgba(255,255,255,0.10), 0 3px 9px rgba(0,0,0,0.26)",
+          transition:
+            "background 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
+          zIndex: 2,
+        }}
+      >
+        {item.label}
+      </span>
     </Link>
   );
 }

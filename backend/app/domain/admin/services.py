@@ -10,9 +10,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.domain.admin.models import (
+    ActivationFunnel,
     ApiKeyMetrics,
     BetaFeed,
     BetaMetrics,
+    DailyCount,
     FeedEvent,
     HdrMetrics,
     OrganizationMetrics,
@@ -31,9 +33,11 @@ class AdminMetricsService:
         now = datetime.now(timezone.utc)
         last_24h = (now - timedelta(hours=24)).isoformat()
         last_7d = (now - timedelta(days=7)).isoformat()
+        last_14d = (now - timedelta(days=14)).isoformat()
 
         by_tier = self._repo.organizations_by_tier(conn)
         api_total, api_active = self._repo.count_api_keys(conn)
+        org_total = sum(by_tier.values())
 
         return BetaMetrics(
             snapshot_at=now.isoformat(),
@@ -56,6 +60,16 @@ class AdminMetricsService:
                 last_7d=self._repo.count_hdrs_since(conn, last_7d),
                 by_type=self._repo.hdrs_by_type(conn),
                 latest_at=self._repo.latest_hdr_at(conn),
+            ),
+            daily_hdrs=[
+                DailyCount(**row)
+                for row in self._repo.hdrs_daily_since(conn, last_14d)
+            ],
+            funnel=ActivationFunnel(
+                organizations=org_total,
+                with_api_key=self._repo.organizations_with_api_key(conn),
+                with_hdr=self._repo.organizations_with_hdr(conn),
+                active_7d=self._repo.active_orgs_since(conn, last_7d),
             ),
         )
 

@@ -1,6 +1,9 @@
 /**
- * Textos institucionais da Central de Documentação — Heillon Legal v20 (PT-BR).
- * Atualizado para Fase 20 — Sistema Definitivo Global (Mai 2026).
+ * Textos institucionais da Central de Documentação — Heillon Legal (PT-BR).
+ * Atualizado para o Beta Privado — Coletores + Quota + Conta (Mai 2026).
+ *
+ * Nota de copy: no beta, o selo de tempo ATIVO é o RFC 3161; o selo
+ * ICP-Brasil qualificado entra na sequência ("arquitetura pronta").
  */
 
 import {
@@ -25,31 +28,40 @@ export function BodyQuickstart() {
     <>
       <Callout variant="tip" title="Início em 5 minutos">
         Este guia leva-o do zero ao primeiro <strong>HDR verificável</strong> em menos de 5 minutos.
-        Não é necessária configuração de ambiente — basta conta e conexão à plataforma.
+        Não é necessária configuração de ambiente — basta criar conta, gerar uma chave de API
+        e ativar um coletor.
       </Callout>
 
       <h2 id="qs-visao">O que é o Heillon Legal?</h2>
       <p>
-        O Heillon Legal é uma plataforma de <strong>legitimidade computacional</strong> para o direito.
-        Cada ação relevante de IA é transformada num <strong>HDR (Heillon Decision Record)</strong> —
-        um registo imutável com hash SHA-256, carimbo temporal RFC 3161 e encadeamento criptográfico.
-        Qualquer decisão pode ser auditada, verificada e apresentada como prova técnica em juízo.
+        O Heillon Legal é o <strong>substrato de auditoria de IA jurídica</strong>: cada vez que
+        você usa ChatGPT, Claude, Gemini ou outra IA no trabalho, a plataforma gera um{" "}
+        <strong>HDR (Heillon Decision Record)</strong> — um registo imutável com hash SHA-256,
+        carimbo temporal RFC 3161 e encadeamento criptográfico. Qualquer decisão pode ser
+        auditada, verificada e apresentada como prova técnica.
       </p>
 
+      <Callout variant="info" title="Captura passiva por coletores">
+        Você não precisa colar prompts manualmente. Os <strong>coletores</strong> observam o uso
+        de IA e geram HDRs em background: a <strong>Extensão do Browser</strong> (Coletor #1) e o{" "}
+        <strong>Gateway MCP/API</strong> compatível com OpenAI e Anthropic (Coletor #2). Você
+        continua trabalhando normalmente — o Heillon cuida do registo.
+      </Callout>
+
       <StatGrid>
-        <StatCard value="272" label="Testes automatizados" icon="✅" />
-        <StatCard value="32" label="Rotas de frontend" icon="🗺" />
-        <StatCard value="7" label="Jurisdições cobertas" icon="🌍" />
-        <StatCard value="20" label="Fases concluídas" icon="🏆" />
+        <StatCard value="2" label="Coletores (Extensão + Gateway)" icon="🛰" />
+        <StatCard value="50" label="HDRs/mês no plano grátis" icon="🎟" />
+        <StatCard value="RFC 3161" label="Selo de tempo ativo" icon="⏱" />
+        <StatCard value="9" label="Jurisdições no corpus" icon="🌍" />
       </StatGrid>
 
-      <h2 id="qs-fluxo">Fluxo rápido</h2>
+      <h2 id="qs-fluxo">Fluxo rápido (captura passiva)</h2>
       <FlowDiagram steps={[
         { icon: "👤", label: "Criar conta",    sub: "/register" },
-        { icon: "📄", label: "Ingerir prova",  sub: "/ingestion" },
-        { icon: "🚀", label: "Criar missão",   sub: "/missions" },
-        { icon: "✅", label: "Aprovar",        sub: "PENDING→APPROVED" },
-        { icon: "🔐", label: "Executar",       sub: "HDR gerado" },
+        { icon: "🔑", label: "Gerar chave",    sub: "onboarding" },
+        { icon: "🛰", label: "Ativar coletor", sub: "Extensão / Gateway" },
+        { icon: "💬", label: "Usar IA",        sub: "ChatGPT/Claude/…" },
+        { icon: "🔐", label: "HDR gerado",     sub: "em background" },
         { icon: "🔍", label: "Verificar",      sub: "/verification" },
       ]} />
 
@@ -77,40 +89,37 @@ export function BodyQuickstart() {
         </div>
       </ScreenFrame>
 
-      <h2 id="qs-passo2">Passo 2 — Ingerir a primeira evidência</h2>
+      <h2 id="qs-passo2">Passo 2 — Gerar a chave de API (onboarding)</h2>
+      <p>
+        Logo após o registo, o assistente de <strong>onboarding em 3 passos</strong>
+        (<code>/conta/onboarding</code>) gera a sua primeira chave de API. A chave conecta
+        os coletores à sua conta e tem o formato <code>heillon_live_…</code>.
+      </p>
       <Steps>
-        <Step n={1} title="Ir a /ingestion">
-          Clique na aba <strong>Evidências</strong> na barra de navegação superior.
+        <Step n={1} title="Abrir o onboarding">
+          Após registar-se é levado a <code>/conta/onboarding</code>. Clique em <em>Próximo</em>.
         </Step>
-        <Step n={2} title="Carregar ficheiro">
-          Arraste um PDF, DOCX ou qualquer ficheiro para a área de upload.
-          O sistema extrai texto (PyMuPDF), calcula SHA-256 e emite um HDR de ingestão.
-        </Step>
-        <Step n={3} title="Guardar o hdr_id">
-          O sistema devolve um <code>hdr_id</code> — guarde-o para vincular à missão.
+        <Step n={2} title="Gerar minha chave">
+          Clique em <strong>Gerar minha chave</strong>. Copie-a imediatamente — por segurança,
+          a chave em texto puro é mostrada uma única vez. Pode revogar e gerar novas em{" "}
+          <a href="/conta/api-keys" className="text-gold-300 underline">Chaves de API</a>.
         </Step>
       </Steps>
 
-      <h2 id="qs-passo3">Passo 3 — Criar e executar a primeira missão</h2>
+      <h2 id="qs-passo3">Passo 3 — Ativar um coletor</h2>
+      <p>
+        Escolha como o Heillon vai observar o seu uso de IA. Os dois coletores são complementares
+        — pode usar ambos com a mesma chave.
+      </p>
       <Steps>
-        <Step n={1} title="Ir a /missions">
-          Clique em <strong>Missões</strong> na barra superior.
+        <Step n={1} title="Coletor #1 — Extensão do Browser">
+          Instale a extensão (Chrome MV3), abra as Opções e cole a chave de API + a URL do servidor.
+          A partir daí, cada par pergunta→resposta em ChatGPT, Claude ou Gemini gera um HDR.
         </Step>
-        <Step n={2} title="Descrever a intenção">
-          Escreva o objetivo em linguagem natural, ex.: <em>"Analisar contrato de prestação de serviços
-          para conformidade LGPD"</em>. Indique os agentes autorizados.
-        </Step>
-        <Step n={3} title="O corpus normativo valida">
-          O sistema avalia automaticamente a intenção contra o corpus normativo.
-          Se aprovado, a missão fica em estado <Badge variant="blue">PENDING</Badge>.
-        </Step>
-        <Step n={4} title="Aprovar (human-in-the-loop)">
-          Clique em <strong>Aprovar</strong> na missão. Este gate humano é obrigatório
-          — nenhuma execução ocorre sem aprovação explícita do operador.
-        </Step>
-        <Step n={5} title="Executar e ver o HDR">
-          Após aprovação, a execução inicia. Cada passo gera um HDR encadeado.
-          Aceda ao painel da missão para ver a cadeia de registos.
+        <Step n={2} title="Coletor #2 — Gateway MCP/API">
+          Aponte o seu SDK OpenAI/Anthropic para o Gateway do Heillon e envie a chave no header{" "}
+          <code>X-Heillon-Api-Key</code>. Cada chamada é auditada e devolve o <code>hdr_id</code>
+          nos headers de resposta.
         </Step>
       </Steps>
 
@@ -123,7 +132,9 @@ export function BodyQuickstart() {
 
       <Callout variant="success" title="Primeiro HDR criado!">
         Parabéns — o seu primeiro Heillon Decision Record está na cadeia.
-        Para aprofundar, consulte o <a href="/docs/chain-of-custody" className="text-gold-300 underline">Manual da Cadeia de Custódia</a>.
+        Para o fluxo manual de evidências e casos (cockpit web), consulte o{" "}
+        <a href="/docs/usage" className="text-gold-300 underline">Manual de Uso</a>; para a base
+        criptográfica, o <a href="/docs/chain-of-custody" className="text-gold-300 underline">Manual da Cadeia de Custódia</a>.
       </Callout>
     </>
   );
@@ -137,8 +148,15 @@ export function BodyManualUsage() {
   return (
     <>
       <Callout variant="info">
-        Este manual cobre todos os fluxos do cockpit web Heillon Legal v20.
-        Para início rápido, consulte primeiro o <a href="/docs/quickstart" className="text-gold-300 underline">Guia de Início Rápido</a>.
+        Este manual cobre todos os fluxos do cockpit web Heillon Legal — captura passiva por
+        coletores, conta, quota e o fluxo manual de casos. Para início rápido, consulte primeiro
+        o <a href="/docs/quickstart" className="text-gold-300 underline">Guia de Início Rápido</a>.
+      </Callout>
+
+      <Callout variant="tip" title="Dois modos de uso">
+        <strong>Captura passiva (recomendado):</strong> ative um coletor e o Heillon registra o
+        seu uso de IA automaticamente. <strong>Fluxo manual (cockpit):</strong> ingira evidências
+        e crie casos diretamente na plataforma. Ambos produzem o mesmo HDR verificável.
       </Callout>
 
       <h2 id="autenticacao">1. Autenticação e sessão</h2>
@@ -220,7 +238,11 @@ export function BodyManualUsage() {
 
       <ApiBlock method="POST" path="/api/v1/ingestion" description="Upload de evidência — multipart/form-data. Retorna hdr_id." auth />
 
-      <h2 id="missoes">4. Missões EASY — ciclo completo</h2>
+      <h2 id="missoes">4. Casos (Missões EASY) — ciclo completo</h2>
+      <Callout variant="info">
+        Na navegação, este fluxo aparece como <strong>Casos</strong> (vernáculo jurídico).
+        Internamente, o motor de orquestração continua a chamar-se EASY.
+      </Callout>
 
       <FlowDiagram steps={[
         { icon: "📝", label: "DRAFT",     sub: "Planeamento" },
@@ -258,7 +280,7 @@ export function BodyManualUsage() {
       <h3 id="missoes-executar">4.4 Execução e geração de HDRs</h3>
       <p>
         Com estado <code>APPROVED</code>, o motor EASY executa cada nó do DAG.
-        Cada passo gera um HDR encadeado com carimbo temporal ICP-Brasil.
+        Cada passo gera um HDR encadeado com carimbo temporal RFC 3161.
         O campo <code>previous_hdr</code> garante a cadeia criptográfica.
       </p>
 
@@ -284,9 +306,10 @@ export function BodyManualUsage() {
         e associada ao <code>organization_id</code> do tenant.
       </p>
 
-      <h2 id="agentes">7. Soberania de modelos</h2>
+      <h2 id="agentes">7. Modelos de IA (soberania de modelos)</h2>
       <p>
-        Em <code>/agent-config</code>, configure os modelos de IA que o EASY pode usar:
+        Em <code>/agent-config</code> (rótulo <strong>Modelos de IA</strong> na navegação),
+        configure os modelos que o EASY pode usar:
       </p>
       <ul>
         <li><strong>Ollama</strong> — modelos locais (Llama 3, Mistral, etc.) sem dados saírem do servidor</li>
@@ -299,12 +322,104 @@ export function BodyManualUsage() {
         A chave Fernet do servidor nunca é acessível via API.
       </Callout>
 
-      <h2 id="normativo">8. Corpus normativo e conformidade</h2>
+      <h2 id="normativo">8. Normas (corpus normativo) e conformidade</h2>
       <p>
-        Em <code>/normative</code>, pesquise o corpus de regras legais usando
-        busca FTS5 (full-text search). Gere relatórios de conformidade LGPD/GDPR
-        para missões específicas e exporte em PDF.
+        Em <code>/normative</code> (rótulo <strong>Normas</strong> na navegação), pesquise o
+        corpus de regras legais usando busca FTS5 (full-text search). Gere relatórios de
+        conformidade LGPD/GDPR para casos específicos e exporte em PDF.
       </p>
+
+      <h2 id="coletores">9. Coletores — captura passiva de IA</h2>
+      <p>
+        Os <strong>coletores</strong> observam o seu uso de IA e geram HDRs em background, sem
+        que você precise colar prompts manualmente. Todos se autenticam pela chave de API
+        (<code>heillon_live_…</code>) e respeitam a quota do seu plano.
+      </p>
+
+      <h3 id="coletores-extensao">9.1 Coletor #1 — Extensão do Browser</h3>
+      <p>
+        Extensão Chrome (Manifest V3, compatível com Edge e Brave) que captura conversas em
+        ChatGPT, Claude e Gemini. Após instalar, abra as Opções e defina a URL do servidor + a
+        chave de API. A chave fica em <code>chrome.storage.local</code> (nunca sincronizada).
+      </p>
+      <ApiBlock method="GET" path="/api/v1/extension/health" description="Valida a chave e a quota (a extensão revalida a cada ~15 min)." auth />
+      <ApiBlock method="POST" path="/api/v1/extension/capture" description="Registra um par pergunta→resposta e devolve o hdr_id." auth />
+
+      <h3 id="coletores-gateway">9.2 Coletor #2 — Gateway MCP/API</h3>
+      <p>
+        Proxy drop-in compatível com a API OpenAI e com a API Anthropic Messages. Aponte o seu
+        SDK para o Gateway e envie a chave no header <code>X-Heillon-Api-Key</code>: cada chamada
+        é auditada e o <code>hdr_id</code>, a quota usada e o limite voltam nos headers de resposta.
+        Suporta respostas em streaming (SSE).
+      </p>
+      <ApiBlock method="POST" path="/gateway/v1/chat/completions" description="Proxy OpenAI Chat Completions com auditoria HDR." auth />
+      <ApiBlock method="POST" path="/gateway/anthropic/v1/messages" description="Proxy Anthropic Messages com auditoria HDR." auth />
+
+      <Callout variant="warning" title="Console standalone continua ativo">
+        Além dos coletores, o console web continua disponível para ingestão manual de
+        evidências e criação de casos. Os três caminhos produzem o mesmo HDR verificável.
+      </Callout>
+
+      <h2 id="chaves-api">10. Chaves de API</h2>
+      <p>
+        Em <code>/conta/api-keys</code> você cria, lista e revoga as chaves usadas pelos coletores
+        (Extensão, Gateway ou integrações próprias). Por segurança:
+      </p>
+      <ul>
+        <li>A chave em texto puro é exibida <strong>uma única vez</strong>, no momento da criação.</li>
+        <li>Depois, apenas o prefixo e a data de último uso (<code>last_used_at</code>) ficam visíveis.</li>
+        <li>Revogar uma chave é imediato e não afeta os HDRs já registrados.</li>
+      </ul>
+
+      <h2 id="conta-quota">11. Conta, quota e planos</h2>
+      <p>
+        Em <code>/conta/quota</code> (rótulo <strong>Conta</strong>) acompanhe o uso da sua
+        organização no período e quando ele renova. O plano define limite mensal de HDRs,
+        retenção e disponibilidade do relatório forense.
+      </p>
+      <div className="my-5 overflow-x-auto rounded-xl border border-white/10">
+        <table className="w-full text-[12px]">
+          <thead>
+            <tr className="border-b border-white/8 bg-white/[0.03] text-left text-[10px] uppercase tracking-wider text-white/50">
+              <th className="px-4 py-3">Plano</th>
+              <th className="px-4 py-3">HDRs/mês</th>
+              <th className="px-4 py-3">Retenção</th>
+              <th className="px-4 py-3">Usuários</th>
+              <th className="px-4 py-3">PDF forense</th>
+            </tr>
+          </thead>
+          <tbody className="text-white/75">
+            {[
+              ["Free",       "50",        "30 dias",  "1",    "—"],
+              ["Pro",        "Ilimitado", "1 ano",    "1",    "✓"],
+              ["Team",       "Ilimitado", "5 anos",   "Até 10","✓"],
+              ["Enterprise", "Ilimitado", "Indefinida","Sem limite","✓"],
+            ].map(([plan, hdr, ret, users, pdf], i) => (
+              <tr key={i} className="border-b border-white/6 hover:bg-white/[0.02]">
+                <td className="px-4 py-3 font-medium text-gold-300/90">{plan}</td>
+                <td className="px-4 py-3">{hdr}</td>
+                <td className="px-4 py-3">{ret}</td>
+                <td className="px-4 py-3">{users}</td>
+                <td className="px-4 py-3">{pdf}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Callout variant="info" title="Quota atingida">
+        Ao esgotar a quota do período, os coletores recebem <code>HTTP 402</code> e param de
+        registrar até a renovação ou o upgrade de plano. A contratação de planos pagos é feita
+        no site institucional — fora do console.
+      </Callout>
+
+      <h2 id="conta-eliminar">12. Privacidade e eliminação de conta</h2>
+      <p>
+        Em <code>/privacy</code> você exerce os direitos do titular (LGPD Art. 18). A
+        <strong> auto-eliminação imediata</strong> de conta anonimiza os seus dados pessoais e
+        revoga as chaves de API, mas <strong>preserva os HDRs já emitidos</strong> — pelo seu
+        valor probatório e pela integridade da cadeia.
+      </p>
+      <ApiBlock method="DELETE" path="/api/v1/privacy/account" description="Auto-eliminação imediata (Art. 18 VI) — anonimiza, revoga chaves, preserva HDRs." auth />
     </>
   );
 }
@@ -361,8 +476,13 @@ export function BodyChainCustody() {
       </ScreenFrame>
 
       <h2 id="hdr-tsa">Carimbos temporais RFC 3161</h2>
+      <Callout variant="info" title="Selo ativo no beta">
+        No beta privado, o selo de tempo <strong>ativo</strong> é o <strong>RFC 3161</strong>, com
+        a cadeia de custódia íntegra. A assinatura <strong>ICP-Brasil qualificada</strong>
+        (Serpro/Certisign com certificado A1) tem a arquitetura pronta e entra na sequência.
+      </Callout>
       <p>
-        O Heillon Legal usa a cadeia de carimbos <strong>ICP-Brasil</strong>:
+        Quando ativada, o Heillon Legal usa a cadeia de carimbos <strong>ICP-Brasil</strong>:
       </p>
       <ol>
         <li><strong>Certisign</strong> — AC Certisign Múltipla G6 (1ª opção)</li>
@@ -489,15 +609,16 @@ export function BodyLgpd() {
         <li><strong>DPO SLA 15 dias</strong> — canal direto com rastreamento de resposta</li>
         <li><strong>Portabilidade ZIP</strong> — exportação completa dos dados do titular</li>
         <li><strong>Incidentes ANPD</strong> — notificação em ≤72h conforme ANPD Res. 15/2024</li>
+        <li><strong>Auto-eliminação imediata</strong> — Art. 18 VI: anonimiza dados pessoais e revoga chaves de API, preservando os HDRs já emitidos pelo valor probatório</li>
       </ul>
 
       <h2 id="lgpd-relatorio">Gerar relatório de conformidade LGPD</h2>
       <Steps>
         <Step n={1} title="Aceder a /normative">
-          Clique na aba <strong>Normativo</strong> na barra de navegação.
+          Clique na aba <strong>Normas</strong> na barra de navegação.
         </Step>
         <Step n={2} title="Inserir mission_id">
-          Cole o identificador da missão a auditar.
+          Cole o identificador do caso a auditar.
         </Step>
         <Step n={3} title="Selecionar framework LGPD-BR">
           Escolha o framework <strong>LGPD-BR</strong> no seletor.
@@ -527,11 +648,13 @@ export function BodyArchitecture() {
       <h2 id="arch-visao">Visão geral da arquitetura</h2>
       <p>
         O Heillon Legal é construído com <strong>Domain-Driven Design (DDD)</strong>,
-        separando 18 bounded contexts no backend FastAPI e 32 rotas no frontend Next.js 15.
+        separando 20+ bounded contexts no backend FastAPI e o cockpit + área de conta no
+        frontend Next.js 15. A captura de IA acontece por <strong>coletores</strong> (Extensão e
+        Gateway) que escrevem no mesmo HDR Ledger.
       </p>
 
       <StatGrid>
-        <StatCard value="18" label="Domínios DDD" icon="🏛" />
+        <StatCard value="20+" label="Domínios DDD" icon="🏛" />
         <StatCard value="FastAPI" label="Backend Python 3.12" icon="⚡" />
         <StatCard value="Next.js 15" label="Frontend App Router" icon="⚛" />
         <StatCard value="PostgreSQL" label="Base de dados principal" icon="🐘" />
@@ -558,8 +681,10 @@ export function BodyArchitecture() {
               ["Animação",     "Framer Motion",                     "Transições de página suaves"],
               ["3D",           "Three.js + @react-three/fiber",     "Hero 3D (frameloop=demand)"],
               ["PDF",          "ReportLab + pikepdf",               "PDF/A-1/B forense com XMP/ICP-Brasil"],
-              ["Deploy",       "Vercel + Docker Compose",           "UI edge-deployed + stack local completa"],
-              ["CI/CD",        "GitHub Actions + Playwright",       "272 testes + E2E smoke"],
+              ["Coletores",    "Extensão Chrome MV3 + Gateway",     "Captura passiva OpenAI/Anthropic + Anthropic Messages (SSE)"],
+              ["Observability","Sentry + Postmark + /admin",        "Erros (PII off), e-mail transacional, métricas do beta"],
+              ["Deploy",       "Vercel + Docker Compose + Caddy",   "UI edge-deployed + stack local + TLS automático"],
+              ["CI/CD",        "GitHub Actions + Playwright",       "ruff, mypy, pytest, security scan + E2E smoke"],
             ].map(([layer, tech, purpose], i) => (
               <tr key={i} className="border-b border-white/6 hover:bg-white/[0.02]">
                 <td className="px-4 py-3 font-medium text-white/88">{layer}</td>
@@ -571,7 +696,7 @@ export function BodyArchitecture() {
         </table>
       </div>
 
-      <h2 id="arch-dominios">18 Domínios DDD</h2>
+      <h2 id="arch-dominios">Domínios DDD (principais)</h2>
       <div className="my-5 grid gap-3 sm:grid-cols-2">
         {[
           { name: "HDR", desc: "Ledger criptográfico — SHA-256, RFC 3161, ICP-Brasil TSA" },
@@ -592,6 +717,9 @@ export function BodyArchitecture() {
           { name: "Malpractice", desc: "Insurance Score, Colorado SB 26-189, CCPA ADMT" },
           { name: "Mobile", desc: "Push tokens, PWA stats, rotas /m/*" },
           { name: "HDR ICP", desc: "TSA fallback: Certisign→Serpro→FreeTSA→stub" },
+          { name: "Tier/Quota", desc: "Planos Free/Pro/Team/Enterprise, limite mensal, retenção, HTTP 402" },
+          { name: "Gateway", desc: "Coletor #2 — proxy OpenAI + Anthropic Messages com auditoria HDR" },
+          { name: "API Keys", desc: "Chaves heillon_live_… dos coletores, prefixo + last_used, revogação" },
         ].map(({ name, desc }) => (
           <div key={name} className="rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3">
             <span className="font-semibold text-gold-300">{name}</span>
@@ -845,6 +973,10 @@ export function BodyAdminGuide() {
               ["FORCE_STUB_TIMESTAMP",    "❌ Não", "Deve ser 'false'. Nunca 'true' em produção."],
               ["TSA_PROVIDER",            "Opcional","certisign | serpro | freetsa (default: certisign)"],
               ["MISSION_ROUTES_REQUIRE_AUTH","Opcional","true — exigir JWT em todas as rotas de missão (recomendado)"],
+              ["BILLING_WEBHOOK_SECRET",  "Opcional","HMAC-SHA256 do webhook de billing. Vazio = endpoint 503 (desativado). Defina em produção."],
+              ["HEILLON_ADMIN_TOKEN",     "Opcional","Token dos endpoints /api/v1/admin/* (header X-Heillon-Admin-Token). ≥24 chars. Vazio = 503."],
+              ["SENTRY_DSN",              "Opcional","Captura de erros (PII off). Vazio = SDK não inicializado. Recomendado em produção."],
+              ["POSTMARK_SERVER_TOKEN",   "Opcional","E-mail transacional. Vazio = modo stub (apenas loga, não envia)."],
             ].map(([v, req, note], i) => (
               <tr key={i} className="border-b border-white/6 hover:bg-white/[0.02]">
                 <td className="px-4 py-3 font-mono text-gold-300/80">{v}</td>
@@ -929,6 +1061,41 @@ curl http://localhost:8000/health`}</pre>
       </p>
       <ApiBlock method="GET" path="/health" description="Liveness check — retorna 200 quando todos os serviços OK." />
       <ApiBlock method="GET" path="/api/v1/health/detailed" description="Painel detalhado com estado de cada serviço." auth />
+
+      <h2 id="admin-coletores">7. Coletores e quota</h2>
+      <p>
+        Os coletores (Extensão e Gateway) autenticam-se por chave de API e respeitam a quota do
+        tier da organização. Não há configuração de servidor por coletor além da chave: o usuário
+        gera a sua em <code>/conta/api-keys</code> e acompanha o consumo em <code>/conta/quota</code>.
+      </p>
+      <ul>
+        <li><strong>Tiers:</strong> Free (50 HDRs/mês, retenção 30d), Pro/Team/Enterprise (ilimitado, retenção e usuários crescentes).</li>
+        <li><strong>Excedente:</strong> ao esgotar a quota, os coletores recebem <code>HTTP 402</code> até a renovação do período.</li>
+        <li><strong>Retenção:</strong> a purga por tier é executada pelo cron <code>scripts/cron_purge_retention.py</code>.</li>
+      </ul>
+
+      <h2 id="admin-billing">8. Webhook de billing (mudança de tier)</h2>
+      <p>
+        A contratação de planos vive no site institucional (fora do console). A mudança de tier
+        chega ao backend por um webhook assinado com <code>BILLING_WEBHOOK_SECRET</code>
+        (HMAC-SHA256 sobre o corpo bruto). Sem o segredo, o endpoint responde <code>503</code>.
+      </p>
+      <ApiBlock method="POST" path="/api/v1/billing/webhook" description="Eventos tier_changed / subscription_cancelled / payment_failed (HMAC obrigatório)." />
+
+      <h2 id="admin-painel">9. Painel admin do beta</h2>
+      <p>
+        Os endpoints <code>/api/v1/admin/*</code> expõem métricas agregadas do beta (sem PII) e
+        são protegidos pelo header <code>X-Heillon-Admin-Token</code> (valor de
+        <code> HEILLON_ADMIN_TOKEN</code>, distinto do JWT e das chaves de API). Sem token
+        configurado, retornam <code>503</code>.
+      </p>
+
+      <h2 id="admin-observability">10. Observabilidade e e-mail</h2>
+      <ul>
+        <li><strong>Sentry</strong> (<code>SENTRY_DSN</code>) — captura de erros com <code>send_default_pii=False</code>; vazio desativa o SDK.</li>
+        <li><strong>Postmark</strong> (<code>POSTMARK_SERVER_TOKEN</code>) — e-mail transacional; vazio opera em modo stub (apenas loga).</li>
+        <li><strong>Caddy</strong> — TLS automático no deploy via Docker Compose (Caddyfile).</li>
+      </ul>
     </>
   );
 }
@@ -971,7 +1138,16 @@ export function BodyFAQ() {
         { q: "Como migrar de SQLite para PostgreSQL?", a: "Defina DATABASE_TYPE=postgresql e configure as variáveis POSTGRES_*. Execute as migrações: uvicorn inicia e aplica migrations/00N_*.sql automaticamente. Para migrar dados existentes, use o script de exportação em scripts/ ou faça backup SQLite antes." },
         { q: "O rate limiting funciona sem Redis?", a: "Sim — há fallback automático para rate limiting em memória. Porém, em múltiplas instâncias, cada instância tem contador independente. Para produção multi-instância, Redis é obrigatório." },
         { q: "Como configurar o carimbo ICP-Brasil Certisign?", a: "Defina TSA_PROVIDER=certisign (default). O sistema usa https://timestamp.certisign.com.br/. Não requer credenciais adicionais. Para Serpro, defina TSA_PROVIDER=serpro." },
-        { q: "Como rodar os testes?", a: "cd backend && python -m pytest -q. Os 272 testes usam SQLite em memória — não requerem PostgreSQL ou Redis externos. Para E2E: ver docs/E2E-CI.md." },
+        { q: "Como rodar os testes?", a: "cd backend && python -m pytest -q. A suíte usa SQLite em memória — não requer PostgreSQL ou Redis externos. Para E2E: ver docs/E2E-CI.md." },
+      ],
+    },
+    {
+      section: "Coletores, conta e quota",
+      items: [
+        { q: "Qual a diferença entre a Extensão e o Gateway?", a: "São os dois coletores. A Extensão do Browser (Chrome MV3) captura passivamente o uso de ChatGPT/Claude/Gemini na interface web. O Gateway MCP/API é um proxy compatível com OpenAI e Anthropic: você aponta o seu SDK para ele e cada chamada de API vira um HDR. Pode usar ambos com a mesma chave." },
+        { q: "Onde gero e revogo minha chave de API?", a: "Em /conta/api-keys. A chave (formato heillon_live_…) é mostrada em texto puro uma única vez, na criação — copie-a na hora. Depois ficam visíveis apenas o prefixo e a data de último uso. Revogar é imediato e não afeta os HDRs já emitidos." },
+        { q: "O que acontece quando atinjo o limite do plano?", a: "Ao esgotar a quota do período (no plano Free, 50 HDRs/mês), os coletores recebem HTTP 402 e param de registrar até a renovação ou o upgrade. Acompanhe o consumo em /conta/quota. A contratação de planos é feita no site institucional." },
+        { q: "Se eu eliminar minha conta, perco os HDRs?", a: "Não. A auto-eliminação (LGPD Art. 18 VI) anonimiza seus dados pessoais e revoga as chaves de API, mas preserva os HDRs já emitidos — pela integridade da cadeia e pelo valor probatório." },
       ],
     },
   ];
@@ -1001,7 +1177,13 @@ export function BodyFAQ() {
 
 export function BodyChangelog() {
   const phases = [
-    { phase: "Fase 20", date: "Mai 2026", badge: "gold" as const, items: ["ISO 42001:2023 AIMS completo", "FRIA (EU AI Act Art. 27)", "Legal Evidence FRE 707 + citações + alucinações", "APAC: UK GDPR + Singapore PDPA + Australia Privacy + Canada C-27", "Malpractice Insurance Score + Colorado SB 26-189", "Heillon Global Compliance Score (17 componentes, tiers bronze→platinum)", "65 novos testes (total: 272)"] },
+    { phase: "Beta Privado (F30)", date: "Mai 2026", badge: "gold" as const, items: ["Production-Ready Sprint para beta privado de advogados", "Deploy: Docker Compose + Caddy (TLS automático) + backup PostgreSQL + bootstrap", "Compliance LGPD: Centro de Privacidade, Termos, banner de cookies, auto-eliminação de conta (preserva HDRs)", "Observabilidade: Sentry (PII off), e-mail Postmark, painel admin /admin (métricas sem PII)", "Console: card de quota no dashboard, nudge de onboarding, banner conta_eliminada no login", "Hardening de estados de UX (loading/erro/vazio)", "Copy: RFC 3161 como selo ativo; ICP-Brasil qualificado posicionado como roadmap"] },
+    { phase: "Coletor #2 — Gateway (F31)", date: "Mai 2026", badge: "green" as const, items: ["Gateway MCP/API: proxy drop-in compatível com OpenAI Chat Completions", "Auditoria HDR por chamada + headers de quota (hdr_id, quota usada/limite/tier)", "Streaming SSE", "Compatibilidade com Anthropic Messages (/gateway/anthropic/v1/messages)"] },
+    { phase: "Coletor #1 — Extensão (F28)", date: "Mai 2026", badge: "green" as const, items: ["Extensão do Browser (Chrome MV3, PoC) para ChatGPT/Claude/Gemini", "Captura passiva pergunta→resposta → HDR em background", "Endpoints /extension/health (valida chave+quota) e /extension/capture", "Chave de API em chrome.storage.local (nunca sincronizada)"] },
+    { phase: "Conta & Quota (F26–F27)", date: "Abr 2026", badge: "green" as const, items: ["Tier & Quota Foundation: planos Free/Pro/Team/Enterprise", "Limite mensal de HDRs, retenção por tier, HTTP 402 ao exceder", "Webhook de billing assinado (HMAC) — precificação no site institucional", "Console: quota visível + onboarding em 3 passos (boas-vindas → chave → coletor)", "Chaves de API heillon_live_… (criação, listagem, revogação)"] },
+    { phase: "Hardening & UX (F22–F24)", date: "Mar 2026", badge: "blue" as const, items: ["Auditorias de UX, segurança, backend e frontend (personas + probes)", "Backend/Frontend hardening + gates de CI (a11y/SEO)", "UX Renaming: vernáculo jurídico BR (Casos, Normas, Modelos de IA, Conta)", "Migração python-jose → PyJWT", "Multi-key Fernet com rotação", "Corpus normativo BR expandido"] },
+    { phase: "Corpus & CI/CD (F21)", date: "Fev 2026", badge: "blue" as const, items: ["Corpus normativo real: 9 jurisdições, 50+ regras (corpus_seed.py)", "CI/CD: ruff, mypy, testes PostgreSQL, security scan, corpus verify", "deploy.yml — Vercel (frontend) + Docker (backend)"] },
+    { phase: "Fase 20", date: "Mai 2026", badge: "gray" as const, items: ["ISO 42001:2023 AIMS completo", "FRIA (EU AI Act Art. 27)", "Legal Evidence FRE 707 + citações + alucinações", "APAC: UK GDPR + Singapore PDPA + Australia Privacy + Canada C-27", "Malpractice Insurance Score + Colorado SB 26-189", "Heillon Global Compliance Score (17 componentes, tiers bronze→platinum)", "65 novos testes (total: 272)"] },
     { phase: "Fase 19", date: "Abr 2026", badge: "green" as const, items: ["UAE PDPL Decreto-Lei 45/2021", "DIFC Data Protection Law + ADGM", "UAE AI Ethics 7 princípios", "UAE AI Seal + Dubai contratos governamentais", "UAE PASS (QES/AES)", "18 testes"] },
     { phase: "Fase 18", date: "Mar 2026", badge: "green" as const, items: ["Colorado AI Act SB 205 (vigente jun/2026)", "CCPA/CPRA + California SB 53", "ABA Formal Opinion 512 (Rules 1.1/1.6/5.3)", "NIST AI RMF 1.0 (GOVERN/MAP/MEASURE/MANAGE)", "ESIGN audit trail", "18 testes"] },
     { phase: "Fase Sig", date: "Fev 2026", badge: "green" as const, items: ["Assinaturas digitais universais", "ICP-Brasil CAdES-BES / eIDAS QES / PAdES-LTA / CAdES-LTA", "ESIGN + UAE-PASS", "Lifecycle: envio→entrega→recebimento→assinatura", "Acks com hash de integridade, revogação admin"] },
@@ -1014,12 +1196,12 @@ export function BodyChangelog() {
 
   return (
     <>
-      <h2 id="cl-resumo">Estado atual: Fase 20 — Sistema Definitivo Global</h2>
+      <h2 id="cl-resumo">Estado atual: Beta Privado — Substrato de coletores</h2>
       <StatGrid>
-        <StatCard value="272" label="Testes automatizados" icon="✅" />
-        <StatCard value="32" label="Rotas de frontend" icon="🗺" />
-        <StatCard value="18" label="Domínios DDD" icon="🏛" />
-        <StatCard value="7+" label="Jurisdições regulatórias" icon="🌍" />
+        <StatCard value="2" label="Coletores (Extensão + Gateway)" icon="🛰" />
+        <StatCard value="4" label="Planos (Free→Enterprise)" icon="🎟" />
+        <StatCard value="20+" label="Domínios DDD" icon="🏛" />
+        <StatCard value="9" label="Jurisdições no corpus" icon="🌍" />
       </StatGrid>
 
       <div className="mt-6 space-y-5">
@@ -1041,10 +1223,10 @@ export function BodyChangelog() {
         ))}
       </div>
 
-      <Callout variant="info" title="Próximo: Fase 21">
-        ISO 27001 completo + ISO 27701 (PIMS) + SOC 2 Type II +
-        Relatório forense PDF/A-3 ICP-Brasil completamente assinado +
-        Onboarding automatizado de executores LLM por tenant.
+      <Callout variant="info" title="Próximo">
+        Beta privado com advogados convidados → lançamento público na Chrome Web Store.
+        Na sequência (pós-CNPJ): selo ICP-Brasil qualificado (Serpro/Certisign, certificado A1),
+        precificação e certificações (ISO 27001, SOC 2 Type II).
       </Callout>
     </>
   );
@@ -1093,10 +1275,16 @@ export function BodyPrivacy() {
       <h2 id="categorias">Dados tratados</h2>
       <ul>
         <li>Credenciais: email (bcrypt), role, organization_id</li>
-        <li>Metadados de missões, HDR payloads, logs de execução</li>
+        <li>Metadados de casos, HDR payloads, logs de execução e de captura dos coletores</li>
         <li>Chaves de agentes encriptadas com Fernet (nunca em plaintext)</li>
-        <li>Logs de infraestrutura retidos conforme política de hosting</li>
+        <li>Chaves de API dos coletores: apenas hash e prefixo (o texto puro é exibido uma única vez)</li>
+        <li>Logs de infraestrutura retidos conforme política de hosting e tier da organização</li>
       </ul>
+      <Callout variant="info">
+        A <strong>auto-eliminação de conta</strong> (<code>/privacy</code>) anonimiza os dados
+        pessoais e revoga as chaves, mas preserva os HDRs já emitidos — pela integridade da
+        cadeia e pelo valor probatório.
+      </Callout>
       <h2 id="bases">Bases legais de tratamento</h2>
       <p>
         Execução de contrato, obrigações legais (LGPD Art. 7º) e legítimo interesse documentado.
@@ -1129,7 +1317,7 @@ export function BodyComplianceGuide() {
 
       <h2 id="comp-visao">Visão geral de conformidade</h2>
       <p>
-        O Heillon Legal v20 cobre 7 jurisdições regulatórias + ISO 42001:2023 AIMS.
+        O Heillon Legal cobre 7 jurisdições regulatórias + ISO 42001:2023 AIMS.
         O <strong>Heillon Global Compliance Score</strong> agrega automaticamente
         a conformidade em 17 dimensões e produz um tier: Bronze / Prata / Ouro / Platina.
       </p>
@@ -1168,8 +1356,8 @@ export function BodyComplianceGuide() {
 
       <h2 id="comp-gerar">Gerar relatório de conformidade</h2>
       <Steps>
-        <Step n={1} title="Aceder a /normative">Navegar para a aba Normativo.</Step>
-        <Step n={2} title="Inserir mission_id">Cole o ID da missão a auditar.</Step>
+        <Step n={1} title="Aceder a /normative">Navegar para a aba Normas.</Step>
+        <Step n={2} title="Inserir mission_id">Cole o ID do caso a auditar.</Step>
         <Step n={3} title="Escolher framework">Selecione LGPD-BR, EU AI Act, ISO 42001, etc.</Step>
         <Step n={4} title="Exportar PDF">O relatório inclui ancoragem constitucional e download PDF.</Step>
       </Steps>

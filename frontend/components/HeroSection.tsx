@@ -74,7 +74,7 @@ export function HeroSection() {
           className="mt-10 flex flex-col gap-4 sm:flex-row"
         >
           <a href="/ingestion" data-cursor-hover className="btn-gold text-center">
-            Começar missão
+            Iniciar análise
           </a>
           <a href="/verification" data-cursor-hover className="btn-glass text-center">
             Verificar prova

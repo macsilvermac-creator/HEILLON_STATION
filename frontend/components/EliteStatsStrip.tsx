@@ -11,7 +11,7 @@ const metrics = [
 
 export function EliteStatsStrip() {
   return (
-    <section className="relative z-10 mx-auto -mt-8 max-w-6xl px-5">
+    <section className="relative z-10 mx-auto max-w-6xl px-5">
       <div className="grid gap-4 md:grid-cols-3">
         {metrics.map((item, index) => (
           <motion.div

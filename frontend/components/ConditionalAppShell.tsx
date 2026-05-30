@@ -5,6 +5,7 @@
  *
  * Desktop + Mobile → FolderTopbar (filing-drawer gold tabs, fixed top)
  * PWA /m/*        → bare shell (no chrome)
+ * Landing /beta   → bare shell (public marketing page, sem chrome do console)
  *
  * FolderSidebar is preserved but not active (can be re-enabled if needed).
  */
@@ -19,9 +20,11 @@ import { SiteFooter } from "@/components/SiteFooter";
 export function ConditionalAppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMobilePwaShell = pathname === "/m" || pathname.startsWith("/m/");
+  const isLanding = pathname === "/beta";
 
-  if (isMobilePwaShell) {
-    // Mobile PWA: bare shell with single <main> landmark (a11y)
+  if (isMobilePwaShell || isLanding) {
+    // Bare shell with single <main> landmark (a11y): mobile PWA + landing pública.
+    // A landing traz seu próprio header/footer e não deve herdar o chrome do console.
     return <main className="relative">{children}</main>;
   }
 

@@ -1,6 +1,6 @@
 /**
- * Índice da Central de Documentação — Heillon Legal v20 (Fase 20).
- * Atualizado: 25 de maio de 2026.
+ * Índice da Central de Documentação — Heillon Legal (Beta Privado).
+ * Atualizado: 30 de maio de 2026 — coletores, quota e conta.
  */
 
 export type DocsCategoryKey = "start" | "manuals" | "legal" | "guides" | "faq" | "changelog";
@@ -14,7 +14,7 @@ export type DocEntryMeta = {
   description: string;
 };
 
-export const DOCS_UPDATED_FALLBACK = "25 de maio de 2026";
+export const DOCS_UPDATED_FALLBACK = "30 de maio de 2026";
 
 export const DOCS_CATEGORY_LABELS: Record<DocsCategoryKey, { label: string; icon: string }> = {
   start:     { label: "Início rápido",  icon: "🚀" },
@@ -31,17 +31,17 @@ export const DOC_ENTRIES: DocEntryMeta[] = [
     href: "/docs/quickstart",
     title: "Início rápido — 5 minutos",
     category: "start",
-    description: "Do zero ao primeiro HDR verificável em 5 passos.",
+    description: "Do zero ao primeiro HDR verificável: conta, chave de API e coletor.",
     searchBlob:
-      "quickstart início rápido primeiro hdr conta registo ingestão missão verificar verificação 5 minutos onboarding",
+      "quickstart início rápido primeiro hdr conta registo chave api coletor extensão gateway captura passiva ingestão caso verificar verificação 5 minutos onboarding",
   },
   {
     href: "/docs/architecture",
     title: "Arquitetura do sistema",
     category: "start",
-    description: "Stack tecnológico, 18 domínios DDD, segurança em camadas.",
+    description: "Stack tecnológico, 20+ domínios DDD, coletores, segurança em camadas.",
     searchBlob:
-      "arquitetura sistema stack fastapi next.js postgresql redis ddd dominios segurança jwt fernet csp hsts tls",
+      "arquitetura sistema stack fastapi next.js postgresql redis ddd dominios coletores extensão gateway tier quota caddy sentry postmark segurança jwt fernet csp hsts tls",
   },
   {
     href: "/docs/regulations",
@@ -65,9 +65,9 @@ export const DOC_ENTRIES: DocEntryMeta[] = [
     href: "/docs/usage",
     title: "Manual de uso geral",
     category: "manuals",
-    description: "Autenticação, painel, evidências, missões EASY, verificação, agentes.",
+    description: "Coletores, conta e quota, chaves de API, casos, verificação e modelos de IA.",
     searchBlob:
-      "manual uso plataforma autenticação cookie httponly missão easy planear executar aprovar diário ingestão evidências verificar hdr agent-config normativo soberania modelos ollama openai anthropic",
+      "manual uso plataforma autenticação cookie httponly coletores extensão browser gateway mcp api captura passiva chave api heillon_live quota planos free pro team enterprise conta eliminação caso missão easy planear executar aprovar diário ingestão evidências verificar hdr agent-config normas modelos de ia soberania ollama openai anthropic",
   },
   {
     href: "/docs/chain-of-custody",
@@ -124,9 +124,9 @@ export const DOC_ENTRIES: DocEntryMeta[] = [
     href: "/docs/admin",
     title: "Guia do administrador",
     category: "guides",
-    description: "Deploy, variáveis de produção, multi-tenant, agentes, corpus normativo.",
+    description: "Deploy, variáveis de produção, coletores, quota, billing, admin e observabilidade.",
     searchBlob:
-      "admin gestão organização multi-tenant agent-config modelos docker compose postgresql redis health fernet auth secret key verification public base corpus normativo rbac",
+      "admin gestão organização multi-tenant agent-config modelos docker compose caddy postgresql redis health fernet auth secret key verification public base corpus normativo rbac coletores quota tier billing webhook hmac heillon_admin_token sentry postmark observabilidade",
   },
 
   // ── FAQ ────────────────────────────────────────────────────────────────────
@@ -136,17 +136,17 @@ export const DOC_ENTRIES: DocEntryMeta[] = [
     category: "faq",
     description: "Respostas por perfil: perito, advogado, magistrado e administrador.",
     searchBlob:
-      "faq perguntas dúvidas perito advogado juiz magistrado tribunal admin login mobile pwa jwt cadeia prova icp-brasil anos depois verificar sem conta",
+      "faq perguntas dúvidas perito advogado juiz magistrado tribunal admin login mobile pwa jwt cadeia prova icp-brasil anos depois verificar sem conta coletores extensão gateway chave api quota plano free eliminar conta hdr",
   },
 
   // ── Changelog ──────────────────────────────────────────────────────────────
   {
     href: "/docs/changelog",
-    title: "Changelog · Fase 1–20",
+    title: "Changelog · até o Beta Privado",
     category: "changelog",
-    description: "Histórico completo de releases — Fase 20: Sistema Definitivo Global.",
+    description: "Histórico de releases — substrato de coletores, quota e conta para o beta.",
     searchBlob:
-      "changelog releases versão fase roadmap história actualização segurança pwa corpus normativo iso42001 eu ai act uae apac malpractice score",
+      "changelog releases versão fase roadmap história actualização beta coletores extensão gateway tier quota conta onboarding caddy sentry segurança pwa corpus normativo iso42001 eu ai act uae apac malpractice score",
   },
 ];
 

@@ -76,6 +76,42 @@ class AdminMetricsRepository:
         value = _val(row, "created_at")
         return str(value) if value is not None else None
 
+    def hdrs_daily_since(self, conn: Any, since_iso: str) -> list[dict[str, Any]]:
+        """HDR counts grouped by UTC day. ``substr(created_at,1,10)`` yields
+        YYYY-MM-DD on both SQLite and Postgres (ISO-8601 created_at)."""
+        rows = conn.execute(
+            """SELECT substr(created_at, 1, 10) AS day, COUNT(*) AS cnt
+                 FROM hdrs
+                WHERE created_at >= ?
+                GROUP BY substr(created_at, 1, 10)
+                ORDER BY day""",
+            (since_iso,),
+        ).fetchall()
+        return [
+            {"date": str(_val(r, "day")), "count": int(_val(r, "cnt") or 0)}
+            for r in rows
+        ]
+
+    def organizations_with_api_key(self, conn: Any) -> int:
+        return self._scalar(
+            conn,
+            "SELECT COUNT(DISTINCT organization_id) AS cnt FROM api_keys",
+        )
+
+    def organizations_with_hdr(self, conn: Any) -> int:
+        return self._scalar(
+            conn,
+            "SELECT COUNT(DISTINCT organization_id) AS cnt FROM hdrs",
+        )
+
+    def active_orgs_since(self, conn: Any, since_iso: str) -> int:
+        return self._scalar(
+            conn,
+            "SELECT COUNT(DISTINCT organization_id) AS cnt FROM hdrs "
+            "WHERE created_at >= ?",
+            (since_iso,),
+        )
+
     def recent_hdrs(self, conn: Any, *, limit: int) -> list[dict[str, str]]:
         rows = conn.execute(
             """SELECT hdr_id, created_at, mission_id, hdr_type, organization_id

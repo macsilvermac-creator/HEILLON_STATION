@@ -1868,3 +1868,24 @@ CREATE TABLE IF NOT EXISTS api_keys (
 CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
 CREATE INDEX IF NOT EXISTS idx_api_keys_org ON api_keys(organization_id);
 CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
+
+-- ===== 023_beta_feedback.sql =====
+CREATE TABLE IF NOT EXISTS beta_feedback (
+    id                   TEXT PRIMARY KEY,
+    organization_id      TEXT NOT NULL DEFAULT 'org_default',
+    user_id              TEXT,
+    role                 TEXT,
+    usability_score      INTEGER,
+    experience_score     INTEGER,
+    functionality_score  INTEGER,
+    delivers_score       INTEGER,
+    nps                  INTEGER,
+    adopt                TEXT,
+    most_valuable        TEXT,
+    frictions            TEXT,
+    improvements         TEXT,
+    contact_ok           INTEGER NOT NULL DEFAULT 0,
+    created_at           TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_org ON beta_feedback(organization_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON beta_feedback(created_at);

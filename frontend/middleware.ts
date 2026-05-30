@@ -17,6 +17,7 @@ import type { NextRequest } from "next/server";
 const AUTH_COOKIE = "heillon_auth_token";
 
 const PUBLIC_PATH_PREFIXES = [
+  "/beta", // Landing pública de convite ao beta freemium (sem auth)
   "/login",
   "/register",
   "/docs",

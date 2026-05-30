@@ -698,6 +698,13 @@ export interface BetaMetrics {
     by_type: Record<string, number>;
     latest_at: string | null;
   };
+  daily_hdrs: Array<{ date: string; count: number }>;
+  funnel: {
+    organizations: number;
+    with_api_key: number;
+    with_hdr: number;
+    active_7d: number;
+  };
 }
 
 export interface BetaFeedEvent {
@@ -729,4 +736,82 @@ export async function fetchBetaFeed(
   const payload = await parseJsonResponse(response);
   if (!response.ok) throw new Error(formatProblemDetail(payload));
   return payload as unknown as { events: BetaFeedEvent[]; count: number };
+}
+
+/* ─── Beta feedback survey (Fase 32) ─────────────────────────────────────
+ * POST /feedback é autenticado pelo cookie de sessão do usuário (mesma
+ * defesa do resto do console). GET /feedback/summary é agregado e
+ * de-identificado, protegido pelo X-Heillon-Admin-Token (igual ao /admin).
+ */
+
+export interface FeedbackSubmission {
+  usability?: number | null;
+  experience?: number | null;
+  functionality?: number | null;
+  delivers?: number | null;
+  nps?: number | null;
+  adopt?: string | null;
+  role?: string | null;
+  most_valuable?: string | null;
+  frictions?: string | null;
+  improvements?: string | null;
+  contact_ok?: boolean;
+}
+
+export interface FeedbackAck {
+  id: string;
+  created_at: string;
+  message: string;
+}
+
+export interface FeedbackSummary {
+  snapshot_at: string;
+  response_count: number;
+  averages: {
+    usability: number | null;
+    experience: number | null;
+    functionality: number | null;
+    delivers: number | null;
+  };
+  nps: {
+    responses: number;
+    promoters: number;
+    passives: number;
+    detractors: number;
+    score: number | null;
+  };
+  adopt_breakdown: Record<string, number>;
+  contact_optins: number;
+  recent_comments: Array<{
+    created_at: string;
+    most_valuable: string | null;
+    frictions: string | null;
+    improvements: string | null;
+  }>;
+}
+
+/** POST /feedback — submete a pesquisa de opinião do beta. */
+export async function submitBetaFeedback(
+  body: FeedbackSubmission,
+): Promise<FeedbackAck> {
+  const response = await apiFetch(`${PREFIX}/feedback`, {
+    method: "POST",
+    headers: authorizedHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(body),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload as unknown as FeedbackAck;
+}
+
+/** GET /feedback/summary — agregado de-identificado (admin-token). */
+export async function fetchFeedbackSummary(
+  adminToken: string,
+): Promise<FeedbackSummary> {
+  const response = await apiFetch(`${PREFIX}/feedback/summary`, {
+    headers: authorizedHeaders({ "X-Heillon-Admin-Token": adminToken }),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) throw new Error(formatProblemDetail(payload));
+  return payload as unknown as FeedbackSummary;
 }

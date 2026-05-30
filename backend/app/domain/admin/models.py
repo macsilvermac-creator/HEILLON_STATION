@@ -41,6 +41,26 @@ class HdrMetrics(BaseModel):
     latest_at: str | None = None
 
 
+class DailyCount(BaseModel):
+    """HDRs created on a given UTC day (YYYY-MM-DD)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    date: str
+    count: int = 0
+
+
+class ActivationFunnel(BaseModel):
+    """Org-level activation funnel: created → has key → has HDR → active (7d)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    organizations: int = 0
+    with_api_key: int = 0
+    with_hdr: int = 0
+    active_7d: int = 0
+
+
 class BetaMetrics(BaseModel):
     """Aggregate snapshot of beta adoption."""
 
@@ -51,6 +71,8 @@ class BetaMetrics(BaseModel):
     users: UserMetrics
     api_keys: ApiKeyMetrics
     hdrs: HdrMetrics
+    daily_hdrs: list[DailyCount] = Field(default_factory=list)
+    funnel: ActivationFunnel = Field(default_factory=ActivationFunnel)
 
 
 class FeedEvent(BaseModel):
