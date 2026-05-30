@@ -29,6 +29,7 @@ from app.domain.gateway.services import (
     DEFAULT_ANTHROPIC_VERSION,
     StreamAccumulator,
     UpstreamError,
+    clamp_max_tokens,
     extract_anthropic_prompt_text,
     extract_anthropic_response_text,
     extract_prompt_text,
@@ -138,8 +139,6 @@ async def _handle_streaming(
     accumulator = StreamAccumulator()
     provider_enum = _provider_for(upstream.upstream_provider)
     prompt_text = extract_prompt_text(body)
-    request_body = body.model_dump(exclude_none=True, mode="json")
-    organization_id = user.organization_id
 
     # Capture immutable settings + user data BEFORE the generator (dependencies
     # may be released before the generator's first call to `conn`).
@@ -147,6 +146,11 @@ async def _handle_streaming(
     from app.db.compat import open_connection
 
     settings_snapshot = runtime_config.get_settings()
+    request_body = clamp_max_tokens(
+        body.model_dump(exclude_none=True, mode="json"),
+        ceiling=settings_snapshot.GATEWAY_MAX_COMPLETION_TOKENS,
+    )
+    organization_id = user.organization_id
 
     async def event_generator():
         # Phase 1: stream upstream chunks verbatim while accumulating
@@ -277,10 +281,13 @@ async def openai_chat_completions(
         )
 
     # 3) Forward to upstream
+    from app.core import config as runtime_config
+
     try:
         upstream_response = await forward_chat_completion(
             request=body,
             upstream=upstream,
+            max_tokens_ceiling=runtime_config.get_settings().GATEWAY_MAX_COMPLETION_TOKENS,
         )
     except UpstreamError as exc:
         # Proxy upstream errors verbatim (preserves provider's error format)
@@ -531,6 +538,15 @@ async def anthropic_messages(
                 "period_end": snap.period_end.isoformat(),
             },
         ) from exc
+
+    # Cost-control: bound max_tokens before forwarding (Anthropic requires the
+    # field, so it is virtually always present; we clamp values above the
+    # ceiling). Applied once so both streaming and sync paths inherit it.
+    from app.core import config as runtime_config
+
+    body = clamp_max_tokens(
+        body, ceiling=runtime_config.get_settings().GATEWAY_MAX_COMPLETION_TOKENS
+    )
 
     if body.get("stream"):
         return await _handle_anthropic_streaming(

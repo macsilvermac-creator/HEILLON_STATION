@@ -34,6 +34,35 @@ UPSTREAM_TIMEOUT = httpx.Timeout(
 )
 
 
+def clamp_max_tokens(body: dict[str, Any], *, ceiling: int) -> dict[str, Any]:
+    """Bound ``max_tokens`` in a forwarded request body to ``ceiling``.
+
+    Cost-control guard for the proxy. Returns a NEW dict (never mutates the
+    caller's body):
+
+    - ``ceiling <= 0`` → disabled; body returned unchanged (verbatim passthrough).
+    - client sent ``max_tokens`` above the ceiling → clamped down to ceiling.
+    - client omitted ``max_tokens`` → ceiling injected as a default so the
+      upstream cannot run an unbounded completion (OpenAI defaults to the
+      model maximum when the field is absent). Anthropic requires the field,
+      so it is virtually always present there; the clamp still applies.
+    - client sent a value at/below the ceiling → kept as-is.
+    """
+    if ceiling <= 0:
+        return body
+    current = body.get("max_tokens")
+    if isinstance(current, bool) or not isinstance(current, int):
+        # Missing / non-int (incl. None) → inject the ceiling as a safe default.
+        clamped = ceiling
+    elif current > ceiling:
+        clamped = ceiling
+    else:
+        return body
+    new_body = dict(body)
+    new_body["max_tokens"] = clamped
+    return new_body
+
+
 class UpstreamError(RuntimeError):
     """Raised when upstream returns non-2xx; carries status + body for proxying."""
 
@@ -47,10 +76,12 @@ async def forward_chat_completion(
     *,
     request: ChatCompletionRequest,
     upstream: GatewayUpstreamConfig,
+    max_tokens_ceiling: int = 0,
 ) -> ChatCompletionResponse:
     """Forward a chat completion to the configured upstream and return its response.
 
     Raises UpstreamError on non-2xx (preserves status + body for verbatim proxying).
+    ``max_tokens_ceiling`` (0 = disabled) bounds the forwarded completion size.
     """
     url = f"{upstream.upstream_base_url}/v1/chat/completions"
     headers = {
@@ -61,6 +92,7 @@ async def forward_chat_completion(
     }
     # Pass through every field the client sent (including future OpenAI additions)
     body = request.model_dump(exclude_none=True, mode="json")
+    body = clamp_max_tokens(body, ceiling=max_tokens_ceiling)
 
     async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT) as client:
         try:

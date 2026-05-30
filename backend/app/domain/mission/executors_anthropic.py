@@ -8,8 +8,15 @@ from typing import Any
 
 import httpx
 
+from app.core import config as runtime_config
 from app.core.security import generate_hash
+from app.domain.mission import executor_cache
 from app.domain.mission.agent_execution import MissionAgentExecutionOutcome
+from app.domain.mission.executor_limits import (
+    MISSION_MAX_COMPLETION_TOKENS,
+    MISSION_PROMPT_MAX_CHARS,
+    MISSION_RESULT_MAX_CHARS,
+)
 from app.domain.mission.models import DAGNode
 
 ANTHROPIC_VERSION_HEADER = "2023-06-01"
@@ -60,38 +67,54 @@ class AnthropicMessagesMissionExecutor:
         )
         duration_ms = 0
 
-        user_message = prompt_payload[:120000]
+        user_message = prompt_payload[:MISSION_PROMPT_MAX_CHARS]
+        input_hash = generate_hash(prompt_payload.encode("utf-8"))
+
+        cache_ttl = runtime_config.get_settings().MISSION_EXECUTOR_CACHE_TTL_SECONDS
+        cache_key = executor_cache.make_key(
+            provider="anthropic", model=self._model, input_hash=input_hash
+        )
 
         try:
-            async with httpx.AsyncClient(timeout=self._timeout) as client:
-                t0 = time.perf_counter()
-                response = await client.post(
-                    f"{self._base_url}/v1/messages",
-                    headers={
-                        "x-api-key": self._api_key,
-                        "anthropic-version": ANTHROPIC_VERSION_HEADER,
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "model": self._model,
-                        "max_tokens": 1024,
-                        "temperature": 0.2,
-                        "system": system_block,
-                        "messages": [{"role": "user", "content": user_message}],
-                    },
-                )
-                duration_ms = max(int((time.perf_counter() - t0) * 1000.0), 1)
+            # Opt-in dedup: reuse an identical prompt's prior result (TTL-bounded)
+            # to avoid re-billing the same completion. Disabled when TTL == 0.
+            bundled = executor_cache.get(cache_key) if cache_ttl > 0 else None
 
-            response.raise_for_status()
-            envelope = response.json()
+            if bundled is None:
+                async with httpx.AsyncClient(timeout=self._timeout) as client:
+                    t0 = time.perf_counter()
+                    response = await client.post(
+                        f"{self._base_url}/v1/messages",
+                        headers={
+                            "x-api-key": self._api_key,
+                            "anthropic-version": ANTHROPIC_VERSION_HEADER,
+                            "Content-Type": "application/json",
+                        },
+                        json={
+                            "model": self._model,
+                            "max_tokens": MISSION_MAX_COMPLETION_TOKENS,
+                            "temperature": 0.2,
+                            "system": system_block,
+                            "messages": [{"role": "user", "content": user_message}],
+                        },
+                    )
+                    duration_ms = max(int((time.perf_counter() - t0) * 1000.0), 1)
 
-            bundled_parts: list[str] = []
-            for block in envelope.get("content") or []:
-                if isinstance(block, dict) and block.get("type") == "text":
-                    text_fragment = block.get("text") or ""
-                    if isinstance(text_fragment, str):
-                        bundled_parts.append(text_fragment)
-            bundled = "\n".join(part for part in bundled_parts if part.strip()).strip()
+                response.raise_for_status()
+                envelope = response.json()
+
+                bundled_parts: list[str] = []
+                for block in envelope.get("content") or []:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        text_fragment = block.get("text") or ""
+                        if isinstance(text_fragment, str):
+                            bundled_parts.append(text_fragment)
+                bundled = "\n".join(
+                    part for part in bundled_parts if part.strip()
+                ).strip()
+
+                if cache_ttl > 0:
+                    executor_cache.put(cache_key, bundled, ttl_seconds=cache_ttl)
 
             hypothesis = ""
             summary = ""
@@ -101,7 +124,7 @@ class AnthropicMessagesMissionExecutor:
                 summary = str(payload.get("summary") or "").strip()
             except json.JSONDecodeError:
                 hypothesis = "Anthropic emitted non-JSON prose."
-                summary = bundled[:12000]
+                summary = bundled[:MISSION_RESULT_MAX_CHARS]
 
             body_for_hash = hypothesis + "\n" + summary + "\n" + bundled
             out_hash = generate_hash(body_for_hash.encode("utf-8"))
@@ -110,9 +133,9 @@ class AnthropicMessagesMissionExecutor:
                 cognitive_hypothesis=hypothesis
                 or "Anthropic returned empty hypothesis.",
                 cognitive_action=f"Anthropic cognition for `{node.agent_id}:{node.action}`.",
-                cognitive_result=(summary or bundled)[:12000],
+                cognitive_result=(summary or bundled)[:MISSION_RESULT_MAX_CHARS],
                 execution_status="completed",
-                input_hash_hex=generate_hash(prompt_payload.encode("utf-8")),
+                input_hash_hex=input_hash,
                 output_hash_hex=out_hash,
                 duration_ms=duration_ms,
             )
@@ -123,7 +146,7 @@ class AnthropicMessagesMissionExecutor:
                 cognitive_action=f"node `{node.node_id}` `{node.agent_id}:{node.action}`",
                 cognitive_result=str(exc)[:4096],
                 execution_status="failed",
-                input_hash_hex=generate_hash(prompt_payload.encode("utf-8")),
+                input_hash_hex=input_hash,
                 output_hash_hex=None,
                 duration_ms=max(duration_ms, 0),
             )

@@ -162,6 +162,30 @@ class Settings(BaseSettings):
         default="nao-responda@heillon.local",
         description="Remetente padrão dos e-mails transacionais.",
     )
+    # Mission executors — cache opt-in de cognição EASY (dedup por hash de input)
+    MISSION_EXECUTOR_CACHE_TTL_SECONDS: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "TTL (segundos) do cache em processo das cognições EASY, com chave "
+            "pelo hash determinístico do prompt (provider:model:input_hash). "
+            "Prompts idênticos dentro do TTL reutilizam a resposta do upstream, "
+            "reduzindo tokens em re-execuções. 0 = DESATIVADO (padrão), de modo "
+            "que cada HDR reflete uma chamada real ao upstream — preservando a "
+            "fidelidade forense. Ative apenas conscientemente."
+        ),
+    )
+    # Gateway Fase 31 — teto de tokens de completude (controle de custo)
+    GATEWAY_MAX_COMPLETION_TOKENS: int = Field(
+        default=4096,
+        ge=0,
+        description=(
+            "Teto de max_tokens repassado ao upstream pelo gateway proxy. "
+            "Requisições acima são limitadas a este valor; quando o cliente "
+            "omite max_tokens (caminho OpenAI), este teto é injetado para "
+            "evitar completudes ilimitadas. 0 = sem teto (repasse verbatim)."
+        ),
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
