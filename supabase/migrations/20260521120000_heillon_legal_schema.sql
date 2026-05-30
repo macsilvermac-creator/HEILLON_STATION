@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS migration_history (
     executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 001 — HDR ledger
+-- 001 — HDR ledger (+ 021: created_at server-side para quota/retention)
 CREATE TABLE IF NOT EXISTS hdrs (
     hdr_id TEXT PRIMARY KEY,
     mission_id TEXT NOT NULL,
@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS hdrs (
     timestamp_iso TIMESTAMPTZ NOT NULL,
     canonical_hash TEXT NOT NULL,
     payload JSONB NOT NULL,
-    organization_id TEXT NOT NULL DEFAULT 'org_default'
+    organization_id TEXT NOT NULL DEFAULT 'org_default',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_hdr_mission ON hdrs (mission_id);
@@ -25,6 +26,8 @@ CREATE INDEX IF NOT EXISTS idx_hdr_previous ON hdrs (previous_hdr);
 CREATE INDEX IF NOT EXISTS idx_hdr_type ON hdrs (hdr_type);
 CREATE INDEX IF NOT EXISTS idx_hdr_ts ON hdrs (timestamp_iso);
 CREATE INDEX IF NOT EXISTS idx_hdr_organization ON hdrs (organization_id);
+CREATE INDEX IF NOT EXISTS idx_hdr_created_at ON hdrs (created_at);
+CREATE INDEX IF NOT EXISTS idx_hdr_org_created ON hdrs (organization_id, created_at);
 
 -- 002 — Missões EASY
 CREATE TABLE IF NOT EXISTS missions (

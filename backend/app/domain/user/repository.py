@@ -42,7 +42,7 @@ class UserRepository:
                 role.value,
                 organization_id,
                 hashed_password,
-                int(is_active),
+                bool(is_active),
                 created_iso,
             ),
         )
