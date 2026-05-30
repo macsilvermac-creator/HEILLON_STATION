@@ -37,7 +37,6 @@ from app.dependencies import (
 from app.core.config import Settings
 from app.db.compat import CompatConnection
 from app.domain.privacy.models import (
-    AccessLogCreate,
     ConsentBundle,
     ConsentRecord,
     ConsentUpdate,
@@ -57,6 +56,7 @@ from app.domain.privacy.services import (
     AccessLogService,
     ConsentService,
     DPOService,
+    ErasureService,
     IncidentService,
     RIPDService,
 )
@@ -70,6 +70,9 @@ _ripd_svc = RIPDService()
 _incident_svc = IncidentService()
 _consent_svc = ConsentService()
 _access_log_svc = AccessLogService()
+_erasure_svc = ErasureService(
+    consent_service=_consent_svc, access_log_service=_access_log_svc
+)
 
 
 def _get_dpo_service(settings: Settings) -> DPOService:
@@ -544,60 +547,13 @@ def delete_account(
     """
     from datetime import datetime, timezone
 
-    now_iso = datetime.now(timezone.utc).isoformat()
-    user_id = user.user_id
-    org_id = user.organization_id
-
-    try:
-        # 1) Revoga consentimentos
-        _consent_svc.revoke_all(conn, user_id=user_id, organization_id=org_id)
-    except Exception:  # noqa: BLE001 — não deve bloquear demais passos
-        pass
-
-    # 2) Anonimiza linha do users (preserva PK + FKs históricas)
-    anonymized_email = f"deleted+{user_id[:16]}@heillon.local"
-    anonymized_name = "[Conta eliminada]"
-    # is_active passed as a Python bool (not literal 0) so it adapts to both
-    # sqlite3 (-> 0/1) and psycopg2 (-> boolean); literal 0 breaks on Postgres.
-    conn.execute(
-        """UPDATE users
-           SET email = ?,
-               name = ?,
-               hashed_password = ?,
-               is_active = ?
-           WHERE user_id = ?""",
-        (anonymized_email, anonymized_name, "deleted", False, user_id),
-    )
-
-    # 3) Revoga todas as API keys ativas
-    conn.execute(
-        """UPDATE api_keys
-           SET revoked_at = ?
-           WHERE user_id = ? AND revoked_at IS NULL""",
-        (now_iso, user_id),
-    )
-
-    # 4) Apaga DPO requests pendentes do próprio usuário (resolvidos ficam para audit)
-    try:
-        conn.execute(
-            """DELETE FROM dpo_requests
-               WHERE requester_email = ?
-                 AND status NOT IN ('resolved', 'rejected')""",
-            (user.email,),
-        )
-    except Exception:  # noqa: BLE001 — tabela pode não existir em todos os schemas
-        pass
-
-    # 5) Registra evento de eliminação para auditoria (Marco Civil / LGPD art. 18, VI).
-    #    AccessLogService.log() já trata suas próprias exceções (best-effort interno).
-    _access_log_svc.log(
+    # Toda a cascata de eliminação vive no domínio (ErasureService): a camada de
+    # apresentação só traduz o usuário autenticado em parâmetros e devolve 204.
+    _erasure_svc.erase_account(
         conn,
-        payload=AccessLogCreate(
-            user_id=user_id,
-            organization_id=org_id,
-            event_type="account_self_delete",
-            resource="lgpd:art_18_VI",
-        ),
+        user_id=user.user_id,
+        organization_id=user.organization_id,
+        user_email=user.email,
+        now_iso=datetime.now(timezone.utc).isoformat(),
     )
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)

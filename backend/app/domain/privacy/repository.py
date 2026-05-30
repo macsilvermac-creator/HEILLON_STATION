@@ -630,3 +630,64 @@ class AccessLogRepository:
         count = result.rowcount
         conn.commit()
         return PurgeStats(purged_count=count, purge_cutoff=now)
+
+
+class ErasureRepository:
+    """Persistence for self-service account erasure (LGPD art. 18 VI).
+
+    Holds the raw SQL that previously lived inline in the privacy router so the
+    presentation layer stays free of persistence concerns. All booleans are
+    passed as Python ``bool`` (not literal 0/1) so they adapt to both sqlite3
+    (-> 0/1) and psycopg2 (-> boolean); a literal ``0`` breaks on Postgres.
+    """
+
+    def anonymize_user(
+        self,
+        conn: Any,
+        *,
+        user_id: str,
+        anonymized_email: str,
+        anonymized_name: str,
+        password_sentinel: str = "deleted",
+    ) -> int:
+        """Anonymise the users row, preserving PK + historical FKs.
+
+        Returns the number of rows updated (1 on success, 0 if already gone).
+        """
+        result = conn.execute(
+            """UPDATE users
+                   SET email = ?,
+                       name = ?,
+                       hashed_password = ?,
+                       is_active = ?
+                 WHERE user_id = ?""",
+            (anonymized_email, anonymized_name, password_sentinel, False, user_id),
+        )
+        return getattr(result, "rowcount", 0) or 0
+
+    def revoke_api_keys(self, conn: Any, *, user_id: str, now_iso: str) -> int:
+        """Mark every still-active API key for the user as revoked.
+
+        Returns the number of keys revoked.
+        """
+        result = conn.execute(
+            """UPDATE api_keys
+                   SET revoked_at = ?
+                 WHERE user_id = ? AND revoked_at IS NULL""",
+            (now_iso, user_id),
+        )
+        return getattr(result, "rowcount", 0) or 0
+
+    def delete_pending_dpo_requests(self, conn: Any, *, requester_email: str) -> int:
+        """Delete the user's own UNRESOLVED DPO requests.
+
+        Resolved/rejected requests are retained for audit. Returns the number of
+        rows deleted.
+        """
+        result = conn.execute(
+            """DELETE FROM dpo_requests
+                 WHERE requester_email = ?
+                   AND status NOT IN ('resolved', 'rejected')""",
+            (requester_email,),
+        )
+        return getattr(result, "rowcount", 0) or 0

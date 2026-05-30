@@ -329,3 +329,27 @@ class PurgeStats(BaseModel):
     purged_count: int
     purge_cutoff: datetime
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# ─── Account erasure (LGPD art. 18 VI) ────────────────────────────────────────
+
+
+class ErasureResult(BaseModel):
+    """Per-step outcome of a self-service account erasure (LGPD art. 18 VI).
+
+    Erasure is a best-effort cascade: the irreversible anonymisation of the
+    `users` row MUST succeed, but ancillary clean-up steps (consent revocation,
+    API-key revocation, pending-DPO deletion) are recorded individually so a
+    partial failure is observable in the audit trail instead of being silently
+    swallowed.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: str
+    user_anonymized: bool = False
+    consents_revoked: int = 0
+    api_keys_revoked: int = 0
+    dpo_requests_deleted: int = 0
+    warnings: list[str] = Field(default_factory=list)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

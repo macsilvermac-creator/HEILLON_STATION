@@ -17,6 +17,7 @@ from app.domain.privacy.models import (
     DPORequest,
     DPORequestCreate,
     DPORequestUpdate,
+    ErasureResult,
     IncidentCreate,
     IncidentUpdate,
     PurgeStats,
@@ -28,6 +29,7 @@ from app.domain.privacy.repository import (
     AccessLogRepository,
     ConsentRepository,
     DPORepository,
+    ErasureRepository,
     IncidentRepository,
     RIPDRepository,
 )
@@ -540,3 +542,114 @@ class AccessLogService:
             stats.purge_cutoff.isoformat(),
         )
         return stats
+
+
+# ─── Account Erasure Service ───────────────────────────────────────────────────
+
+
+class ErasureService:
+    """Orchestrates self-service account erasure (LGPD art. 18 VI).
+
+    Cascade (best-effort except where noted):
+      1. Revoke all consent-based purposes (LGPD art. 8 §5)
+      2. Anonymise the ``users`` row — the ONLY mandatory step
+      3. Revoke every still-active API key
+      4. Delete the user's own pending DPO requests
+      5. Write an ``account_self_delete`` audit event (Marco Civil / art. 18 VI)
+
+    What is intentionally preserved (legal basis): HDR chain (evidential custody,
+    art. 7º II + art. 16), access_logs (Marco Civil min. retention), and security
+    incidents where the user was a victim.
+
+    Ancillary steps that fail are recorded in ``ErasureResult.warnings`` instead
+    of being silently swallowed, so a partial erasure is visible in logs/audit.
+    """
+
+    def __init__(
+        self,
+        repository: ErasureRepository | None = None,
+        *,
+        consent_service: "ConsentService | None" = None,
+        access_log_service: "AccessLogService | None" = None,
+    ) -> None:
+        self._repo = repository or ErasureRepository()
+        self._consent = consent_service or ConsentService()
+        self._access_log = access_log_service or AccessLogService()
+
+    def erase_account(
+        self,
+        conn: Any,
+        *,
+        user_id: str,
+        organization_id: str,
+        user_email: str,
+        now_iso: str,
+    ) -> ErasureResult:
+        result = ErasureResult(user_id=user_id)
+
+        # 1) Revoke consents (best-effort — must not block anonymisation)
+        try:
+            revoked = self._consent.revoke_all(
+                conn, user_id=user_id, organization_id=organization_id
+            )
+            result.consents_revoked = len(revoked)
+        except Exception as exc:  # noqa: BLE001 — recorded, not swallowed
+            logger.warning(
+                "Erasure: consent revocation failed user=%s: %s", user_id, exc
+            )
+            result.warnings.append(f"consent_revocation_failed: {exc}")
+
+        # 2) Anonymise users row — MANDATORY. A failure here is propagated so the
+        #    caller returns 5xx and the SPA does not believe the account is gone.
+        anonymized_email = f"deleted+{user_id[:16]}@heillon.local"
+        result.user_anonymized = (
+            self._repo.anonymize_user(
+                conn,
+                user_id=user_id,
+                anonymized_email=anonymized_email,
+                anonymized_name="[Conta eliminada]",
+            )
+            > 0
+        )
+
+        # 3) Revoke API keys (best-effort)
+        try:
+            result.api_keys_revoked = self._repo.revoke_api_keys(
+                conn, user_id=user_id, now_iso=now_iso
+            )
+        except Exception as exc:  # noqa: BLE001 — recorded, not swallowed
+            logger.warning(
+                "Erasure: API-key revocation failed user=%s: %s", user_id, exc
+            )
+            result.warnings.append(f"api_key_revocation_failed: {exc}")
+
+        # 4) Delete pending DPO requests (best-effort — table may be absent)
+        try:
+            result.dpo_requests_deleted = self._repo.delete_pending_dpo_requests(
+                conn, requester_email=user_email
+            )
+        except Exception as exc:  # noqa: BLE001 — recorded, not swallowed
+            logger.warning("Erasure: DPO cleanup failed user=%s: %s", user_id, exc)
+            result.warnings.append(f"dpo_cleanup_failed: {exc}")
+
+        # 5) Audit event (AccessLogService.log is itself best-effort internally)
+        self._access_log.log(
+            conn,
+            payload=AccessLogCreate(
+                user_id=user_id,
+                organization_id=organization_id,
+                event_type="account_self_delete",
+                resource="lgpd:art_18_VI",
+            ),
+        )
+
+        logger.info(
+            "Account erased user=%s anonymized=%s consents=%d keys=%d dpo=%d warnings=%d",
+            user_id,
+            result.user_anonymized,
+            result.consents_revoked,
+            result.api_keys_revoked,
+            result.dpo_requests_deleted,
+            len(result.warnings),
+        )
+        return result
