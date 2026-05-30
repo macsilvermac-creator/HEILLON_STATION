@@ -15,6 +15,18 @@ from app.domain.normative.models import (
 )
 
 
+def _is_postgres(conn) -> bool:
+    """True when running against PostgreSQL (CompatConnection carries dialect).
+
+    FTS5 virtual tables and their MATCH/rebuild syntax are SQLite-only. On
+    Postgres a failed FTS statement would also poison the whole transaction
+    ("current transaction is aborted"), so callers must skip those paths and
+    use the LIKE/ILIKE fallback instead.
+    """
+
+    return getattr(conn, "dialect", "sqlite") in ("postgresql", "postgres")
+
+
 def seed_corpus(conn, rules: Sequence[NormativeRule]) -> None:
     """Upsert default rules into SQLite, rebuilding the FTS5 index."""
 
@@ -61,32 +73,38 @@ def search_rules(conn, query: str, *, limit: int = 20) -> list[NormativeRule]:
 
     clean = query.strip()
 
-    try:
-        rows = conn.execute(
-            """
-            SELECT r.rule_id, r.name, r.description, r.category,
-                   r.condition_text, r.action_on_violation, r.priority, r.enabled
-            FROM normative_rules_fts f
-            JOIN normative_rules r ON r.rule_id = f.rule_id
-            WHERE normative_rules_fts MATCH ?
-            ORDER BY rank
-            LIMIT ?
-            """,
-            (clean, limit),
-        ).fetchall()
-    except Exception:
-        # FTS table unavailable — degrade gracefully
-        like = f"%{clean}%"
-        rows = conn.execute(
-            """
-            SELECT rule_id, name, description, category,
-                   condition_text, action_on_violation, priority, enabled
-            FROM normative_rules
-            WHERE name LIKE ? OR description LIKE ? OR condition_text LIKE ?
-            LIMIT ?
-            """,
-            (like, like, like, limit),
-        ).fetchall()
+    # SQLite: try the FTS5 MATCH path first (BM25 relevance ranking).
+    if not _is_postgres(conn):
+        try:
+            rows = conn.execute(
+                """
+                SELECT r.rule_id, r.name, r.description, r.category,
+                       r.condition_text, r.action_on_violation, r.priority, r.enabled
+                FROM normative_rules_fts f
+                JOIN normative_rules r ON r.rule_id = f.rule_id
+                WHERE normative_rules_fts MATCH ?
+                ORDER BY rank
+                LIMIT ?
+                """,
+                (clean, limit),
+            ).fetchall()
+            return [_row_to_rule(row) for row in rows]
+        except Exception:
+            pass  # FTS table unavailable — fall through to LIKE
+
+    # Postgres (no FTS5) or SQLite fallback: case-insensitive substring search.
+    op = "ILIKE" if _is_postgres(conn) else "LIKE"
+    like = f"%{clean}%"
+    rows = conn.execute(
+        f"""
+        SELECT rule_id, name, description, category,
+               condition_text, action_on_violation, priority, enabled
+        FROM normative_rules
+        WHERE name {op} ? OR description {op} ? OR condition_text {op} ?
+        LIMIT ?
+        """,  # noqa: S608
+        (like, like, like, limit),
+    ).fetchall()
 
     return [_row_to_rule(row) for row in rows]
 
@@ -102,6 +120,10 @@ def _list_all(conn, *, limit: int = 100) -> list[NormativeRule]:
 
 
 def _rebuild_fts(conn) -> None:
+    # FTS5 is SQLite-only; on Postgres this statement would fail and poison the
+    # surrounding transaction, silently rolling back the corpus seed.
+    if _is_postgres(conn):
+        return
     try:
         conn.execute(
             "INSERT INTO normative_rules_fts(normative_rules_fts) VALUES('rebuild')"
@@ -111,13 +133,15 @@ def _rebuild_fts(conn) -> None:
 
 
 def _row_to_rule(row) -> NormativeRule:
+    # Named access works for both sqlite3.Row and psycopg2 RealDictCursor;
+    # positional access (row[0]) would raise on RealDictCursor (dict rows).
     return NormativeRule(
-        rule_id=row[0],
-        name=row[1],
-        description=row[2],
-        category=NormativeCategory(row[3]),
-        condition=row[4],
-        action_on_violation=ViolationAction(row[5]),
-        priority=row[6],
-        enabled=bool(row[7]),
+        rule_id=row["rule_id"],
+        name=row["name"],
+        description=row["description"],
+        category=NormativeCategory(row["category"]),
+        condition=row["condition_text"],
+        action_on_violation=ViolationAction(row["action_on_violation"]),
+        priority=row["priority"],
+        enabled=bool(row["enabled"]),
     )

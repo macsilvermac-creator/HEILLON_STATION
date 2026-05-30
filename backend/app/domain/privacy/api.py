@@ -557,14 +557,16 @@ def delete_account(
     # 2) Anonimiza linha do users (preserva PK + FKs históricas)
     anonymized_email = f"deleted+{user_id[:16]}@heillon.local"
     anonymized_name = "[Conta eliminada]"
+    # is_active passed as a Python bool (not literal 0) so it adapts to both
+    # sqlite3 (-> 0/1) and psycopg2 (-> boolean); literal 0 breaks on Postgres.
     conn.execute(
         """UPDATE users
            SET email = ?,
                name = ?,
                hashed_password = ?,
-               is_active = 0
+               is_active = ?
            WHERE user_id = ?""",
-        (anonymized_email, anonymized_name, "deleted", user_id),
+        (anonymized_email, anonymized_name, "deleted", False, user_id),
     )
 
     # 3) Revoga todas as API keys ativas

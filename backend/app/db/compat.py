@@ -75,10 +75,19 @@ class CompatConnection:
 
         import psycopg2.extensions as pg_ext
 
+        # Strip SQL comments UP-FRONT, before splitting on ';'. A ';' inside a
+        # comment (e.g. "-- base table; FTS5 omitido") would otherwise corrupt
+        # the naive split and feed a syntax-error fragment to psycopg2; a
+        # comment-only fragment makes it raise "can't execute an empty query".
+        # The bootstrap DDL has no string literals containing '--', '/* */' or
+        # ';', so whole-script comment removal is safe here.
+        clean = re.sub(r"/\*.*?\*/", "", script, flags=re.DOTALL)
+        clean = re.sub(r"--[^\n]*", "", clean)
+
         prev_isolation = self._raw.isolation_level
         self._raw.set_isolation_level(pg_ext.ISOLATION_LEVEL_AUTOCOMMIT)
         try:
-            statements = [s.strip() for s in script.split(";") if s.strip()]
+            statements = [s.strip() for s in clean.split(";") if s.strip()]
             for stmt in statements:
                 upper = stmt.upper()
                 if upper.startswith("BEGIN") or upper.startswith("COMMIT"):
